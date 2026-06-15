@@ -409,8 +409,8 @@
       position: absolute;
       left: max(16px, env(safe-area-inset-left));
       bottom: max(18px, env(safe-area-inset-bottom));
-      width: 118px;
-      height: 118px;
+      width: 104px;
+      height: 104px;
       border: 2px solid rgba(255, 255, 255, 0.28);
       border-radius: 50%;
       background: rgba(12, 18, 27, 0.58);
@@ -423,8 +423,8 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       background: rgba(72, 213, 151, 0.88);
@@ -436,15 +436,58 @@
       position: absolute;
       right: max(16px, env(safe-area-inset-right));
       bottom: max(28px, env(safe-area-inset-bottom));
-      width: 104px;
-      min-height: 58px;
-      padding: 8px;
+      width: 86px;
+      min-height: 46px;
+      padding: 6px;
       border-radius: 10px;
       background: rgba(124, 31, 49, 0.86);
       border-color: rgba(255, 160, 176, 0.62);
       color: #fff2f4;
+      font-size: 12px;
       pointer-events: auto;
       touch-action: manipulation;
+    }
+
+    #mobileFullscreenButton {
+      position: absolute;
+      top: max(8px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 92px;
+      min-height: 34px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      background: rgba(21, 32, 45, 0.84);
+      border-color: rgba(143, 201, 255, 0.5);
+      color: #e7f5ff;
+      font-size: 11px;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    #orientationPrompt {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(310px, calc(100vw - 40px));
+      transform: translate(-50%, -50%);
+      display: none;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      background: rgba(8, 12, 19, 0.78);
+      color: #f4f8ff;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.45;
+      pointer-events: none;
+    }
+
+    #orientationPrompt strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #8fd4ff;
+      font-size: 16px;
     }
 
     .popupWindow {
@@ -792,72 +835,201 @@
         display: block;
       }
 
+      button {
+        padding: 5px 7px;
+        border-radius: 5px;
+        font-size: 11px;
+      }
+
+      .panel {
+        padding: 7px;
+        border-radius: 6px;
+      }
+
+      .panelTitle {
+        margin-bottom: 5px;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+      }
+
+      .statRow {
+        gap: 5px;
+        margin: 2px 0;
+        font-size: 10.5px;
+      }
+
+      .bar {
+        height: 8px;
+        margin-top: 4px;
+      }
+
       #hud {
-        top: 8px;
-        left: 8px;
-        width: min(46vw, 214px);
-        max-height: 42vh;
+        top: max(6px, env(safe-area-inset-top));
+        left: max(6px, env(safe-area-inset-left));
+        width: min(27vw, 164px);
+        max-height: 46vh;
         overflow-y: auto;
       }
 
       #itemMachine {
-        top: 8px;
-        right: 8px;
-        width: min(46vw, 214px);
-        max-height: 42vh;
+        top: max(6px, env(safe-area-inset-top));
+        right: max(6px, env(safe-area-inset-right));
+        width: min(30vw, 174px);
+        max-height: 46vh;
         overflow-y: auto;
       }
 
       #statusPanel {
-        left: 8px;
-        bottom: 146px;
-        width: min(52vw, 252px);
-        max-height: 28vh;
+        left: max(116px, calc(env(safe-area-inset-left) + 110px));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        width: min(38vw, 260px);
+        max-height: 108px;
         overflow-y: auto;
       }
 
       #debugPanel {
-        right: 8px;
-        bottom: 104px;
-        width: min(45vw, 210px);
-        max-height: 32vh;
+        display: none;
       }
 
-      #debugBody {
-        max-height: calc(32vh - 48px);
+      #lastItem,
+      #recentPerk,
+      #itemInventory {
+        min-height: 24px;
+        max-height: 58px;
+        padding: 5px;
+        font-size: 10px;
+        line-height: 1.25;
+      }
+
+      #rollItemButton {
+        margin: 5px 0;
+      }
+
+      .compactSelect {
+        width: 70px;
+        padding: 3px 5px;
+        font-size: 10px;
+      }
+
+      .popupWindow {
+        min-width: 184px;
+        max-width: min(360px, calc(100vw - 14px));
+        border-width: 1px;
+      }
+
+      .titleBar {
+        min-height: 24px;
+        padding: 4px 6px;
+        font-size: 11px;
+      }
+
+      .popupClose {
+        width: 21px;
+        height: 20px;
+      }
+
+      .popupBody {
+        padding: 7px;
+        font-size: 11px;
+      }
+
+      .popupControls {
+        gap: 5px;
+        margin-top: 7px;
+      }
+
+      #itemPanel,
+      #perkPanel,
+      #gameOverPanel {
+        width: min(620px, calc(100vw - 16px));
+        max-height: calc(100vh - 16px);
+        padding: 10px;
+      }
+
+      #itemPanel h2,
+      #perkPanel h2,
+      #gameOverPanel h2 {
+        font-size: 18px;
+      }
+
+      #itemChoices,
+      #perkChoices {
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .itemChoice,
+      .perkChoice {
+        min-height: 92px;
+        padding: 8px;
+      }
+
+      .itemChoice strong,
+      .perkChoice strong {
+        margin-bottom: 5px;
+        font-size: 13px;
+      }
+
+      .itemChoice span,
+      .perkChoice span,
+      .moduleChoice span,
+      .bossItemChoice span {
+        font-size: 11px;
+      }
+
+      .moduleChoice,
+      .bossItemChoice {
+        min-height: 78px;
+        padding: 8px;
       }
 
       #trashZone {
-        bottom: 126px;
+        bottom: 78px;
+        width: 126px;
+        height: 42px;
+        font-size: 11px;
       }
     }
 
     @media (pointer: coarse) and (orientation: portrait) {
+      #orientationPrompt {
+        display: block;
+      }
+
       #hud,
       #itemMachine {
-        width: calc(50vw - 14px);
+        width: calc(50vw - 12px);
+        max-height: 30vh;
       }
 
       #statusPanel {
-        left: 8px;
-        right: 8px;
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
         width: auto;
-        bottom: 150px;
-        max-height: 22vh;
+        bottom: 118px;
+        max-height: 18vh;
       }
 
-      #debugPanel {
-        right: 8px;
-        width: 132px;
-        max-height: 42px;
+      #mobileJoystick {
+        width: 92px;
+        height: 92px;
       }
 
-      #debugPanel #debugBody {
-        display: none;
+      #mobileJoystickKnob {
+        width: 34px;
+        height: 34px;
       }
 
-      #debugToggleButton {
-        display: none;
+      #mobileEmergencyButton {
+        width: 78px;
+        min-height: 42px;
+      }
+    }
+
+    @media (pointer: coarse) and (orientation: landscape) {
+      #itemChoices,
+      #perkChoices {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
   </style>
@@ -949,6 +1121,11 @@
       <div id="popupLayer"></div>
       <div id="trashZone">여기로 버리기</div>
       <div id="mobileControls" aria-label="모바일 조작">
+        <button id="mobileFullscreenButton" type="button">전체화면</button>
+        <div id="orientationPrompt">
+          <strong>가로 모드 권장</strong>
+          휴대폰을 가로로 돌리거나 전체화면 버튼을 눌러 플레이 영역을 넓혀 주세요.
+        </div>
         <div id="mobileJoystick" aria-label="이동 조이스틱">
           <div id="mobileJoystickKnob"></div>
         </div>
@@ -1750,6 +1927,7 @@
     const mobileJoystick = document.getElementById("mobileJoystick");
     const mobileJoystickKnob = document.getElementById("mobileJoystickKnob");
     const mobileEmergencyButton = document.getElementById("mobileEmergencyButton");
+    const mobileFullscreenButton = document.getElementById("mobileFullscreenButton");
     const hpText = document.getElementById("hpText");
     const goldText = document.getElementById("goldText");
     const levelText = document.getElementById("levelText");
@@ -5344,6 +5522,57 @@
       emergencyCloseOldestPopup();
       updateUI();
     });
+
+    function fullscreenElement() {
+      return document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.msFullscreenElement ||
+        null;
+    }
+
+    function updateFullscreenButton() {
+      mobileFullscreenButton.textContent = fullscreenElement() ? "창 모드" : "전체화면";
+    }
+
+    async function requestLandscapeMode() {
+      const target = shell;
+      try {
+        if (!fullscreenElement()) {
+          if (target.requestFullscreen) {
+            await target.requestFullscreen({ navigationUI: "hide" });
+          } else if (target.webkitRequestFullscreen) {
+            target.webkitRequestFullscreen();
+          }
+        } else if (document.exitFullscreen) {
+          await document.exitFullscreen();
+          updateFullscreenButton();
+          return;
+        }
+      } catch (error) {
+        createSystemGrowthPopup("전체화면 실패", "브라우저가 전체화면 전환을 막았습니다. 주소창 메뉴의 전체화면이나 홈 화면 추가를 사용해 보세요.");
+        updateFullscreenButton();
+        return;
+      }
+
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock("landscape");
+        }
+      } catch (error) {
+        createSystemGrowthPopup("가로 잠금 안내", "이 브라우저는 자동 가로 잠금을 지원하지 않습니다. 기기 회전 잠금을 끄고 직접 가로로 돌려 주세요.");
+      }
+
+      resizeCanvas();
+      updateUI();
+      updateFullscreenButton();
+    }
+
+    mobileFullscreenButton.addEventListener("click", () => {
+      requestLandscapeMode();
+    });
+
+    document.addEventListener("fullscreenchange", updateFullscreenButton);
+    document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
 
     restartButton.addEventListener("click", resetGame);
 
