@@ -1,0 +1,5408 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>팝업 로그라이크 린 프로토타입</title>
+  <style>
+    :root {
+      --bg: #11151c;
+      --panel: rgba(18, 24, 34, 0.92);
+      --panel-border: rgba(255, 255, 255, 0.16);
+      --text: #edf2f7;
+      --muted: #9aa8ba;
+      --accent: #48d597;
+      --danger: #ff5964;
+      --gold: #f3c84b;
+      --xp: #4aa8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1c2633 0, var(--bg) 58%);
+      color: var(--text);
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+
+    button {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #273244;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      background: #34435c;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      padding: 0;
+    }
+
+    #gameShell {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #0b0f16;
+      border: 0;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    #fieldCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #101720;
+      touch-action: none;
+    }
+
+    .panel {
+      position: absolute;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
+      padding: 12px;
+      z-index: 20;
+      backdrop-filter: blur(8px);
+    }
+
+    #hud {
+      top: 12px;
+      left: 12px;
+      width: 250px;
+    }
+
+    #itemMachine {
+      top: 12px;
+      right: 12px;
+      width: 235px;
+    }
+
+    #statusPanel {
+      left: 12px;
+      bottom: 12px;
+      width: 270px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    #debugPanel {
+      right: 12px;
+      bottom: 12px;
+      width: 250px;
+      max-height: calc(100vh - 24px);
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+    }
+
+    #debugPanel.minimized {
+      width: 132px;
+      padding: 8px 10px;
+      max-height: 42px;
+    }
+
+    #debugPanel.minimized #debugBody {
+      display: none;
+    }
+
+    #debugBody {
+      max-height: calc(100vh - 82px);
+      overflow-y: auto;
+      padding-right: 2px;
+      touch-action: pan-y;
+    }
+
+    .panelHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .panelHeader .panelTitle {
+      margin-bottom: 0;
+    }
+
+    .panelToggle {
+      width: 26px;
+      height: 24px;
+      padding: 0;
+      border-radius: 5px;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    #debugButtons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+      max-height: min(38vh, 260px);
+      overflow-y: auto;
+    }
+
+    #debugButtons button {
+      padding: 6px 7px;
+      font-size: 11px;
+    }
+
+    .panelTitle {
+      margin: 0 0 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #d8e3f3;
+    }
+
+    .statRow {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    .compactSelect {
+      width: 96px;
+      padding: 5px 7px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 5px;
+      background: #1f2a3b;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .bar {
+      width: 100%;
+      height: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      margin-top: 6px;
+    }
+
+    .barFill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--xp), #87d3ff);
+      transition: width 0.12s linear;
+    }
+
+    #rollItemButton {
+      width: 100%;
+      margin: 8px 0;
+      background: #3c2f13;
+      border-color: rgba(243, 200, 75, 0.55);
+      color: #ffe7a1;
+    }
+
+    #lastItem,
+    #recentPerk,
+    #itemInventory {
+      min-height: 36px;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    #itemInventory {
+      max-height: 112px;
+      overflow-y: auto;
+      touch-action: pan-y;
+    }
+
+    .inventoryRow {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .inventoryRow:last-child {
+      border-bottom: 0;
+    }
+
+    #itemOverlay,
+    #perkOverlay,
+    #gameOverOverlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 7, 12, 0.64);
+      z-index: 5000;
+    }
+
+    #itemPanel,
+    #perkPanel,
+    #gameOverPanel {
+      width: min(680px, calc(100% - 40px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      touch-action: pan-y;
+      background: rgba(18, 24, 34, 0.98);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.55);
+      padding: 18px;
+    }
+
+    #itemPanel h2,
+    #perkPanel h2,
+    #gameOverPanel h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    #itemChoices,
+    #perkChoices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .itemChoice,
+    .perkChoice {
+      min-height: 150px;
+      text-align: left;
+      background: #1f2a3b;
+      border-color: rgba(72, 213, 151, 0.42);
+      line-height: 1.35;
+    }
+
+    .itemChoice {
+      border-color: rgba(243, 200, 75, 0.5);
+    }
+
+    .itemChoice strong,
+    .perkChoice strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #9ff0c7;
+      font-size: 16px;
+    }
+
+    .itemChoice strong {
+      color: #ffe29a;
+    }
+
+    .itemChoice span,
+    .perkChoice span {
+      display: block;
+      color: #c8d5e7;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .choiceMeta {
+      display: block;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f6d477;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .rarityBadge {
+      display: inline-block;
+      margin: 0 0 8px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #dce8f8;
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 900;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .rarityCommon {
+      color: #dce8f8;
+    }
+
+    .rarityRare {
+      color: #73bfff;
+    }
+
+    .rarityEpic {
+      color: #d2a2ff;
+    }
+
+    .rarityCursed {
+      color: #ff8ea1;
+    }
+
+    .raritySponsored {
+      color: #ffe176;
+    }
+
+    #popupLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    #trashZone {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 58px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+      border: 2px dashed rgba(255, 255, 255, 0.42);
+      border-radius: 8px;
+      background: rgba(10, 16, 24, 0.78);
+      color: #f6d477;
+      font-size: 13px;
+      font-weight: 900;
+      pointer-events: none;
+    }
+
+    #trashZone.active {
+      display: flex;
+    }
+
+    #mobileControls {
+      position: absolute;
+      inset: 0;
+      z-index: 2600;
+      display: none;
+      pointer-events: none;
+    }
+
+    #mobileJoystick {
+      position: absolute;
+      left: max(16px, env(safe-area-inset-left));
+      bottom: max(18px, env(safe-area-inset-bottom));
+      width: 118px;
+      height: 118px;
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      border-radius: 50%;
+      background: rgba(12, 18, 27, 0.58);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34);
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    #mobileJoystickKnob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(72, 213, 151, 0.88);
+      border: 2px solid rgba(255, 255, 255, 0.68);
+      box-shadow: 0 0 18px rgba(72, 213, 151, 0.35);
+    }
+
+    #mobileEmergencyButton {
+      position: absolute;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: max(28px, env(safe-area-inset-bottom));
+      width: 104px;
+      min-height: 58px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(124, 31, 49, 0.86);
+      border-color: rgba(255, 160, 176, 0.62);
+      color: #fff2f4;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .popupWindow {
+      position: absolute;
+      min-width: 220px;
+      max-width: min(460px, calc(100vw - 24px));
+      background: #f7f7f7;
+      color: #20242c;
+      border: 2px solid #4d5668;
+      border-radius: 7px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.46);
+      overflow: hidden;
+      pointer-events: auto;
+      user-select: none;
+    }
+
+    .popupWindow.ad_buff {
+      background: #fff4bd;
+      border-color: #d6aa21;
+    }
+
+    .popupWindow.timed_reward {
+      background: #dfeeff;
+      border-color: #4c91d8;
+    }
+
+    .popupWindow.terms {
+      background: #ffe2ea;
+      border-color: #d84e74;
+    }
+
+    .popupWindow.moving_close {
+      background: #f2f2f2;
+      border-color: #7f8a99;
+    }
+
+    .popupWindow.infection {
+      background: #e4ffe6;
+      border-color: #3caa5f;
+    }
+
+    .popupWindow.trash_drag {
+      background: #ece7ff;
+      border-color: #8d78db;
+    }
+
+    .popupWindow.first_purchase_package {
+      background: #fff7d7;
+      border-color: #d7a72f;
+    }
+
+    .popupWindow.system_notice {
+      background: #eaf6ff;
+      border-color: #67a9d8;
+    }
+
+    .popupWindow.boss_package_ad {
+      background: #fff0f0;
+      border-color: #c63b52;
+    }
+
+    .popupWindow.sponsored_ad {
+      background: #fff6cf;
+      border-color: #d8aa27;
+    }
+
+    .popupWindow.recurring_investment,
+    .popupWindow.loan_offer,
+    .popupWindow.stock_market {
+      background: #eaf7ef;
+      border-color: #35a866;
+    }
+
+    .popupWindow.clean_challenge {
+      background: #eefcff;
+      border-color: #49a7c7;
+    }
+
+    .popupWindow.volatile_popup {
+      background: #ffe8dd;
+      border-color: #df6c36;
+    }
+
+    .popupWindow.interest_offer {
+      background: #e8fbff;
+      border-color: #2d9bb8;
+    }
+
+    .popupWindow.popup_store {
+      background: #f4edff;
+      border-color: #8154c7;
+    }
+
+    .titleBar {
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      background: #394354;
+      color: white;
+      cursor: grab;
+      touch-action: none;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .ad_buff .titleBar {
+      background: #a77705;
+    }
+
+    .timed_reward .titleBar {
+      background: #235d99;
+    }
+
+    .terms .titleBar {
+      background: #a92f55;
+    }
+
+    .infection .titleBar {
+      background: #207a3e;
+    }
+
+    .trash_drag .titleBar {
+      background: #5843ad;
+    }
+
+    .first_purchase_package .titleBar {
+      background: #8c6410;
+    }
+
+    .system_notice .titleBar {
+      background: #2a6f9a;
+    }
+
+    .boss_package_ad .titleBar {
+      background: #8e2637;
+    }
+
+    .sponsored_ad .titleBar {
+      background: #9d7308;
+    }
+
+    .recurring_investment .titleBar,
+    .loan_offer .titleBar,
+    .stock_market .titleBar {
+      background: #217748;
+    }
+
+    .clean_challenge .titleBar {
+      background: #257d97;
+    }
+
+    .volatile_popup .titleBar {
+      background: #a84d20;
+    }
+
+    .interest_offer .titleBar {
+      background: #126d82;
+    }
+
+    .popup_store .titleBar {
+      background: #56339a;
+    }
+
+    .titleBar:active {
+      cursor: grabbing;
+    }
+
+    .popupClose {
+      width: 24px;
+      height: 22px;
+      padding: 0;
+      border-radius: 4px;
+      color: white;
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .popupBody {
+      padding: 10px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .system_notice .popupBody {
+      white-space: pre-line;
+    }
+
+    .popupControls {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .popupControls button {
+      color: #15202b;
+      background: rgba(255, 255, 255, 0.75);
+      border-color: rgba(0, 0, 0, 0.22);
+    }
+
+    .popupProgress {
+      width: 100%;
+      height: 10px;
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 9px;
+    }
+
+    .popupProgressFill {
+      height: 100%;
+      width: 0%;
+      background: #2c91e6;
+    }
+
+    .termsClause {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 8px;
+      margin-top: 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.65);
+      color: #4b1d2c;
+      font-weight: 700;
+    }
+
+    .termsClause input {
+      margin-top: 2px;
+    }
+
+    .contractChoice {
+      padding: 8px;
+      margin-top: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .contractChoice strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #2c2415;
+    }
+
+    .contractChoice p {
+      margin: 0 0 8px;
+      color: #4a3a1a;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .popupProduct {
+      width: 100%;
+      justify-content: space-between;
+      text-align: left;
+    }
+
+    .moduleChoice,
+    .bossItemChoice {
+      display: block;
+      width: 100%;
+      min-height: 96px;
+      padding: 12px;
+      text-align: left;
+      color: #f4f7fb;
+      background: #263142;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 7px;
+    }
+
+    .moduleChoice strong,
+    .bossItemChoice strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 15px;
+    }
+
+    .moduleChoice span,
+    .bossItemChoice span {
+      display: block;
+      color: #c7d2e1;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .moduleChoice:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    .bossPackageGrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .bossItemChoice.selected {
+      border-color: #f6d477;
+      box-shadow: 0 0 0 2px rgba(246, 212, 119, 0.25);
+      background: #3a3425;
+    }
+
+    .popupWarning {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(180, 37, 61, 0.12);
+      color: #7a1427;
+      font-weight: 800;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .gold {
+      color: var(--gold);
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    @media (max-width: 760px) {
+      #hud,
+      #itemMachine,
+      #statusPanel {
+        width: 210px;
+        padding: 9px;
+      }
+
+      #itemChoices,
+      #perkChoices {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (pointer: coarse), (max-width: 860px) {
+      #mobileControls {
+        display: block;
+      }
+
+      #hud {
+        top: 8px;
+        left: 8px;
+        width: min(46vw, 214px);
+        max-height: 42vh;
+        overflow-y: auto;
+      }
+
+      #itemMachine {
+        top: 8px;
+        right: 8px;
+        width: min(46vw, 214px);
+        max-height: 42vh;
+        overflow-y: auto;
+      }
+
+      #statusPanel {
+        left: 8px;
+        bottom: 146px;
+        width: min(52vw, 252px);
+        max-height: 28vh;
+        overflow-y: auto;
+      }
+
+      #debugPanel {
+        right: 8px;
+        bottom: 104px;
+        width: min(45vw, 210px);
+        max-height: 32vh;
+      }
+
+      #debugBody {
+        max-height: calc(32vh - 48px);
+      }
+
+      #trashZone {
+        bottom: 126px;
+      }
+    }
+
+    @media (pointer: coarse) and (orientation: portrait) {
+      #hud,
+      #itemMachine {
+        width: calc(50vw - 14px);
+      }
+
+      #statusPanel {
+        left: 8px;
+        right: 8px;
+        width: auto;
+        bottom: 150px;
+        max-height: 22vh;
+      }
+
+      #debugPanel {
+        right: 8px;
+        width: 132px;
+        max-height: 42px;
+      }
+
+      #debugPanel #debugBody {
+        display: none;
+      }
+
+      #debugToggleButton {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="gameShell">
+      <canvas id="fieldCanvas" width="960" height="540"></canvas>
+
+      <section id="hud" class="panel">
+        <h1 class="panelTitle">상태</h1>
+        <div class="statRow"><span>HP</span><strong id="hpText">5 / 5</strong></div>
+        <div class="statRow"><span>골드</span><strong id="goldText" class="gold">0</strong></div>
+        <div class="statRow"><span>레벨</span><strong id="levelText">1</strong></div>
+        <div class="statRow"><span>XP</span><strong id="xpText">0 / 40</strong></div>
+        <div class="bar"><div id="xpFill" class="barFill"></div></div>
+        <div class="statRow"><span>1차 모듈</span><strong id="primaryModuleText">미선택</strong></div>
+        <div class="statRow"><span>보조 모듈</span><strong id="secondaryModuleText">없음</strong></div>
+        <div class="statRow"><span>1차 숙련도</span><strong id="primaryMasteryText">0</strong></div>
+        <div class="statRow"><span>보조 숙련도</span><strong id="secondaryMasteryText">0</strong></div>
+        <div class="statRow"><span>다음 선택</span><strong id="nextChoiceText">시작 선택</strong></div>
+        <div class="statRow"><span>팝업</span><strong id="popupCountText">0 / 5</strong></div>
+      </section>
+
+      <section id="itemMachine" class="panel">
+        <h2 class="panelTitle">아이템 머신</h2>
+        <div class="statRow"><span>비용</span><strong id="itemCostText">25G</strong></div>
+        <button id="rollItemButton">아이템 뽑기 - 25G</button>
+        <div id="lastItem">최근 아이템: 없음</div>
+        <h2 class="panelTitle" style="margin-top: 12px;">아이템 목록</h2>
+        <div id="itemInventory">보유 아이템 없음</div>
+        <h2 class="panelTitle" style="margin-top: 12px;">최근 성장</h2>
+        <div id="recentPerk">아직 없음</div>
+      </section>
+
+      <section id="statusPanel" class="panel">
+        <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
+        <div class="statRow" style="margin-top: 8px;"><span>배속</span><select id="speedSelect" class="compactSelect"></select></div>
+        <div id="runStats" style="margin-top: 8px;"></div>
+      </section>
+
+      <section id="debugPanel" class="panel">
+        <div class="panelHeader">
+          <h2 class="panelTitle">디버그</h2>
+          <button id="debugToggleButton" class="panelToggle" type="button" title="디버그 패널 접기">−</button>
+        </div>
+        <div id="debugBody">
+          <div id="debugStats"></div>
+          <div id="debugButtons">
+            <button type="button" data-debug="gold">골드 +25</button>
+            <button type="button" data-debug="gold100">골드 +100</button>
+            <button type="button" data-debug="xp10">XP +10</button>
+            <button type="button" data-debug="xp">XP +레벨</button>
+            <button type="button" data-debug="forceLevel">강제 레벨업</button>
+            <button type="button" data-debug="boss">보스 소환</button>
+            <button type="button" data-debug="bossPackage">보스 패키지</button>
+            <button type="button" data-debug="rate">팝업 x2</button>
+            <button type="button" data-debug="heat">Heat +1</button>
+            <button type="button" data-debug="creditPlus">신용도 +10</button>
+            <button type="button" data-debug="creditMinus">신용도 -10</button>
+            <button type="button" data-debug="clear">팝업 제거</button>
+            <button type="button" data-popup="first_purchase_package">첫 계약</button>
+            <button type="button" data-popup="interest_offer">이자 상품</button>
+            <button type="button" data-popup="recurring_investment">자동 투자</button>
+            <button type="button" data-popup="loan_offer">대출</button>
+            <button type="button" data-popup="stock_stable">안정주</button>
+            <button type="button" data-popup="stock_momentum">성장주</button>
+            <button type="button" data-popup="stock_cursed">저주주</button>
+            <button type="button" data-popup="popup_store">팝업 상점</button>
+            <button type="button" data-popup="basic_ad">기본 팝업</button>
+            <button type="button" data-popup="ad_buff">광고 버프</button>
+            <button type="button" data-popup="ad_coupon">광고 할인</button>
+            <button type="button" data-popup="ad_free_sample">광고 샘플</button>
+            <button type="button" data-popup="ad_premium_sample">광고 선택지</button>
+            <button type="button" data-popup="timed_reward">시간 보상</button>
+            <button type="button" data-popup="terms">약관</button>
+            <button type="button" data-popup="terms_ad_tracking">추적 약관</button>
+            <button type="button" data-popup="terms_emergency_waiver">긴급 각서</button>
+            <button type="button" data-popup="terms_malicious_optimization">악성 약관</button>
+            <button type="button" data-popup="clean_challenge_basic">청소 의뢰</button>
+            <button type="button" data-popup="volatile_bomb_popup">불안정 창</button>
+            <button type="button" data-popup="moving_close">움직이는 X</button>
+            <button type="button" data-popup="infection">감염</button>
+            <button type="button" data-popup="trash_drag">쓰레기통</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="popupLayer"></div>
+      <div id="trashZone">여기로 버리기</div>
+      <div id="mobileControls" aria-label="모바일 조작">
+        <div id="mobileJoystick" aria-label="이동 조이스틱">
+          <div id="mobileJoystickKnob"></div>
+        </div>
+        <button id="mobileEmergencyButton" type="button">긴급 닫기</button>
+      </div>
+
+      <div id="itemOverlay">
+        <div id="itemPanel">
+          <h2 id="itemOverlayTitle">아이템 선택</h2>
+          <div id="itemOverlayDescription" class="muted">골드를 지불했습니다. 패시브 아이템 1개를 선택해 현재 런 성능을 누적 성장시키세요.</div>
+          <div id="itemChoices"></div>
+        </div>
+      </div>
+
+      <div id="perkOverlay">
+        <div id="perkPanel">
+          <h2>특전 선택</h2>
+          <div class="muted">레벨 성장은 UI 규칙, 팝업 경제, 플레이 방식을 바꿉니다.</div>
+          <div id="perkChoices"></div>
+        </div>
+      </div>
+
+      <div id="gameOverOverlay">
+        <div id="gameOverPanel">
+          <h2>게임 오버</h2>
+          <p id="gameOverSummary"></p>
+          <p class="muted">R을 눌러 재시작하세요.</p>
+          <button id="restartButton" type="button">재시작</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const CONFIG = {
+      canvasWidth: 960,
+      canvasHeight: 540,
+
+      playerMaxHP: 5,
+      playerMoveSpeed: 180,
+      playerDamage: 10,
+      playerAttackInterval: 0.6,
+      playerAttackRange: 140,
+
+      enemyHP: 20,
+      enemySpeed: 70,
+      enemyDamage: 1,
+      enemySpawnInterval: 2.2,
+      enemySpawnIntervalMin: 0.75,
+
+      goldPerKill: 5,
+      xpPerKill: 10,
+
+      itemRollCost: 25,
+      itemRollCostGrowth: 1.18,
+      itemRollCostCap: null,
+
+      xpBaseRequirement: 40,
+      xpRequirementGrowth: 1.25,
+
+      popupBaseSpawnInterval: 14,
+      popupMinSpawnInterval: 5.4,
+      popupPressureRampSeconds: 190,
+      maxOpenPopups: 5,
+      popupOverlapMaxWidthRatio: 0.5,
+      popupOverlapMaxHeightRatio: 0.5,
+
+      centralSafeZoneWidthRatio: 0.38,
+      centralSafeZoneHeightRatio: 0.38,
+      emergencyCloseCooldown: 9,
+
+      bossSpawnTimes: [90, 180],
+      bossBaseHP: 420,
+      bossGoldReward: 80,
+      bossXPReward: 80
+    };
+
+    const ITEMS = [
+      {
+        id: "damage_up",
+        name: "공격력 증가",
+        description: "피해량 +20%",
+        rarity: "Common",
+        effect: { stat: "damageMultiplier", value: 0.2 }
+      },
+      {
+        id: "attack_speed_up",
+        name: "공격 속도 증가",
+        description: "공격 간격 -10%",
+        rarity: "Common",
+        effect: { stat: "attackIntervalMultiplier", value: -0.1 }
+      },
+      {
+        id: "range_up",
+        name: "사거리 증가",
+        description: "공격 사거리 +15%",
+        rarity: "Common",
+        effect: { stat: "attackRangeMultiplier", value: 0.15 }
+      },
+      {
+        id: "move_speed_up",
+        name: "이동 속도 증가",
+        description: "이동 속도 +10%",
+        rarity: "Common",
+        effect: { stat: "moveSpeedMultiplier", value: 0.1 }
+      },
+      {
+        id: "max_hp_up",
+        name: "최대 HP 증가",
+        description: "최대 HP +1",
+        rarity: "Common",
+        effect: { stat: "maxHP", value: 1 }
+      },
+      {
+        id: "piercing_ad_shot",
+        name: "관통 광고탄",
+        description: "자동 공격이 적 1명을 추가로 타격",
+        rarity: "Rare",
+        effect: { stat: "extraTargets", value: 1 }
+      },
+      {
+        id: "clean_desk",
+        name: "정리된 책상",
+        description: "열린 팝업이 2개 이하일 때 피해량 +25%",
+        rarity: "Rare",
+        effect: { stat: "cleanDeskDamageMultiplier", value: 0.25 }
+      },
+      {
+        id: "clutter_adaptation",
+        name: "난장판 적응",
+        description: "열린 팝업 1개당 공격 간격 -4%, 최대 -20%",
+        rarity: "Rare",
+        effect: { stat: "clutterAttackIntervalPerPopup", value: -0.04 }
+      },
+      {
+        id: "gold_bullets",
+        name: "골드 탄환",
+        description: "골드가 50 이상이면 피해량 +20%",
+        rarity: "Rare",
+        effect: { stat: "goldBulletDamageMultiplier", value: 0.2 }
+      },
+      {
+        id: "emergency_training",
+        name: "긴급 대처 훈련",
+        description: "Space 긴급 닫기 후 5초간 이동속도 +30%",
+        rarity: "Rare",
+        effect: { stat: "emergencyMoveSpeedMultiplier", value: 0.3 }
+      },
+      {
+        id: "auto_click_macro",
+        name: "자동 클릭 매크로",
+        description: "8초마다 가장 오래된 기본 팝업 자동 제거",
+        rarity: "Epic",
+        effect: { stat: "autoCloseBasicInterval", value: 8 }
+      },
+      {
+        id: "sponsored_blade",
+        name: "스폰서드 블레이드",
+        description: "광고 버프 팝업이 열려 있으면 자동 공격 2연타",
+        rarity: "Epic",
+        effect: { stat: "sponsoredDoubleHit", value: 1 }
+      },
+      {
+        id: "overheated_lootbox",
+        name: "과열된 랜덤박스",
+        description: "아이템 선택 후 10초간 피해량 +15%",
+        rarity: "Epic",
+        effect: { stat: "purchaseDamageBurst", value: 0.15 }
+      },
+      {
+        id: "premium_cursor",
+        name: "프리미엄 커서",
+        description: "팝업 드래그 중 공격 간격 -20%",
+        rarity: "Epic",
+        effect: { stat: "dragAttackIntervalMultiplier", value: -0.2 }
+      },
+      {
+        id: "window_breaker",
+        name: "창문 파쇄기",
+        description: "팝업을 닫으면 플레이어 주변 적에게 15 피해",
+        rarity: "Epic",
+        effect: { stat: "popupCloseDamage", value: 15 }
+      },
+      {
+        id: "malicious_optimization",
+        name: "악성 최적화",
+        description: "피해량 +50%, 팝업 생성률 +25%",
+        rarity: "Cursed",
+        effects: [
+          { stat: "damageMultiplier", value: 0.5 },
+          { stat: "popupSpawnRateMultiplier", value: 0.25 }
+        ]
+      },
+      {
+        id: "trial_version",
+        name: "무료 체험판",
+        description: "공격 간격 -35%, 60초 후 최대 HP -1",
+        rarity: "Cursed",
+        effects: [
+          { stat: "attackIntervalMultiplier", value: -0.35 },
+          { stat: "delayedMaxHPLoss", value: 1, delay: 60 }
+        ]
+      },
+      {
+        id: "suspicious_booster",
+        name: "수상한 부스터",
+        description: "이동속도 +40%, 팝업 드래그 속도 -25%",
+        rarity: "Cursed",
+        effects: [
+          { stat: "moveSpeedMultiplier", value: 0.4 },
+          { stat: "popupDragSpeedMultiplier", value: -0.25 }
+        ]
+      },
+      {
+        id: "personal_data_sale",
+        name: "개인정보 판매",
+        description: "즉시 100G, 약관 팝업 등장률 증가",
+        rarity: "Cursed",
+        effects: [
+          { stat: "gold", value: 100 },
+          { stat: "termsPopupWeightMultiplier", value: 0.6 }
+        ]
+      },
+      {
+        id: "close_button_addiction",
+        name: "닫기 버튼 중독",
+        description: "팝업을 닫을 때마다 +3G, 최대 팝업 +1",
+        rarity: "Sponsored",
+        effects: [
+          { stat: "goldPerPopupClose", value: 3 },
+          { stat: "maxOpenPopups", value: 1 }
+        ]
+      }
+    ];
+
+    const PERKS = [
+      {
+        id: "faster_drag",
+        name: "가벼운 창",
+        description: "팝업 드래그가 더 가볍게 느껴집니다.",
+        rarity: "Common",
+        effect: { stat: "popupDragSpeedMultiplier", value: 0.25 }
+      },
+      {
+        id: "popup_spawn_down",
+        name: "팝업 차단기",
+        description: "팝업 생성률 -10%",
+        rarity: "Common",
+        effect: { stat: "popupSpawnRateMultiplier", value: -0.1 }
+      },
+      {
+        id: "ad_profit",
+        name: "광고 수익",
+        description: "열린 광고 팝업이 시간에 따라 골드를 생성합니다.",
+        rarity: "Rare",
+        effect: { stat: "adGoldPerSecond", value: 1 }
+      },
+      {
+        id: "better_ad_buff",
+        name: "스폰서 파워",
+        description: "광고 버프 팝업 효과 +20%",
+        rarity: "Rare",
+        effect: { stat: "adBuffMultiplier", value: 0.2 }
+      },
+      {
+        id: "shorter_timed_rewards",
+        name: "빠른 수령",
+        description: "시간 보상 팝업 완료 시간 -20%",
+        rarity: "Common",
+        effect: { stat: "timedRewardDurationMultiplier", value: -0.2 }
+      },
+      {
+        id: "popup_capacity",
+        name: "어수선한 바탕화면",
+        description: "최대 열린 팝업 +1",
+        rarity: "Rare",
+        effect: { stat: "maxOpenPopups", value: 1 }
+      },
+      {
+        id: "wide_safe_zone",
+        name: "넓은 안전구역",
+        description: "팝업이 플레이어 중심부를 더 넓게 피해서 생성됩니다.",
+        rarity: "Common",
+        effect: { stat: "safeZoneMultiplier", value: 0.18 }
+      },
+      {
+        id: "emergency_cooldown_down",
+        name: "긴급 종료 단축",
+        description: "Space 긴급 닫기 쿨타임 -20%",
+        rarity: "Common",
+        effect: { stat: "emergencyCooldownMultiplier", value: -0.2 }
+      },
+      {
+        id: "terms_expert",
+        name: "약관 전문가",
+        description: "위험 약관 패널티를 1회 무효화합니다.",
+        rarity: "Rare",
+        effect: { stat: "termsPenaltyShield", value: 1 }
+      },
+      {
+        id: "cleanup_bonus",
+        name: "창 정리 보너스",
+        description: "팝업을 닫을 때마다 골드 +2",
+        rarity: "Rare",
+        effect: { stat: "goldPerPopupClose", value: 2 }
+      },
+      {
+        id: "sponsor_friendly",
+        name: "스폰서 친화",
+        description: "광고 버프 +25%, 팝업 생성률 +10%",
+        rarity: "Rare",
+        effects: [
+          { stat: "adBuffMultiplier", value: 0.25 },
+          { stat: "popupSpawnRateMultiplier", value: 0.1 }
+        ]
+      },
+      {
+        id: "multi_monitor",
+        name: "멀티 모니터",
+        description: "최대 팝업 +2, 팝업 4개 이상이면 골드 획득 +30%",
+        rarity: "Epic",
+        effects: [
+          { stat: "maxOpenPopups", value: 2 },
+          { stat: "crowdedGoldMultiplier", value: 0.3 }
+        ]
+      },
+      {
+        id: "task_manager",
+        name: "작업 관리자",
+        description: "긴급 닫기가 Basic보다 위험 팝업을 우선 닫습니다.",
+        rarity: "Epic",
+        effect: { stat: "smartEmergencyClose", value: 1 }
+      },
+      {
+        id: "focus_mode",
+        name: "집중 모드",
+        description: "HP가 1이 되면 8초간 새 팝업 생성을 1회 중지합니다.",
+        rarity: "Epic",
+        effect: { stat: "lowHpPopupFreeze", value: 1 }
+      },
+      {
+        id: "ad_addiction",
+        name: "광고 중독",
+        description: "광고 수익 2배, 팝업 생성률 +40%",
+        rarity: "Cursed",
+        effects: [
+          { stat: "adGoldMultiplier", value: 1 },
+          { stat: "popupSpawnRateMultiplier", value: 0.4 }
+        ]
+      },
+      {
+        id: "risky_clause_fan",
+        name: "위험 조항 애호가",
+        description: "약관 패널티를 받을 때마다 +60G",
+        rarity: "Cursed",
+        effect: { stat: "goldPerTermsPenalty", value: 60 }
+      },
+      {
+        id: "chaos_build",
+        name: "난장판 빌드",
+        description: "최대 팝업 +3, 팝업 5개 이상이면 아이템 가격 -20%",
+        rarity: "Cursed",
+        effects: [
+          { stat: "maxOpenPopups", value: 3 },
+          { stat: "crowdedItemDiscount", value: 0.2 }
+        ]
+      },
+      {
+        id: "interest_vip",
+        name: "이자 VIP",
+        description: "이자 상품 출현률 +30%, 이자 지급 +20%",
+        rarity: "Rare",
+        effects: [
+          { stat: "interestPopupWeightMultiplier", value: 0.3 },
+          { stat: "interestPayoutMultiplier", value: 0.2 }
+        ]
+      },
+      {
+        id: "popup_store_coupon",
+        name: "팝업 스토어 쿠폰",
+        description: "팝업 스토어 출현률 +30%, 상점 가격 -15%",
+        rarity: "Rare",
+        effects: [
+          { stat: "popupStoreWeightMultiplier", value: 0.3 },
+          { stat: "popupStoreDiscountMultiplier", value: 0.15 }
+        ]
+      },
+      {
+        id: "no_insurance",
+        name: "보험 없는 삶",
+        description: "긴급 닫기 비활성화, 보상 팝업 골드 +50%",
+        rarity: "Cursed",
+        effects: [
+          { stat: "emergencyCloseDisabled", value: 1 },
+          { stat: "rewardGoldMultiplier", value: 0.5 }
+        ]
+      }
+    ];
+
+    const POPUP_DEFINITIONS = [
+      {
+        id: "first_purchase_package",
+        title: "첫 빌드 계약",
+        body: "한 런에 한 번만 뜨는 초반 빌드 계약입니다. 실제 결제가 아니라 인게임 골드 계약입니다.",
+        type: "first_purchase_package",
+        weight: 0
+      },
+      {
+        id: "boss_package_ad",
+        title: "보스 처치 기념 한정 성장 패키지",
+        body: "다음 구간 생존을 위한 필수 패키지입니다. 아이템 6개 중 2개를 선택하세요.",
+        type: "boss_package_ad",
+        weight: 0
+      },
+      {
+        id: "basic_ad",
+        title: "광고 메시지",
+        body: "닫거나 구석으로 치워 두세요.",
+        type: "basic",
+        weight: 40
+      },
+      {
+        id: "ad_buff",
+        title: "스폰서 광고: 공격력 캠페인",
+        body: "광고가 열려 있는 동안 공격력이 증가합니다.",
+        type: "sponsored_ad",
+        adRole: "ongoing_buff",
+        weight: 14,
+        duration: 20,
+        ongoingBuffs: [
+          { stat: "damageMultiplier", value: 0.2 }
+        ],
+        completionRewards: []
+      },
+      {
+        id: "ad_coupon",
+        title: "스폰서 광고: 할인 쿠폰",
+        body: "광고를 끝까지 시청하면 다음 아이템 머신 비용이 할인됩니다.",
+        type: "sponsored_ad",
+        adRole: "completion_reward",
+        weight: 14,
+        duration: 18,
+        ongoingBuffs: [],
+        completionRewards: [
+          { type: "itemDiscount", value: 0.3, uses: 1 }
+        ]
+      },
+      {
+        id: "ad_free_sample",
+        title: "스폰서 광고: 무료 샘플",
+        body: "광고를 끝까지 시청하면 보급형 아이템 샘플을 받습니다.",
+        type: "sponsored_ad",
+        adRole: "completion_reward",
+        weight: 12,
+        duration: 18,
+        ongoingBuffs: [],
+        completionRewards: [
+          { type: "freeSampleItem", rarity: "Common", count: 1 }
+        ]
+      },
+      {
+        id: "ad_premium_sample",
+        title: "스폰서 광고: 프리미엄 샘플",
+        body: "광고 중에는 공격 속도가 증가하고, 끝까지 보면 선택지가 늘어납니다.",
+        type: "sponsored_ad",
+        adRole: "hybrid",
+        weight: 8,
+        duration: 22,
+        ongoingBuffs: [
+          { stat: "attackIntervalMultiplier", value: -0.08 }
+        ],
+        completionRewards: [
+          { type: "extraItemChoice", value: 1, uses: 1 },
+          { type: "gold", value: 20 }
+        ]
+      },
+      {
+        id: "timed_reward",
+        title: "한정 보상",
+        body: "15초 동안 열어 두면 30G를 얻습니다.",
+        type: "timed_reward",
+        weight: 20,
+        duration: 15,
+        rewardGold: 30
+      },
+      {
+        id: "terms",
+        title: "약관 동의",
+        body: "수락하기 전에 위험 조항 체크를 해제하세요.",
+        type: "terms",
+        termsKind: "personal_data",
+        weight: 15,
+        dangerClauseText: "개인 데이터를 판매하고 위험 약관을 더 자주 받는 데 동의합니다.",
+        safeRewardEffects: [{ type: "gold", value: 20 }],
+        riskyRewardEffects: [{ type: "gold", value: 65 }],
+        penaltyEffects: [{ type: "stat", stat: "termsPopupWeightMultiplier", value: 0.35 }],
+        heatOnRisk: 1
+      },
+      {
+        id: "terms_ad_tracking",
+        title: "광고 추적 동의",
+        body: "광고 보상을 키울 수 있지만 추적 조항은 위험합니다.",
+        type: "terms",
+        termsKind: "ad_tracking",
+        weight: 8,
+        dangerClauseText: "광고 추적을 허용하고 스폰서 광고 압박을 늘리는 데 동의합니다.",
+        safeRewardEffects: [{ type: "gold", value: 18 }],
+        riskyRewardEffects: [{ type: "stat", stat: "sponsoredRewardMultiplier", value: 0.25 }],
+        penaltyEffects: [{ type: "stat", stat: "sponsoredPopupWeightMultiplier", value: 0.35 }],
+        heatOnRisk: 1
+      },
+      {
+        id: "terms_emergency_waiver",
+        title: "긴급 닫기 포기 각서",
+        body: "보상은 커지지만 긴급 닫기 능력이 크게 약해집니다.",
+        type: "terms",
+        termsKind: "emergency_waiver",
+        weight: 7,
+        dangerClauseText: "긴급 닫기 쿨타임 증가와 보상 강화에 동의합니다.",
+        safeRewardEffects: [{ type: "gold", value: 20 }],
+        riskyRewardEffects: [{ type: "stat", stat: "rewardGoldMultiplier", value: 0.35 }],
+        penaltyEffects: [{ type: "stat", stat: "emergencyCooldownMultiplier", value: 0.9 }],
+        heatOnRisk: 2
+      },
+      {
+        id: "terms_malicious_optimization",
+        title: "악성 최적화 동의서",
+        body: "전투 성능은 좋아지지만 팝업 압박과 Heat가 오릅니다.",
+        type: "terms",
+        termsKind: "malicious_optimization",
+        weight: 8,
+        dangerClauseText: "악성 최적화와 팝업 압박 증가에 동의합니다.",
+        safeRewardEffects: [{ type: "timedStat", stat: "damageMultiplier", value: 0.12, duration: 20 }],
+        riskyRewardEffects: [{ type: "timedStat", stat: "damageMultiplier", value: 0.32, duration: 28 }],
+        penaltyEffects: [{ type: "stat", stat: "popupSpawnRateMultiplier", value: 0.25 }],
+        heatOnRisk: 2
+      },
+      {
+        id: "interest_offer",
+        title: "고수익 예치 상품",
+        body: "현재 골드의 일부를 예치하고 만기까지 버티면 이자를 받습니다.",
+        type: "interest_offer",
+        weight: 10
+      },
+      {
+        id: "recurring_investment",
+        title: "자동 적립 투자",
+        body: "일정 시간 동안 새로 얻는 골드 일부를 자동 투자합니다.",
+        type: "recurring_investment",
+        weight: 8,
+        duration: 30,
+        redirectRatio: 0.3,
+        maturityBonus: 0.3
+      },
+      {
+        id: "loan_offer",
+        title: "즉시 대출 제안",
+        body: "골드를 지금 받고 나중에 더 많이 갚습니다.",
+        type: "loan_offer",
+        weight: 8
+      },
+      {
+        id: "stock_stable",
+        title: "안정 배당주",
+        body: "낮은 변동성과 약한 상승 흐름을 가진 주식입니다.",
+        type: "stock_market",
+        stockKind: "stable",
+        weight: 7,
+        volatility: 0.035,
+        drift: 0.006,
+        principalOptions: [40, 80, 120]
+      },
+      {
+        id: "stock_momentum",
+        title: "모멘텀 성장주",
+        body: "변동성이 크고 수익/손실 폭이 큽니다.",
+        type: "stock_market",
+        stockKind: "momentum",
+        weight: 7,
+        volatility: 0.09,
+        drift: 0.004,
+        principalOptions: [50, 100, 150]
+      },
+      {
+        id: "stock_cursed",
+        title: "저주 조작주",
+        body: "고위험 주식입니다. 손실 매도 시 Heat가 오릅니다.",
+        type: "stock_market",
+        stockKind: "cursed",
+        weight: 3,
+        volatility: 0.14,
+        drift: 0.008,
+        principalOptions: [60, 120, 180],
+        cursedLossHeat: 1
+      },
+      {
+        id: "popup_store",
+        title: "팝업 스토어",
+        body: "등급과 가격만 보고 미확인 아이템을 하나 구매합니다.",
+        type: "popup_store",
+        weight: 10,
+        duration: 18
+      },
+      {
+        id: "clean_challenge_basic",
+        title: "청소 의뢰",
+        body: "10초 동안 열린 팝업을 1개 이하로 유지하세요.",
+        type: "clean_challenge",
+        weight: 8,
+        duration: 10,
+        targetOpenPopups: 1,
+        reward: { type: "itemDiscount", value: 0.25, uses: 1 }
+      },
+      {
+        id: "volatile_bomb_popup",
+        title: "불안정한 창",
+        body: "시간 안에 닫으면 주변 적에게 피해를 줍니다.",
+        type: "volatile_popup",
+        weight: 8,
+        duration: 8,
+        closeDamage: 25,
+        closeRadius: 150,
+        timeoutSpawnBasic: true
+      },
+      {
+        id: "moving_close",
+        title: "움직이는 닫기 버튼",
+        body: "닫기 버튼이 천천히 움직입니다. 침착하게 눌러 보세요.",
+        type: "moving_close",
+        weight: 12
+      },
+      {
+        id: "infection",
+        title: "감염된 팝업",
+        body: "8초 동안 방치하면 기본 팝업을 하나 퍼뜨립니다.",
+        type: "infection",
+        weight: 12,
+        duration: 8
+      },
+      {
+        id: "trash_drag",
+        title: "버려야 하는 창",
+        body: "닫기 버튼이 없습니다. 화면 아래 쓰레기통으로 끌어 버리세요.",
+        type: "trash_drag",
+        weight: 12
+      }
+    ];
+
+    const FIRST_PURCHASE_PACKAGES = [
+      {
+        id: "sponsored_starter",
+        name: "스폰서 스타터 계약",
+        theme: "광고 수익 빌드",
+        description: "광고를 열어둘수록 돈과 힘을 얻지만, 화면이 더러워집니다.",
+        cost: 10,
+        effects: [
+          { stat: "adGoldPerSecond", value: 1 },
+          { stat: "adBuffMultiplier", value: 0.2 },
+          { stat: "popupSpawnRateMultiplier", value: 0.15 }
+        ]
+      },
+      {
+        id: "clean_desk_starter",
+        name: "클린 데스크 스타터 계약",
+        theme: "낮은 팝업 수 유지 빌드",
+        description: "열린 팝업을 적게 유지하면 전투력이 오르고 안전 구역이 넓어집니다.",
+        cost: 10,
+        effects: [
+          { stat: "cleanDeskDamageMultiplier", value: 0.2 },
+          { stat: "safeZoneMultiplier", value: 0.12 },
+          { stat: "emergencyCooldownMultiplier", value: -0.1 }
+        ]
+      },
+      {
+        id: "clutter_chaos_starter",
+        name: "난장판 스타터 계약",
+        theme: "화면 과밀 적응 빌드",
+        description: "팝업을 어느 정도 열어둘수록 공격 속도와 보상이 좋아지지만 관리 부담이 커집니다.",
+        cost: 10,
+        effects: [
+          { stat: "maxOpenPopups", value: 2 },
+          { stat: "clutterAttackIntervalPerPopup", value: -0.02 },
+          { stat: "crowdedGoldMultiplier", value: 0.15 },
+          { stat: "popupSpawnRateMultiplier", value: 0.18 }
+        ]
+      },
+      {
+        id: "popup_executioner_starter",
+        name: "팝업 처형자 스타터 계약",
+        theme: "닫기/처리 보상 빌드",
+        description: "팝업을 닫을 때마다 골드와 전투 보조 효과를 얻지만, 팝업이 조금 더 자주 옵니다.",
+        cost: 10,
+        effects: [
+          { stat: "goldPerPopupClose", value: 2 },
+          { stat: "popupCloseDamage", value: 8 },
+          { stat: "emergencyCooldownMultiplier", value: -0.15 },
+          { stat: "popupSpawnRateMultiplier", value: 0.1 }
+        ]
+      },
+      {
+        id: "investor_starter",
+        name: "투자자 스타터 계약",
+        theme: "이자/투자/대출 경제 빌드",
+        description: "돈을 묶어 두고 정산하는 팝업이 더 자주 나오며, 이자 지급과 상점 효율이 좋아집니다.",
+        cost: 10,
+        effects: [
+          { stat: "interestPopupWeightMultiplier", value: 0.55 },
+          { stat: "interestPayoutMultiplier", value: 0.18 },
+          { stat: "popupStoreDiscountMultiplier", value: 0.1 }
+        ]
+      },
+      {
+        id: "risky_terms_starter",
+        name: "위험 약관 스타터 계약",
+        theme: "약관/저주 빌드",
+        description: "위험 약관과 저주를 이용해 빠르게 성장합니다.",
+        cost: 10,
+        effects: [
+          { stat: "goldPerTermsPenalty", value: 60 },
+          { stat: "termsPopupWeightMultiplier", value: 0.5 },
+          { stat: "termsPenaltyShield", value: 1 },
+          { stat: "heat", value: 2 }
+        ]
+      }
+    ];
+
+    const POPUP_STORE_CATALOG = [
+      { rarity: "Common", label: "보급형 미확인 아이템", price: 22 },
+      { rarity: "Rare", label: "희귀 미확인 아이템", price: 48 },
+      { rarity: "Epic", label: "특급 미확인 아이템", price: 88 }
+    ];
+
+    const ATTACK_MODULES = [
+      {
+        id: "ranged",
+        name: "원거리",
+        description: "가장 가까운 적을 안정적으로 자동 공격합니다.",
+        baseDamage: 10,
+        baseCooldown: 0.62,
+        baseRange: 155
+      },
+      {
+        id: "melee",
+        name: "근접",
+        description: "플레이어 주변 가까운 적들을 강하게 베어냅니다.",
+        baseDamage: 15,
+        baseCooldown: 0.82,
+        baseRange: 76
+      },
+      {
+        id: "aura",
+        name: "오라",
+        description: "주변 범위 안의 적에게 짧은 주기로 지속 피해를 줍니다.",
+        baseDamage: 5,
+        baseCooldown: 0.38,
+        baseRange: 104
+      },
+      {
+        id: "deploy",
+        name: "설치",
+        description: "플레이어 근처에 지뢰를 설치해 적이 밟으면 폭발합니다.",
+        baseDamage: 23,
+        baseCooldown: 2.15,
+        baseRange: 64
+      }
+    ];
+
+    const DEEPENING_OPTIONS = [
+      { id: "power", name: "화력형", description: "해당 모듈 피해량 +30%", damage: 0.3 },
+      { id: "tempo", name: "빈도형", description: "해당 모듈 쿨타임 -20%", cooldown: -0.2 },
+      { id: "area", name: "범위형", description: "해당 모듈 범위 +25%", range: 0.25 }
+    ];
+
+    const SYNERGY_OPTIONS = [
+      {
+        id: "popup_trigger",
+        name: "창 닫기 연계",
+        description: "팝업을 닫을 때 1차 공격이 즉시 한 번 발동합니다."
+      },
+      {
+        id: "secondary_haste",
+        name: "보조 적중 가속",
+        description: "보조 공격이 적중하면 1차 공격 쿨타임이 짧게 줄어듭니다."
+      },
+      {
+        id: "primary_charge",
+        name: "처치 충전",
+        description: "1차 공격으로 적을 처치하면 보조 공격이 즉시 충전됩니다."
+      }
+    ];
+
+    const canvas = document.getElementById("fieldCanvas");
+    const ctx = canvas.getContext("2d");
+    const shell = document.getElementById("gameShell");
+    const popupLayer = document.getElementById("popupLayer");
+    const trashZone = document.getElementById("trashZone");
+    const mobileJoystick = document.getElementById("mobileJoystick");
+    const mobileJoystickKnob = document.getElementById("mobileJoystickKnob");
+    const mobileEmergencyButton = document.getElementById("mobileEmergencyButton");
+    const hpText = document.getElementById("hpText");
+    const goldText = document.getElementById("goldText");
+    const levelText = document.getElementById("levelText");
+    const xpText = document.getElementById("xpText");
+    const xpFill = document.getElementById("xpFill");
+    const primaryModuleText = document.getElementById("primaryModuleText");
+    const secondaryModuleText = document.getElementById("secondaryModuleText");
+    const primaryMasteryText = document.getElementById("primaryMasteryText");
+    const secondaryMasteryText = document.getElementById("secondaryMasteryText");
+    const nextChoiceText = document.getElementById("nextChoiceText");
+    const popupCountText = document.getElementById("popupCountText");
+    const itemCostText = document.getElementById("itemCostText");
+    const rollItemButton = document.getElementById("rollItemButton");
+    const lastItem = document.getElementById("lastItem");
+    const itemInventory = document.getElementById("itemInventory");
+    const recentPerk = document.getElementById("recentPerk");
+    const runStats = document.getElementById("runStats");
+    const debugPanel = document.getElementById("debugPanel");
+    const debugToggleButton = document.getElementById("debugToggleButton");
+    const debugStats = document.getElementById("debugStats");
+    const debugButtons = document.getElementById("debugButtons");
+    const speedSelect = document.getElementById("speedSelect");
+    const itemOverlay = document.getElementById("itemOverlay");
+    const itemOverlayTitle = document.getElementById("itemOverlayTitle");
+    const itemOverlayDescription = document.getElementById("itemOverlayDescription");
+    const itemChoices = document.getElementById("itemChoices");
+    const perkOverlay = document.getElementById("perkOverlay");
+    const perkChoices = document.getElementById("perkChoices");
+    const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const gameOverSummary = document.getElementById("gameOverSummary");
+    const restartButton = document.getElementById("restartButton");
+
+    const keys = Object.create(null);
+    let popupIdSeed = 1;
+    let zSeed = 1200;
+    let state = createInitialState();
+    let lastFrameTime = performance.now();
+
+    function createInitialState() {
+      return {
+        elapsed: 0,
+        paused: true,
+        selectingItem: false,
+        selectingPerk: false,
+        selectingModule: false,
+        selectingPaidReward: false,
+        gameOver: false,
+        timeScale: 1,
+        gold: 0,
+        xp: 0,
+        xpNeed: CONFIG.xpBaseRequirement,
+        level: 1,
+        heat: 0,
+        creditScore: 50,
+        investedGold: 0,
+        debtGold: 0,
+        sponsoredCompletions: 0,
+        nextItemDiscounts: [],
+        nextItemExtraChoices: 0,
+        killCount: 0,
+        itemRollCount: 0,
+        termsPenaltyCount: 0,
+        adOpenTime: 0,
+        firstPurchaseOfferShown: false,
+        firstPurchasePaid: false,
+        firstPurchasePackageChosen: null,
+        firstPurchaseTimer: randomRange(3, 5),
+        lastItemText: "최근 아이템: 없음",
+        recentPerkText: "공격 모듈을 선택하세요.",
+        primaryModule: null,
+        secondaryModule: null,
+        primaryMastery: 0,
+        secondaryMastery: 0,
+        primaryDeepening: null,
+        secondaryDeepening: null,
+        moduleSynergy: null,
+        moduleTimers: {
+          primary: 0,
+          secondary: 0
+        },
+        bossSpawnIndex: 0,
+        bossPackageCount: 0,
+        pendingBossPackage: null,
+        itemCounts: Object.create(null),
+        timedEffects: [],
+        delayedEvents: [],
+        enemyTimer: 0.8,
+        popupTimer: 12,
+        attackTimer: 0.25,
+        emergencyTimer: 0,
+        emergencyBoostTimer: 0,
+        autoCloseBasicTimer: 8,
+        popupFreezeTimer: 0,
+        lowHpFreezeUsed: false,
+        adGoldBank: 0,
+        metrics: {
+          interestAccepted: 0,
+          interestCompleted: 0,
+          interestLost: 0,
+          popupStorePurchases: 0,
+          passiveGoldEarned: 0,
+          bossKills: 0,
+          bossPackagesPurchased: 0,
+          sponsoredRewards: 0,
+          volatileClosures: 0
+        },
+        player: {
+          x: 0,
+          y: 0,
+          radius: 13,
+          hp: CONFIG.playerMaxHP,
+          maxHP: CONFIG.playerMaxHP,
+          hitFlash: 0
+        },
+        camera: {
+          x: -CONFIG.canvasWidth / 2,
+          y: -CONFIG.canvasHeight / 2
+        },
+        stats: {
+          damageMultiplier: 0,
+          attackIntervalMultiplier: 0,
+          attackRangeMultiplier: 0,
+          moveSpeedMultiplier: 0,
+          popupDragSpeedMultiplier: 0,
+          popupSpawnRateMultiplier: 0,
+          adGoldPerSecond: 0,
+          adGoldMultiplier: 0,
+          adBuffMultiplier: 0,
+          sponsoredRewardMultiplier: 0,
+          sponsoredPopupWeightMultiplier: 0,
+          timedRewardDurationMultiplier: 0,
+          maxOpenPopups: CONFIG.maxOpenPopups,
+          extraTargets: 0,
+          cleanDeskDamageMultiplier: 0,
+          clutterAttackIntervalPerPopup: 0,
+          goldBulletDamageMultiplier: 0,
+          emergencyMoveSpeedMultiplier: 0,
+          autoCloseBasicInterval: 0,
+          sponsoredDoubleHit: 0,
+          purchaseDamageBurst: 0,
+          dragAttackIntervalMultiplier: 0,
+          popupCloseDamage: 0,
+          delayedMaxHPLoss: 0,
+          termsPopupWeightMultiplier: 0,
+          goldPerPopupClose: 0,
+          safeZoneMultiplier: 0,
+          emergencyCooldownMultiplier: 0,
+          termsPenaltyShield: 0,
+          crowdedGoldMultiplier: 0,
+          smartEmergencyClose: 0,
+          lowHpPopupFreeze: 0,
+          goldPerTermsPenalty: 0,
+          crowdedItemDiscount: 0,
+          emergencyCloseDisabled: 0,
+          rewardGoldMultiplier: 0,
+          interestPopupWeightMultiplier: 0,
+          interestPayoutMultiplier: 0,
+          popupStoreWeightMultiplier: 0,
+          popupStoreDiscountMultiplier: 0,
+          debtItemCostMultiplier: 0
+        },
+        enemies: [],
+        mines: [],
+        pickups: [],
+        attacks: [],
+        openPopups: [],
+        mobileInput: {
+          active: false,
+          pointerId: null,
+          x: 0,
+          y: 0
+        },
+        draggingPopup: null
+      };
+    }
+
+    function resetGame() {
+      popupLayer.replaceChildren();
+      popupIdSeed = 1;
+      zSeed = 1200;
+      state = createInitialState();
+      state.timeScale = Number.parseInt(speedSelect.value, 10) || 1;
+      resetJoystickInput();
+      itemOverlay.style.display = "none";
+      perkOverlay.style.display = "none";
+      gameOverOverlay.style.display = "none";
+      resizeCanvas();
+      updateUI();
+      openAttackModuleSelection("primary_start");
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function distance(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.hypot(dx, dy);
+    }
+
+    function updateCamera() {
+      if (!state || !state.player || !state.camera) {
+        return;
+      }
+      state.camera.x = state.player.x - CONFIG.canvasWidth / 2;
+      state.camera.y = state.player.y - CONFIG.canvasHeight / 2;
+    }
+
+    function worldToScreen(point) {
+      return {
+        x: point.x - state.camera.x,
+        y: point.y - state.camera.y
+      };
+    }
+
+    function screenToWorld(point) {
+      return {
+        x: point.x + state.camera.x,
+        y: point.y + state.camera.y
+      };
+    }
+
+    function resizeCanvas() {
+      const width = Math.max(320, Math.floor(window.innerWidth || 960));
+      const height = Math.max(320, Math.floor(window.innerHeight || 540));
+      CONFIG.canvasWidth = width;
+      CONFIG.canvasHeight = height;
+      canvas.width = width;
+      canvas.height = height;
+      updateCamera();
+    }
+
+    function randomRange(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function pickRandom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function pickWeighted(list) {
+      const total = list.reduce((sum, item) => sum + weightedValue(item), 0);
+      let roll = Math.random() * total;
+      for (const item of list) {
+        roll -= weightedValue(item);
+        if (roll <= 0) {
+          return item;
+        }
+      }
+      return list[list.length - 1];
+    }
+
+    function weightedValue(item) {
+      const rarityWeights = {
+        Common: 50,
+        Rare: 27,
+        Epic: 12,
+        Cursed: 8,
+        Sponsored: 10
+      };
+      let weight = item.weight ?? rarityWeights[item.rarity] ?? 10;
+      if (item.rarity === "Cursed" && state.heat >= 5) {
+        weight *= 1.25;
+      }
+      if (item.type === "terms") {
+        weight *= Math.max(0.1, 1 + state.stats.termsPopupWeightMultiplier + (state.heat >= 5 ? 0.25 : 0));
+      } else if (item.type === "sponsored_ad") {
+        weight *= Math.max(0.1, 1 + state.stats.sponsoredPopupWeightMultiplier);
+      } else if (item.type === "interest_offer" || item.type === "recurring_investment" || item.type === "loan_offer" || item.type === "stock_market") {
+        weight *= Math.max(0.1, 1 + state.stats.interestPopupWeightMultiplier);
+      } else if (item.type === "popup_store") {
+        weight *= Math.max(0.1, 1 + state.stats.popupStoreWeightMultiplier);
+      }
+      return weight;
+    }
+
+    function activeTimedMultiplier(stat) {
+      return state.timedEffects
+        .filter(effect => effect.stat === stat)
+        .reduce((sum, effect) => sum + effect.value, 0);
+    }
+
+    function getOpenAdBuffMultiplier() {
+      let buff = 0;
+      for (const popup of state.openPopups) {
+        if (popup.def.type === "ad_buff") {
+          buff += popup.def.buffValue * Math.max(0, 1 + state.stats.adBuffMultiplier);
+        }
+      }
+      return buff;
+    }
+
+    function globalDamageMultiplier() {
+      let multiplier = state.stats.damageMultiplier + getOpenAdBuffMultiplier() + activeTimedMultiplier("damageMultiplier") + sponsoredBuff("damageMultiplier") + clutterThresholdBonuses().damageBonus;
+      if (state.stats.cleanDeskDamageMultiplier > 0 && state.openPopups.length <= 2) {
+        multiplier += state.stats.cleanDeskDamageMultiplier;
+      }
+      if (state.stats.goldBulletDamageMultiplier > 0 && state.gold >= 50) {
+        multiplier += state.stats.goldBulletDamageMultiplier;
+      }
+      return multiplier;
+    }
+
+    function deepeningFor(slot) {
+      return DEEPENING_OPTIONS.find(option => option.id === state[slot + "Deepening"]);
+    }
+
+    function moduleCombatStats(slot) {
+      const module = moduleById(state[slot + "Module"]);
+      if (!module) {
+        return null;
+      }
+
+      const mastery = state[slot + "Mastery"] || 0;
+      const deepening = deepeningFor(slot) || {};
+      const secondaryScale = slot === "secondary" ? 0.72 : 1;
+      const damageMultiplier = globalDamageMultiplier() + mastery * 0.08 + (deepening.damage || 0);
+      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0);
+      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0);
+      cooldownMultiplier += sponsoredBuff("attackIntervalMultiplier") + clutterThresholdBonuses().attackIntervalBonus;
+      if (state.stats.clutterAttackIntervalPerPopup < 0) {
+        cooldownMultiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
+      }
+      if (state.draggingPopup) {
+        cooldownMultiplier += state.stats.dragAttackIntervalMultiplier;
+      }
+
+      return {
+        module,
+        damage: module.baseDamage * secondaryScale * Math.max(0.1, 1 + damageMultiplier),
+        cooldown: module.baseCooldown * Math.max(0.2, 1 + cooldownMultiplier),
+        range: module.baseRange * Math.max(0.25, 1 + rangeMultiplier)
+      };
+    }
+
+    function effectiveDamage() {
+      const stats = moduleCombatStats("primary");
+      if (stats) {
+        return stats.damage;
+      }
+      return CONFIG.playerDamage * Math.max(0.1, 1 + globalDamageMultiplier());
+    }
+
+    function effectiveAttackInterval() {
+      const stats = moduleCombatStats("primary");
+      if (stats) {
+        return stats.cooldown;
+      }
+      let multiplier = state.stats.attackIntervalMultiplier;
+      if (state.stats.clutterAttackIntervalPerPopup < 0) {
+        multiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
+      }
+      if (state.draggingPopup) {
+        multiplier += state.stats.dragAttackIntervalMultiplier;
+      }
+      return CONFIG.playerAttackInterval * Math.max(0.22, 1 + multiplier);
+    }
+
+    function effectiveAttackRange() {
+      const stats = moduleCombatStats("primary");
+      if (stats) {
+        return stats.range;
+      }
+      return CONFIG.playerAttackRange * Math.max(0.2, 1 + state.stats.attackRangeMultiplier);
+    }
+
+    function effectiveMoveSpeed() {
+      let multiplier = state.stats.moveSpeedMultiplier;
+      if (state.emergencyBoostTimer > 0) {
+        multiplier += state.stats.emergencyMoveSpeedMultiplier;
+      }
+      return CONFIG.playerMoveSpeed * Math.max(0.2, 1 + multiplier);
+    }
+
+    function effectivePopupInterval() {
+      const timePressure = clamp(state.elapsed / CONFIG.popupPressureRampSeconds, 0, 1);
+      const baseInterval = CONFIG.popupBaseSpawnInterval - (CONFIG.popupBaseSpawnInterval - CONFIG.popupMinSpawnInterval) * timePressure;
+      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + state.heat * 0.015);
+      return Math.max(CONFIG.popupMinSpawnInterval, baseInterval / spawnRate);
+    }
+
+    function timedRewardDuration(def) {
+      return def.duration * Math.max(0.25, 1 + state.stats.timedRewardDurationMultiplier);
+    }
+
+    function maxOpenPopups() {
+      return Math.max(1, Math.round(state.stats.maxOpenPopups));
+    }
+
+    function currentItemRollCost() {
+      const grown = Math.floor(CONFIG.itemRollCost * Math.pow(CONFIG.itemRollCostGrowth, state.itemRollCount));
+      const capped = typeof CONFIG.itemRollCostCap === "number" ? Math.min(CONFIG.itemRollCostCap, grown) : grown;
+      const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
+      const discount = (state.openPopups.length >= 5 ? state.stats.crowdedItemDiscount : 0) + clutterThresholdBonuses().itemDiscount + pendingDiscount;
+      const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
+      return Math.max(1, Math.floor(capped * Math.max(0.2, 1 - discount) * Math.max(1, 1 + debtPenalty)));
+    }
+
+    function popupStorePrice(product) {
+      const discount = Math.max(0, Math.min(0.75, state.stats.popupStoreDiscountMultiplier));
+      return Math.max(1, Math.floor(product.price * (1 - discount)));
+    }
+
+    function itemsByRarity(rarity) {
+      const pool = ITEMS.filter(item => item.rarity === rarity);
+      return pool.length > 0 ? pool : ITEMS;
+    }
+
+    function randomItemByRarity(rarity) {
+      const pool = itemsByRarity(rarity);
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function buildPopupStoreProducts() {
+      return POPUP_STORE_CATALOG.map(product => ({ ...product }));
+    }
+
+    function bossPackageCost(tier) {
+      if (tier <= 1) return 80;
+      if (tier === 2) return 140;
+      return 220 + (tier - 3) * 90;
+    }
+
+    function chooseBossPackageItems() {
+      const pool = ITEMS.slice();
+      const options = [];
+      while (options.length < 6 && pool.length > 0) {
+        const selected = pickWeighted(pool);
+        const index = pool.indexOf(selected);
+        options.push(pool.splice(index, 1)[0]);
+      }
+      return options;
+    }
+
+    function creditGrade(score) {
+      if (score < 20) return "파산 위험";
+      if (score < 40) return "낮음";
+      if (score < 60) return "보통";
+      if (score < 80) return "우수";
+      return "VIP";
+    }
+
+    function addCreditScore(delta, reason) {
+      state.creditScore = clamp(state.creditScore + delta, 0, 100);
+      if (reason) {
+        state.recentPerkText = "<strong>신용도 " + (delta >= 0 ? "+" : "") + delta + ":</strong> " + reason;
+      }
+    }
+
+    function activeRecurringInvestment() {
+      return state.openPopups.find(popup => popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured);
+    }
+
+    function addGold(amount, source) {
+      let remaining = amount;
+      const recurring = source !== "investmentPayout" ? activeRecurringInvestment() : null;
+      if (recurring && amount > 0) {
+        const redirected = Math.floor(amount * recurring.investment.redirectRatio);
+        if (redirected > 0) {
+          recurring.investment.accumulated += redirected;
+          state.investedGold += redirected;
+          remaining -= redirected;
+        }
+      }
+      state.gold += remaining;
+      if (source && source !== "pickup" && source !== "debug") {
+        state.metrics.passiveGoldEarned += Math.max(0, remaining);
+      }
+    }
+
+    function clutterThresholdBonuses() {
+      const count = state.openPopups.length;
+      return {
+        attackIntervalBonus: count >= 3 ? -0.08 : 0,
+        damageBonus: count >= 5 ? 0.18 : 0,
+        itemDiscount: count >= 7 ? 0.15 : 0
+      };
+    }
+
+    function clutterTierLabel() {
+      const count = state.openPopups.length;
+      if (count >= 7) return "과밀 III";
+      if (count >= 5) return "과밀 II";
+      if (count >= 3) return "과밀 I";
+      return "없음";
+    }
+
+    function sponsoredBuff(stat) {
+      let total = 0;
+      for (const popup of state.openPopups) {
+        if (popup.def.type !== "sponsored_ad" || popup.sponsoredCompleted) {
+          continue;
+        }
+        for (const buff of popup.def.ongoingBuffs || []) {
+          if (buff.stat === stat) {
+            total += buff.value * Math.max(0, 1 + state.stats.adBuffMultiplier);
+          }
+        }
+      }
+      return total;
+    }
+
+    function grantSponsoredReward(reward) {
+      state.metrics.sponsoredRewards += 1;
+      if (reward.type === "gold") {
+        addGold(Math.round(reward.value * Math.max(0.1, 1 + state.stats.sponsoredRewardMultiplier)), "sponsored");
+      } else if (reward.type === "itemDiscount") {
+        state.nextItemDiscounts.push({ value: reward.value, uses: reward.uses || 1 });
+      } else if (reward.type === "freeSampleItem") {
+        const count = reward.count || 1;
+        for (let i = 0; i < count; i += 1) {
+          applyItemReward(randomItemByRarity(reward.rarity || "Common"), "스폰서 샘플");
+        }
+      } else if (reward.type === "extraItemChoice") {
+        state.nextItemExtraChoices += reward.value || 1;
+      }
+    }
+
+    function applyRewardEffect(effect) {
+      if (effect.type === "gold") {
+        addGold(effect.value, "terms");
+      } else if (effect.type === "stat") {
+        applyEffect({ stat: effect.stat, value: effect.value });
+      } else if (effect.type === "timedStat") {
+        state.timedEffects.push({
+          stat: effect.stat,
+          value: effect.value,
+          remaining: effect.duration || 20
+        });
+      } else if (effect.type === "itemDiscount") {
+        state.nextItemDiscounts.push({ value: effect.value, uses: effect.uses || 1 });
+      }
+    }
+
+    function applyPenaltyEffect(effect) {
+      applyRewardEffect(effect);
+    }
+
+    function applyTermsRewardEffects(effects, risky) {
+      const heatRewardMultiplier = risky && state.heat >= 3 ? 1.15 : 1;
+      for (const effect of effects || []) {
+        if (effect.type === "gold") {
+          addGold(Math.round(effect.value * heatRewardMultiplier), "terms");
+        } else {
+          applyRewardEffect(effect);
+        }
+      }
+    }
+
+    function acceptTermsPopup(popupId, def, checked) {
+      if (checked) {
+        applyTermsRewardEffects(def.riskyRewardEffects || [{ type: "gold", value: def.rewardGold || 50 }], true);
+        if (state.stats.termsPenaltyShield > 0) {
+          state.stats.termsPenaltyShield -= 1;
+        } else {
+          state.termsPenaltyCount += 1;
+          if (state.stats.goldPerTermsPenalty > 0) {
+            addGold(state.stats.goldPerTermsPenalty, "termsPenalty");
+          }
+          for (const penalty of def.penaltyEffects || [{ type: "stat", stat: def.penaltyStat, value: def.penaltyValue }]) {
+            applyPenaltyEffect(penalty);
+          }
+        }
+        state.heat += def.heatOnRisk || 1;
+      } else {
+        applyTermsRewardEffects(def.safeRewardEffects || [{ type: "gold", value: def.safeRewardGold || 20 }], false);
+      }
+      closePopup(popupId);
+    }
+
+    function loanTermsByCredit(score) {
+      if (score < 40) return { receive: 70, repay: 105, deadline: 35 };
+      if (score < 60) return { receive: 100, repay: 130, deadline: 45 };
+      if (score < 80) return { receive: 120, repay: 145, deadline: 45 };
+      return { receive: 150, repay: 175, deadline: 60 };
+    }
+
+    function applyEffects(source) {
+      const effects = source.effects || (source.effect ? [source.effect] : []);
+      for (const effect of effects) {
+        applyEffect(effect);
+      }
+    }
+
+    function applyEffect(effect) {
+      if (effect.stat === "heat") {
+        state.heat = Math.max(0, state.heat + effect.value);
+        return;
+      }
+
+      if (effect.stat === "gold") {
+        addGold(effect.value, "effect");
+        return;
+      }
+
+      if (effect.stat === "maxHP") {
+        state.player.maxHP += effect.value;
+        state.player.hp = clamp(state.player.hp + effect.value, 0, state.player.maxHP);
+        return;
+      }
+
+      if (effect.stat === "maxOpenPopups") {
+        state.stats.maxOpenPopups += effect.value;
+        return;
+      }
+
+      if (effect.stat === "delayedMaxHPLoss") {
+        state.delayedEvents.push({
+          type: "maxHPLoss",
+          value: effect.value,
+          remaining: effect.delay || 60
+        });
+        return;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(state.stats, effect.stat)) {
+        state.stats[effect.stat] += effect.value;
+      }
+    }
+
+    function chooseItemOptions() {
+      const pool = ITEMS.slice();
+      const options = [];
+      const targetCount = Math.min(pool.length, 3 + state.nextItemExtraChoices);
+      state.nextItemExtraChoices = 0;
+      while (options.length < targetCount && pool.length > 0) {
+        const selected = pickWeighted(pool);
+        const index = pool.indexOf(selected);
+        options.push(pool.splice(index, 1)[0]);
+      }
+      return options;
+    }
+
+    function rollItem() {
+      const cost = currentItemRollCost();
+      if (state.gameOver || state.paused || state.selectingItem || state.selectingPerk || state.gold < cost) {
+        return;
+      }
+
+      state.gold -= cost;
+      for (const discount of state.nextItemDiscounts) {
+        discount.uses -= 1;
+      }
+      state.nextItemDiscounts = state.nextItemDiscounts.filter(discount => discount.uses > 0);
+      openItemSelection();
+      updateUI();
+    }
+
+    function completeFirstPurchasePayment(popupId) {
+      const cost = FIRST_PURCHASE_PACKAGES[0]?.cost || 10;
+      if (state.gold < cost || state.gameOver || state.firstPurchasePaid) {
+        return;
+      }
+
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup) {
+        return;
+      }
+
+      state.gold -= cost;
+      state.firstPurchasePaid = true;
+      state.firstPurchasePackageChosen = "결제 완료, 계약 선택 대기";
+      popup.firstPurchasePaid = true;
+      closePopup(popupId);
+      openFirstPurchasePackageSelection();
+      updateUI();
+    }
+
+    function openFirstPurchasePackageSelection() {
+      state.selectingItem = true;
+      state.selectingPaidReward = true;
+      state.paused = true;
+      openItemLikeOverlay("첫 빌드 계약 선택", "결제 완료. 이번 런의 초반 빌드 계약 1개를 선택하세요.");
+      for (const packageDef of FIRST_PURCHASE_PACKAGES) {
+        const button = document.createElement("button");
+        button.className = "itemChoice";
+        button.innerHTML =
+          "<strong>" + packageDef.name + "</strong>" +
+          "<span>" + packageDef.theme + "<br>" + packageDef.description + "</span>";
+        button.addEventListener("click", () => applyFirstPurchasePackage(packageDef));
+        itemChoices.appendChild(button);
+      }
+    }
+
+    function applyFirstPurchasePackage(packageDef) {
+      if (state.gameOver || !state.firstPurchasePaid || state.firstPurchasePackageChosen === packageDef.name) {
+        return;
+      }
+
+      applyEffects(packageDef);
+      state.firstPurchasePackageChosen = packageDef.name;
+      state.recentPerkText = "<strong>첫 계약:</strong> " + packageDef.name + "<br>" + packageDef.description;
+      closeItemLikeOverlay();
+    }
+
+    function rejectFirstPurchasePackage(popupId) {
+      state.firstPurchasePackageChosen = "거절";
+      closePopup(popupId);
+      updateUI();
+    }
+
+    function interestMaturityText(popup) {
+      if (popup.interestMaturityType === "kills") {
+        return "적 " + popup.interestMaturityTarget + "마리 처치";
+      }
+      return popup.interestMaturityTarget + "초 유지";
+    }
+
+    function interestPayout(popup) {
+      return Math.round(popup.interestPayout * Math.max(0.1, 1 + state.stats.interestPayoutMultiplier));
+    }
+
+    function rerenderInterestOffer(popup) {
+      const body = popup.element.querySelector(".popupBody");
+      if (!body) {
+        return;
+      }
+      body.replaceChildren(document.createTextNode(popup.def.body));
+      renderInterestOfferControls(body, popup);
+    }
+
+    function acceptInterestOffer(popupId, option) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || popup.interestAccepted || state.gameOver) {
+        return;
+      }
+
+      const selected = option || popup.depositOptions[0];
+      const principal = Math.floor(state.gold * selected.ratio);
+      if (principal < 30 || state.gold < principal) {
+        return;
+      }
+
+      popup.interestPrincipal = principal;
+      popup.interestPayout = Math.round(principal * (1 + selected.bonus));
+      state.gold -= popup.interestPrincipal;
+      state.investedGold += popup.interestPrincipal;
+      popup.interestAccepted = true;
+      popup.interestStartLife = popup.life || 0;
+      popup.interestStartKills = state.killCount;
+      popup.interestMaturityProgress = 0;
+      state.metrics.interestAccepted += 1;
+      addCreditScore(2, "예치 상품 수락");
+      rerenderInterestOffer(popup);
+      updateUI();
+    }
+
+    function cancelInterestOffer(popup) {
+      if (!popup || !popup.interestAccepted || popup.interestMatured) {
+        return;
+      }
+      const refund = Math.floor(popup.interestPrincipal * 0.4);
+      popup.interestMatured = true;
+      state.investedGold = Math.max(0, state.investedGold - popup.interestPrincipal);
+      addGold(refund, "investmentPayout");
+      addCreditScore(-8, "예치 상품 중도 해지");
+      state.metrics.interestLost += 1;
+    }
+
+    function completeInterestOffer(popup) {
+      if (!popup || popup.interestMatured || !popup.interestAccepted) {
+        return;
+      }
+
+      popup.interestMatured = true;
+      state.investedGold = Math.max(0, state.investedGold - popup.interestPrincipal);
+      addGold(interestPayout(popup), "investmentPayout");
+      addCreditScore(8, "예치 상품 만기 정산");
+      state.metrics.interestCompleted += 1;
+      closePopup(popup.id);
+      updateUI();
+    }
+
+    function updateInterestPopupUI(popup) {
+      const progress = popup.element.querySelector(".interestProgressFill");
+      const label = popup.element.querySelector(".interestProgressLabel");
+      const ratio = clamp(popup.interestMaturityProgress / popup.interestMaturityTarget, 0, 1);
+      if (progress) {
+        progress.style.width = (ratio * 100).toFixed(1) + "%";
+      }
+      if (label) {
+        label.textContent = Math.min(popup.interestMaturityProgress, popup.interestMaturityTarget).toFixed(popup.interestMaturityType === "time" ? 1 : 0) + " / " + popup.interestMaturityTarget;
+      }
+    }
+
+    function updateInterestKillProgress() {
+      const completed = [];
+      for (const popup of state.openPopups) {
+        if (popup.def.type !== "interest_offer" || !popup.interestAccepted || popup.interestMaturityType !== "kills") {
+          continue;
+        }
+        popup.interestMaturityProgress = state.killCount - popup.interestStartKills;
+        updateInterestPopupUI(popup);
+        if (popup.interestMaturityProgress >= popup.interestMaturityTarget) {
+          completed.push(popup);
+        }
+      }
+      for (const popup of completed) {
+        completeInterestOffer(popup);
+      }
+    }
+
+    function purchasePopupStoreItem(popupId, product) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      const cost = popupStorePrice(product);
+      if (!popup || state.gameOver || state.gold < cost) {
+        return;
+      }
+
+      const item = randomItemByRarity(product.rarity);
+      state.gold -= cost;
+      applyItemReward(item, "팝업 스토어 구매");
+      state.metrics.popupStorePurchases += 1;
+      closePopup(popupId);
+      updateUI();
+    }
+
+    function applyItemReward(item, sourceText) {
+      applyEffects(item);
+      if (item.rarity === "Cursed") {
+        state.heat += 1;
+      }
+      state.itemCounts[item.id] = (state.itemCounts[item.id] || 0) + 1;
+      state.lastItemText = rarityBadge(item.rarity) + " <strong>" + item.name + "</strong><br>" + item.description + "<br><span class=\"gold\">" + sourceText + " · 현재: " + describeItemCurrent(item, 0) + "</span>";
+    }
+
+    function openItemLikeOverlay(title, description) {
+      itemOverlay.querySelectorAll(".itemOverlayCounter").forEach(element => element.remove());
+      itemOverlayTitle.textContent = title;
+      itemOverlayDescription.textContent = description;
+      itemChoices.replaceChildren();
+      itemOverlay.style.display = "flex";
+    }
+
+    function closeItemLikeOverlay() {
+      state.selectingItem = false;
+      state.selectingPaidReward = false;
+      state.paused = false;
+      state.pendingBossPackage = null;
+      itemOverlay.style.display = "none";
+      checkLevelUp();
+      updateUI();
+    }
+
+    function createBossPackagePopup(tier) {
+      const base = POPUP_DEFINITIONS.find(item => item.id === "boss_package_ad");
+      if (!base) {
+        return;
+      }
+      const def = {
+        ...base,
+        tier,
+        packageCost: bossPackageCost(tier),
+        packageItems: chooseBossPackageItems()
+      };
+      createPopup(def);
+    }
+
+    function grantBossRewards(enemy) {
+      const tier = enemy.bossTier || 1;
+      const goldReward = CONFIG.bossGoldReward + (tier - 1) * 60;
+      const xpReward = CONFIG.bossXPReward + (tier - 1) * 55;
+      addGold(goldReward, "boss");
+      state.xp += xpReward;
+      state.metrics.bossKills += 1;
+      state.recentPerkText = "<strong>보스 처치:</strong> +" + goldReward + "G / +" + xpReward + "XP<br>보스 패키지 AD가 열렸습니다.";
+      createBossPackagePopup(tier);
+      checkLevelUp();
+    }
+
+    function purchaseBossPackage(popupId) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || state.gold < popup.bossPackageCost || state.gameOver) {
+        return;
+      }
+
+      state.gold -= popup.bossPackageCost;
+      state.pendingBossPackage = {
+        tier: popup.bossPackageTier,
+        cost: popup.bossPackageCost,
+        items: popup.bossPackageItems,
+        selectedIds: []
+      };
+      closePopup(popupId);
+      openBossPackageSelection();
+      updateUI();
+    }
+
+    function openBossPackageSelection() {
+      const pack = state.pendingBossPackage;
+      if (!pack) {
+        return;
+      }
+
+      state.selectingItem = true;
+      state.selectingPaidReward = true;
+      state.paused = true;
+      openItemLikeOverlay("보스 패키지 보상 선택", "결제 완료. 아이템 6개 중 2개를 선택하면 즉시 적용됩니다.");
+
+      const counter = document.createElement("div");
+      counter.className = "choiceMeta itemOverlayCounter";
+      counter.textContent = "0 / 2 선택";
+      itemChoices.before(counter);
+
+      for (const item of pack.items) {
+        const button = document.createElement("button");
+        button.className = "bossItemChoice";
+        button.dataset.itemId = item.id;
+        button.innerHTML =
+          rarityBadge(item.rarity) +
+          "<strong>" + item.name + "</strong>" +
+          "<span>" + item.description + "<br>현재: " + describeItemCurrent(item, 0) + "</span>";
+        button.addEventListener("click", () => toggleBossPackageSelection(item.id, counter));
+        itemChoices.appendChild(button);
+      }
+
+      refreshBossPackageOverlay(counter);
+    }
+
+    function toggleBossPackageSelection(itemId, counter) {
+      const pack = state.pendingBossPackage;
+      if (!pack) {
+        return;
+      }
+
+      const index = pack.selectedIds.indexOf(itemId);
+      if (index >= 0) {
+        pack.selectedIds.splice(index, 1);
+      } else if (pack.selectedIds.length < 2) {
+        pack.selectedIds.push(itemId);
+      }
+      refreshBossPackageOverlay(counter);
+
+      if (pack.selectedIds.length === 2) {
+        completeBossPackageSelection();
+      }
+    }
+
+    function refreshBossPackageOverlay(counter) {
+      const pack = state.pendingBossPackage;
+      if (!pack) {
+        return;
+      }
+      counter.textContent = pack.selectedIds.length + " / 2 선택";
+      itemChoices.querySelectorAll(".bossItemChoice").forEach(button => {
+        const selected = pack.selectedIds.includes(button.dataset.itemId);
+        button.classList.toggle("selected", selected);
+        button.disabled = !selected && pack.selectedIds.length >= 2;
+      });
+    }
+
+    function completeBossPackageSelection() {
+      const pack = state.pendingBossPackage;
+      if (!pack || pack.selectedIds.length !== 2) {
+        return;
+      }
+
+      const selectedItems = pack.items.filter(item => pack.selectedIds.includes(item.id));
+      for (const item of selectedItems) {
+        applyItemReward(item, "보스 패키지");
+      }
+      state.metrics.bossPackagesPurchased += 1;
+      state.bossPackageCount += 1;
+      state.recentPerkText = "<strong>보스 패키지 완료:</strong> 아이템 2개 획득";
+      closeItemLikeOverlay();
+    }
+
+    function applyItemChoice(item) {
+      applyItemReward(item, "아이템 머신");
+      state.itemRollCount += 1;
+      if (state.stats.purchaseDamageBurst > 0) {
+        state.timedEffects.push({
+          stat: "damageMultiplier",
+          value: state.stats.purchaseDamageBurst,
+          remaining: 10
+        });
+      }
+      state.selectingItem = false;
+      state.paused = false;
+      itemOverlay.style.display = "none";
+      checkLevelUp();
+      updateUI();
+    }
+
+    function openItemSelection() {
+      state.selectingItem = true;
+      state.paused = true;
+      openItemLikeOverlay("아이템 선택", "골드를 지불했습니다. 패시브 아이템 1개를 선택해 현재 런 성능을 누적 성장시키세요.");
+
+      for (const item of chooseItemOptions()) {
+        const button = document.createElement("button");
+        button.className = "itemChoice";
+        button.innerHTML =
+          rarityBadge(item.rarity) +
+          "<strong>" + item.name + "</strong>" +
+          "<span>" + item.description + "</span>" +
+          "<em class=\"choiceMeta\">현재: " + describeItemCurrent(item, 0) + "<br>선택 후: " + describeItemCurrent(item, 1) + "</em>";
+        button.addEventListener("click", () => applyItemChoice(item));
+        itemChoices.appendChild(button);
+      }
+    }
+
+    function moduleById(id) {
+      return ATTACK_MODULES.find(module => module.id === id);
+    }
+
+    function moduleName(id) {
+      return moduleById(id)?.name || "없음";
+    }
+
+    function slotLabel(slot) {
+      return slot === "secondary" ? "보조" : "1차";
+    }
+
+    function setModulePanelText(title, body) {
+      const panel = document.getElementById("perkPanel");
+      panel.querySelector("h2").textContent = title;
+      panel.querySelector(".muted").textContent = body;
+    }
+
+    function closeModuleSelection() {
+      state.selectingModule = false;
+      state.selectingPerk = false;
+      state.paused = false;
+      perkOverlay.style.display = "none";
+      checkLevelUp();
+      updateUI();
+    }
+
+    function openAttackModuleSelection(kind) {
+      state.selectingModule = true;
+      state.selectingPerk = true;
+      state.paused = true;
+      perkChoices.replaceChildren();
+
+      const secondary = kind === "secondary";
+      setModulePanelText(
+        secondary ? "Lv.5 보조 공격 모듈 선택" : "시작 1차 공격 모듈 선택",
+        secondary ? "1차 공격 모듈과 다른 보조 모듈을 선택합니다." : "선택 전까지 게임은 멈춥니다. 이번 런의 기본 공격 방식을 고르세요."
+      );
+
+      for (const module of ATTACK_MODULES) {
+        const disabled = secondary && module.id === state.primaryModule;
+        const button = document.createElement("button");
+        button.className = "moduleChoice";
+        button.disabled = disabled;
+        button.innerHTML =
+          "<strong>" + module.name + (disabled ? " · 1차 선택됨" : "") + "</strong>" +
+          "<span>" + module.description + "<br>기본 피해 " + module.baseDamage + " / 쿨타임 " + module.baseCooldown.toFixed(2) + "초 / 범위 " + module.baseRange + "</span>";
+        button.addEventListener("click", () => {
+          if (disabled) {
+            return;
+          }
+          if (secondary) {
+            state.secondaryModule = module.id;
+            state.secondaryMastery = Math.max(1, state.secondaryMastery);
+            state.recentPerkText = "<strong>보조 모듈 선택:</strong> " + module.name;
+          } else {
+            state.primaryModule = module.id;
+            state.primaryMastery = Math.max(1, state.primaryMastery);
+            state.recentPerkText = "<strong>1차 모듈 선택:</strong> " + module.name;
+          }
+          closeModuleSelection();
+        });
+        perkChoices.appendChild(button);
+      }
+
+      perkOverlay.style.display = "flex";
+    }
+
+    function openDeepeningSelection(slot) {
+      state.selectingModule = true;
+      state.selectingPerk = true;
+      state.paused = true;
+      perkChoices.replaceChildren();
+
+      setModulePanelText(
+        (slot === "secondary" ? "Lv.13 보조 공격 심화" : "Lv.9 1차 공격 심화"),
+        slotLabel(slot) + " 공격 모듈 " + moduleName(state[slot + "Module"]) + "의 방향을 정합니다."
+      );
+
+      for (const option of DEEPENING_OPTIONS) {
+        const button = document.createElement("button");
+        button.className = "moduleChoice";
+        button.innerHTML = "<strong>" + option.name + "</strong><span>" + option.description + "</span>";
+        button.addEventListener("click", () => {
+          state[slot + "Deepening"] = option.id;
+          state.recentPerkText = "<strong>" + slotLabel(slot) + " 심화:</strong> " + moduleName(state[slot + "Module"]) + " · " + option.name;
+          closeModuleSelection();
+        });
+        perkChoices.appendChild(button);
+      }
+
+      perkOverlay.style.display = "flex";
+    }
+
+    function openSynergySelection() {
+      state.selectingModule = true;
+      state.selectingPerk = true;
+      state.paused = true;
+      perkChoices.replaceChildren();
+
+      setModulePanelText("Lv.17 공격 연계 선택", "1차와 보조 공격이 서로 영향을 주는 임시 연계 규칙을 고릅니다.");
+
+      for (const option of SYNERGY_OPTIONS) {
+        const button = document.createElement("button");
+        button.className = "moduleChoice";
+        button.innerHTML = "<strong>" + option.name + "</strong><span>" + option.description + "</span>";
+        button.addEventListener("click", () => {
+          state.moduleSynergy = option.id;
+          state.recentPerkText = "<strong>공격 연계:</strong> " + option.name;
+          closeModuleSelection();
+        });
+        perkChoices.appendChild(button);
+      }
+
+      perkOverlay.style.display = "flex";
+    }
+
+    function applyMasteryLevelUp() {
+      const lines = [];
+      if (state.primaryModule) {
+        state.primaryMastery += 1;
+        lines.push(moduleName(state.primaryModule) + " 숙련도 +1");
+      }
+      if (state.secondaryModule) {
+        state.secondaryMastery += 1;
+        lines.push(moduleName(state.secondaryModule) + " 숙련도 +1");
+      }
+
+      if (lines.length === 0) {
+        return;
+      }
+
+      const detail = "피해량 +8% / 범위 +3% / 쿨타임 소폭 감소";
+      state.recentPerkText = "<strong>숙련도 상승:</strong><br>" + lines.join("<br>") + "<br>" + detail;
+      createSystemGrowthPopup(lines.join(" / "), detail);
+    }
+
+    function handleLevelChoice() {
+      if (state.level === 5 && !state.secondaryModule) {
+        openAttackModuleSelection("secondary");
+        return true;
+      }
+      if (state.level === 9 && !state.primaryDeepening) {
+        openDeepeningSelection("primary");
+        return true;
+      }
+      if (state.level === 13 && state.secondaryModule && !state.secondaryDeepening) {
+        openDeepeningSelection("secondary");
+        return true;
+      }
+      if (state.level === 17 && state.secondaryModule && !state.moduleSynergy) {
+        openSynergySelection();
+        return true;
+      }
+      return false;
+    }
+
+    function checkLevelUp() {
+      if (state.selectingItem || state.selectingPerk || state.selectingModule || state.gameOver) {
+        return;
+      }
+
+      while (state.xp >= state.xpNeed && !state.selectingModule && !state.selectingItem && !state.gameOver) {
+        state.xp -= state.xpNeed;
+        state.level += 1;
+        state.xpNeed = Math.round(state.xpNeed * CONFIG.xpRequirementGrowth);
+        if (handleLevelChoice()) {
+          break;
+        }
+        applyMasteryLevelUp();
+      }
+    }
+
+    function spawnEnemy() {
+      const edge = Math.floor(Math.random() * 4);
+      const margin = 80;
+      const left = state.camera.x;
+      const top = state.camera.y;
+      const right = left + CONFIG.canvasWidth;
+      const bottom = top + CONFIG.canvasHeight;
+      let x = 0;
+      let y = 0;
+
+      if (edge === 0) {
+        x = randomRange(left - margin, right + margin);
+        y = top - margin;
+      } else if (edge === 1) {
+        x = right + margin;
+        y = randomRange(top - margin, bottom + margin);
+      } else if (edge === 2) {
+        x = randomRange(left - margin, right + margin);
+        y = bottom + margin;
+      } else {
+        x = left - margin;
+        y = randomRange(top - margin, bottom + margin);
+      }
+
+      const ageBoost = Math.min(1.8, state.elapsed / 110);
+      state.enemies.push({
+        x,
+        y,
+        type: "normal",
+        radius: 12,
+        hp: CONFIG.enemyHP * (1 + ageBoost * 0.3),
+        maxHP: CONFIG.enemyHP * (1 + ageBoost * 0.3),
+        speed: CONFIG.enemySpeed * (1 + ageBoost * 0.18),
+        damage: CONFIG.enemyDamage,
+        contactTimer: 0,
+        dead: false
+      });
+    }
+
+    function spawnBoss(tier) {
+      const edge = Math.floor(Math.random() * 4);
+      const margin = 140;
+      const left = state.camera.x;
+      const top = state.camera.y;
+      const right = left + CONFIG.canvasWidth;
+      const bottom = top + CONFIG.canvasHeight;
+      const x = edge === 1 ? right + margin : edge === 3 ? left - margin : randomRange(left + 80, right - 80);
+      const y = edge === 0 ? top - margin : edge === 2 ? bottom + margin : randomRange(top + 70, bottom - 70);
+      const hp = CONFIG.bossBaseHP * (1 + (tier - 1) * 0.62 + state.level * 0.035);
+      state.enemies.push({
+        x,
+        y,
+        type: "boss",
+        bossTier: tier,
+        radius: 28 + tier * 3,
+        hp,
+        maxHP: hp,
+        speed: Math.max(38, CONFIG.enemySpeed * (0.62 + tier * 0.05)),
+        damage: CONFIG.enemyDamage + tier,
+        contactTimer: 0,
+        dead: false
+      });
+      state.recentPerkText = "<strong>보스 등장:</strong> " + tier + "구간 보스";
+    }
+
+    function updateBossSpawns() {
+      if (state.bossSpawnIndex >= CONFIG.bossSpawnTimes.length) {
+        return;
+      }
+
+      const nextTime = CONFIG.bossSpawnTimes[state.bossSpawnIndex];
+      if (state.elapsed >= nextTime) {
+        state.bossSpawnIndex += 1;
+        spawnBoss(state.bossSpawnIndex);
+      }
+    }
+
+    function spawnPickups(enemy) {
+      state.pickups.push({
+        type: "gold",
+        x: enemy.x - 7,
+        y: enemy.y,
+        value: CONFIG.goldPerKill,
+        radius: 6
+      });
+      state.pickups.push({
+        type: "xp",
+        x: enemy.x + 7,
+        y: enemy.y,
+        value: CONFIG.xpPerKill,
+        radius: 5
+      });
+    }
+
+    function recordEnemyKill(enemy) {
+      if (enemy.killRecorded) {
+        return;
+      }
+      enemy.killRecorded = true;
+      state.killCount += 1;
+      if (state.moduleSynergy === "primary_charge" && enemy.lastHitSlot === "primary" && state.secondaryModule) {
+        state.moduleTimers.secondary = 0;
+      }
+      if (enemy.type === "boss") {
+        grantBossRewards(enemy);
+      } else {
+        spawnPickups(enemy);
+      }
+      updateInterestKillProgress();
+    }
+
+    function damageEnemy(enemy, amount, sourceSlot) {
+      if (!enemy || enemy.dead) {
+        return false;
+      }
+
+      enemy.hp -= amount;
+      if (sourceSlot) {
+        enemy.lastHitSlot = sourceSlot;
+      }
+      if (enemy.hp <= 0 && !enemy.dead) {
+        enemy.dead = true;
+        recordEnemyKill(enemy);
+      }
+      return true;
+    }
+
+    function updatePlayer(dt) {
+      let dx = 0;
+      let dy = 0;
+      if (keys.w) dy -= 1;
+      if (keys.s) dy += 1;
+      if (keys.a) dx -= 1;
+      if (keys.d) dx += 1;
+      if (state.mobileInput.active) {
+        dx += state.mobileInput.x;
+        dy += state.mobileInput.y;
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        const length = Math.hypot(dx, dy);
+        const speedScale = Math.min(1, length);
+        dx /= length;
+        dy /= length;
+        const speed = effectiveMoveSpeed();
+        state.player.x += dx * speed * speedScale * dt;
+        state.player.y += dy * speed * speedScale * dt;
+      }
+
+      updateCamera();
+      state.player.hitFlash = Math.max(0, state.player.hitFlash - dt);
+    }
+
+    function updateEnemies(dt) {
+      state.popupFreezeTimer = Math.max(0, state.popupFreezeTimer - dt);
+      state.enemyTimer -= dt;
+      if (state.enemyTimer <= 0) {
+        spawnEnemy();
+        const pressure = Math.min(1.45, state.elapsed * 0.012);
+        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, CONFIG.enemySpawnInterval - pressure);
+        state.enemyTimer = nextInterval;
+      }
+
+      for (const enemy of state.enemies) {
+        const dx = state.player.x - enemy.x;
+        const dy = state.player.y - enemy.y;
+        const length = Math.max(0.001, Math.hypot(dx, dy));
+        enemy.x += (dx / length) * enemy.speed * dt;
+        enemy.y += (dy / length) * enemy.speed * dt;
+        enemy.contactTimer = Math.max(0, enemy.contactTimer - dt);
+
+        const touching = distance(enemy, state.player) < enemy.radius + state.player.radius;
+        if (touching && enemy.contactTimer <= 0) {
+          enemy.contactTimer = 0.85;
+          state.player.hp -= enemy.damage || CONFIG.enemyDamage;
+          state.player.hitFlash = 0.16;
+          if (state.player.hp <= 1 && state.stats.lowHpPopupFreeze > 0 && !state.lowHpFreezeUsed) {
+            state.lowHpFreezeUsed = true;
+            state.popupFreezeTimer = 8;
+          }
+          if (state.player.hp <= 0) {
+            endGame();
+          }
+        }
+      }
+
+      state.enemies = state.enemies.filter(enemy => !enemy.dead);
+    }
+
+    function nearestTargets(range, limit) {
+      return state.enemies
+        .filter(enemy => !enemy.dead && distance(enemy, state.player) <= range)
+        .sort((a, b) => distance(a, state.player) - distance(b, state.player))
+        .slice(0, limit);
+    }
+
+    function addCircleAttack(x, y, radius, color, ttl) {
+      state.attacks.push({
+        type: "circle",
+        x,
+        y,
+        radius,
+        color,
+        ttl,
+        maxTtl: ttl
+      });
+    }
+
+    function triggerModuleAttack(slot, forced) {
+      const stats = moduleCombatStats(slot);
+      if (!stats) {
+        return false;
+      }
+
+      const module = stats.module;
+      const targetCount = Math.max(1, 1 + Math.round(state.stats.extraTargets));
+      const hitCount = state.stats.sponsoredDoubleHit > 0 && countOpenAdPopups() > 0 ? 2 : 1;
+      let hitAny = false;
+
+      if (module.id === "ranged") {
+        const targets = nearestTargets(stats.range, targetCount);
+        if (targets.length === 0) {
+          return false;
+        }
+        for (const target of targets) {
+          for (let hit = 0; hit < hitCount; hit += 1) {
+            hitAny = damageEnemy(target, stats.damage, slot) || hitAny;
+          }
+          state.attacks.push({
+            type: "line",
+            x1: state.player.x,
+            y1: state.player.y,
+            x2: target.x,
+            y2: target.y,
+            ttl: 0.13,
+            maxTtl: 0.13
+          });
+        }
+      } else if (module.id === "melee") {
+        const targets = nearestTargets(stats.range, 999);
+        if (targets.length === 0 && !forced) {
+          return false;
+        }
+        for (const target of targets) {
+          for (let hit = 0; hit < hitCount; hit += 1) {
+            hitAny = damageEnemy(target, stats.damage, slot) || hitAny;
+          }
+        }
+        addCircleAttack(state.player.x, state.player.y, stats.range, "rgba(255, 190, 106, ", 0.18);
+      } else if (module.id === "aura") {
+        const targets = nearestTargets(stats.range, 999);
+        if (targets.length === 0 && !forced) {
+          return false;
+        }
+        for (const target of targets) {
+          hitAny = damageEnemy(target, stats.damage, slot) || hitAny;
+        }
+        addCircleAttack(state.player.x, state.player.y, stats.range, "rgba(97, 211, 255, ", 0.2);
+      } else if (module.id === "deploy") {
+        const angle = Math.random() * Math.PI * 2;
+        const offset = randomRange(18, 46);
+        state.mines.push({
+          x: state.player.x + Math.cos(angle) * offset,
+          y: state.player.y + Math.sin(angle) * offset,
+          radius: 9,
+          explosionRadius: stats.range,
+          damage: stats.damage,
+          ttl: 8,
+          sourceSlot: slot
+        });
+        addCircleAttack(state.player.x, state.player.y, 22, "rgba(176, 255, 128, ", 0.14);
+        hitAny = true;
+      }
+
+      if (hitAny && slot === "secondary" && state.moduleSynergy === "secondary_haste") {
+        state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
+      }
+
+      if (!forced) {
+        state.moduleTimers[slot] = stats.cooldown;
+      }
+      return hitAny;
+    }
+
+    function updateAutoAttack(dt) {
+      state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - dt);
+      state.moduleTimers.secondary = Math.max(0, state.moduleTimers.secondary - dt);
+
+      if (state.primaryModule && state.moduleTimers.primary <= 0) {
+        triggerModuleAttack("primary", false);
+      }
+      if (state.secondaryModule && state.moduleTimers.secondary <= 0) {
+        triggerModuleAttack("secondary", false);
+      }
+    }
+
+    function explodeMine(mine) {
+      addCircleAttack(mine.x, mine.y, mine.explosionRadius, "rgba(178, 255, 122, ", 0.22);
+      for (const enemy of state.enemies) {
+        if (!enemy.dead && distance(enemy, mine) <= mine.explosionRadius + enemy.radius) {
+          damageEnemy(enemy, mine.damage, mine.sourceSlot);
+        }
+      }
+      mine.done = true;
+    }
+
+    function updateMines(dt) {
+      for (const mine of state.mines) {
+        mine.ttl -= dt;
+        const triggered = state.enemies.some(enemy => !enemy.dead && distance(enemy, mine) <= mine.radius + enemy.radius);
+        if (mine.ttl <= 0 || triggered) {
+          explodeMine(mine);
+        }
+      }
+      state.mines = state.mines.filter(mine => !mine.done);
+    }
+
+    function updatePickups(dt) {
+      for (const pickup of state.pickups) {
+        const d = distance(pickup, state.player);
+        if (d < 120) {
+          const dx = state.player.x - pickup.x;
+          const dy = state.player.y - pickup.y;
+          const length = Math.max(0.001, Math.hypot(dx, dy));
+          const pull = 130 * dt;
+          pickup.x += (dx / length) * pull;
+          pickup.y += (dy / length) * pull;
+        }
+
+        if (distance(pickup, state.player) < state.player.radius + pickup.radius + 4) {
+          pickup.collected = true;
+          if (pickup.type === "gold") {
+            const crowdedBonus = state.openPopups.length >= 4 ? state.stats.crowdedGoldMultiplier : 0;
+            addGold(Math.round(pickup.value * Math.max(0.1, 1 + crowdedBonus)), "pickup");
+          } else {
+            state.xp += pickup.value;
+          }
+        }
+      }
+
+      state.pickups = state.pickups.filter(pickup => !pickup.collected);
+      checkLevelUp();
+    }
+
+    function updateAttacks(dt) {
+      for (const attack of state.attacks) {
+        attack.ttl -= dt;
+      }
+      state.attacks = state.attacks.filter(attack => attack.ttl > 0);
+    }
+
+    function countOpenAdPopups() {
+      return state.openPopups.filter(popup =>
+        popup.def.type === "sponsored_ad" ||
+        popup.def.type === "ad_buff" ||
+        popup.def.type === "basic" ||
+        popup.def.id === "basic_ad"
+      ).length;
+    }
+
+    function updatePopupTimers(dt) {
+      state.popupTimer -= dt;
+      state.emergencyTimer = Math.max(0, state.emergencyTimer - dt);
+      state.emergencyBoostTimer = Math.max(0, state.emergencyBoostTimer - dt);
+
+      updateTimedAndDelayedEffects(dt);
+      updateAutoCloseMacro(dt);
+      updateSpecialPopups(dt);
+      updateFirstPurchaseOffer(dt);
+
+      if (state.popupTimer <= 0) {
+        if (state.openPopups.length < maxOpenPopups()) {
+          if (state.popupFreezeTimer <= 0) {
+            createPopup(pickWeighted(POPUP_DEFINITIONS));
+          }
+        }
+        state.popupTimer = effectivePopupInterval() * randomRange(0.9, 1.12);
+      }
+
+      const openAds = countOpenAdPopups();
+      if (openAds > 0 && state.stats.adGoldPerSecond > 0) {
+        state.adOpenTime += openAds * dt;
+        state.adGoldBank += openAds * state.stats.adGoldPerSecond * Math.max(0.1, 1 + state.stats.adGoldMultiplier) * dt;
+        const payout = Math.floor(state.adGoldBank);
+        if (payout > 0) {
+          addGold(payout, "adPassive");
+          state.adGoldBank -= payout;
+        }
+      }
+
+      const completed = [];
+      for (const popup of state.openPopups) {
+        if (popup.def.type !== "timed_reward") {
+          continue;
+        }
+
+        popup.elapsed += dt;
+        const duration = timedRewardDuration(popup.def);
+        const ratio = clamp(popup.elapsed / duration, 0, 1);
+        const progress = popup.element.querySelector(".popupProgressFill");
+        const label = popup.element.querySelector(".timerLabel");
+        if (progress) {
+          progress.style.width = (ratio * 100).toFixed(1) + "%";
+        }
+        if (label) {
+          label.textContent = Math.max(0, duration - popup.elapsed).toFixed(1) + "초";
+        }
+
+        if (popup.elapsed >= duration && !popup.rewarded) {
+          popup.rewarded = true;
+          addGold(Math.round(popup.def.rewardGold * Math.max(0.1, 1 + state.stats.rewardGoldMultiplier)), "timedReward");
+          completed.push(popup.id);
+        }
+      }
+
+      for (const id of completed) {
+        closePopup(id);
+      }
+    }
+
+    function updateFirstPurchaseOffer(dt) {
+      if (state.firstPurchaseOfferShown || state.gameOver) {
+        return;
+      }
+
+      state.firstPurchaseTimer -= dt;
+      if (state.firstPurchaseTimer > 0) {
+        return;
+      }
+
+      const def = POPUP_DEFINITIONS.find(item => item.id === "first_purchase_package");
+      if (def) {
+        createPopup(def);
+        state.firstPurchaseOfferShown = true;
+      }
+    }
+
+    function updateTimedAndDelayedEffects(dt) {
+      for (const effect of state.timedEffects) {
+        effect.remaining -= dt;
+      }
+      state.timedEffects = state.timedEffects.filter(effect => effect.remaining > 0);
+
+      for (const event of state.delayedEvents) {
+        event.remaining -= dt;
+        if (event.remaining <= 0 && !event.done && event.type === "maxHPLoss") {
+          event.done = true;
+          state.player.maxHP = Math.max(1, state.player.maxHP - event.value);
+          state.player.hp = clamp(state.player.hp, 1, state.player.maxHP);
+        }
+      }
+      state.delayedEvents = state.delayedEvents.filter(event => !event.done);
+    }
+
+    function updateSpecialPopups(dt) {
+      const pendingBasicSpawns = [];
+      const completedInterest = [];
+      const completedSponsored = [];
+      const completedRecurring = [];
+      const defaultedLoans = [];
+      const completedCleanChallenges = [];
+      const expiredCleanChallenges = [];
+      const expiredVolatilePopups = [];
+      const expiredStores = [];
+      const expiredSystemPopups = [];
+      for (const popup of state.openPopups) {
+        popup.life = (popup.life || 0) + dt;
+
+        if (popup.def.category === "system" && popup.life >= (popup.def.autoClose || 3.4)) {
+          expiredSystemPopups.push(popup.id);
+          continue;
+        }
+
+        if (popup.def.type === "moving_close") {
+          const close = popup.element.querySelector(".popupClose");
+          if (close) {
+            const x = Math.sin(popup.life * 2.4) * 18;
+            const y = Math.cos(popup.life * 1.8) * 5;
+            close.style.transform = "translate(" + x.toFixed(1) + "px, " + y.toFixed(1) + "px)";
+          }
+        }
+
+        if (popup.def.type === "infection") {
+          const duration = popup.def.duration || 8;
+          const ratio = clamp((popup.life % duration) / duration, 0, 1);
+          const progress = popup.element.querySelector(".popupProgressFill");
+          if (progress) {
+            progress.style.width = (ratio * 100).toFixed(1) + "%";
+            progress.style.background = "#38b86f";
+          }
+          if (popup.life >= duration && !popup.infecting) {
+            popup.infecting = true;
+            pendingBasicSpawns.push(popup);
+          }
+        }
+
+        if (popup.def.type === "sponsored_ad" && !popup.sponsoredCompleted) {
+          popup.sponsoredElapsed += dt;
+          const duration = popup.def.duration || 18;
+          const ratio = clamp(popup.sponsoredElapsed / duration, 0, 1);
+          const progress = popup.element.querySelector(".sponsoredProgressFill");
+          const label = popup.element.querySelector(".sponsoredTimeLabel");
+          if (progress) {
+            progress.style.width = (ratio * 100).toFixed(1) + "%";
+            progress.style.background = "#d59e0f";
+          }
+          if (label) {
+            label.textContent = Math.max(0, duration - popup.sponsoredElapsed).toFixed(1) + "초";
+          }
+          if (popup.sponsoredElapsed >= duration) {
+            popup.sponsoredCompleted = true;
+            completedSponsored.push(popup);
+          }
+        }
+
+        if (popup.def.type === "interest_offer" && popup.interestAccepted && popup.interestMaturityType === "time") {
+          popup.interestMaturityProgress = Math.max(0, popup.life - (popup.interestStartLife || 0));
+          updateInterestPopupUI(popup);
+          if (popup.interestMaturityProgress >= popup.interestMaturityTarget) {
+            completedInterest.push(popup);
+          }
+        }
+
+        if (popup.def.type === "recurring_investment" && popup.investment.accepted && !popup.investment.matured) {
+          popup.investment.elapsed += dt;
+          updateRecurringInvestmentUI(popup);
+          if (popup.investment.elapsed >= popup.investment.duration) {
+            completedRecurring.push(popup);
+          }
+        }
+
+        if (popup.def.type === "loan_offer" && popup.loan.accepted && !popup.loan.resolved) {
+          popup.loan.elapsed += dt;
+          updateLoanUI(popup);
+          if (popup.loan.elapsed >= popup.loan.deadline) {
+            defaultedLoans.push(popup);
+          }
+        }
+
+        if (popup.def.type === "stock_market" && popup.stock.invested) {
+          popup.stock.elapsed += dt;
+          popup.stock.tickTimer -= dt;
+          if (popup.stock.tickTimer <= 0) {
+            popup.stock.tickTimer = 1;
+            const change = popup.stock.drift + randomRange(-popup.stock.volatility, popup.stock.volatility);
+            popup.stock.currentValue = Math.max(1, popup.stock.currentValue * (1 + change));
+            popup.stock.lastTrend = (change >= 0 ? "상승 " : "하락 ") + formatSignedPercent(change);
+            updateStockUI(popup);
+          }
+        }
+
+        if (popup.def.type === "clean_challenge") {
+          popup.cleanElapsed += dt;
+          if (state.openPopups.length <= (popup.def.targetOpenPopups || 1)) {
+            popup.cleanProgress += dt;
+          } else {
+            popup.cleanProgress = Math.max(0, popup.cleanProgress - dt * 1.5);
+          }
+          updateCleanChallengeUI(popup);
+          if (popup.cleanProgress >= (popup.def.duration || 10)) {
+            completedCleanChallenges.push(popup);
+          } else if (popup.cleanElapsed >= (popup.def.duration || 10) * 2.2) {
+            expiredCleanChallenges.push(popup.id);
+          }
+        }
+
+        if (popup.def.type === "volatile_popup" && !popup.volatileExpired) {
+          popup.volatileElapsed += dt;
+          updateVolatileUI(popup);
+          if (popup.volatileElapsed >= (popup.def.duration || 8)) {
+            popup.volatileExpired = true;
+            expiredVolatilePopups.push(popup);
+          }
+        }
+
+        if (popup.def.type === "popup_store") {
+          const duration = popup.def.duration || 18;
+          const ratio = clamp(popup.life / duration, 0, 1);
+          const progress = popup.element.querySelector(".storeProgressFill");
+          if (progress) {
+            progress.style.width = (ratio * 100).toFixed(1) + "%";
+            progress.style.background = "#8b5cf6";
+          }
+          if (popup.life >= duration) {
+            expiredStores.push(popup.id);
+          }
+        }
+      }
+
+      for (const popup of completedInterest) {
+        completeInterestOffer(popup);
+      }
+
+      for (const popup of completedRecurring) {
+        completeRecurringInvestment(popup);
+      }
+
+      for (const popup of defaultedLoans) {
+        defaultLoan(popup);
+      }
+
+      for (const popup of completedCleanChallenges) {
+        completeCleanChallenge(popup);
+      }
+
+      for (const id of expiredCleanChallenges) {
+        closePopup(id);
+      }
+
+      for (const popup of expiredVolatilePopups) {
+        if (popup.def.timeoutSpawnBasic && state.openPopups.length < maxOpenPopups()) {
+          const basic = POPUP_DEFINITIONS.find(def => def.id === "basic_ad");
+          if (basic) {
+            createPopup(basic);
+          }
+        }
+        closePopup(popup.id);
+      }
+
+      for (const popup of completedSponsored) {
+        for (const reward of popup.def.completionRewards || []) {
+          grantSponsoredReward(reward);
+        }
+        state.sponsoredCompletions += 1;
+        closePopup(popup.id);
+      }
+
+      for (const id of expiredStores) {
+        closePopup(id);
+      }
+
+      for (const id of expiredSystemPopups) {
+        closePopup(id);
+      }
+
+      for (const popup of pendingBasicSpawns) {
+        if (state.openPopups.length < maxOpenPopups()) {
+          const basic = POPUP_DEFINITIONS.find(def => def.id === "basic_ad");
+          if (basic) {
+            createPopup(basic);
+          }
+        }
+        popup.life = 0;
+        popup.infecting = false;
+      }
+    }
+
+    function updateAutoCloseMacro(dt) {
+      if (state.stats.autoCloseBasicInterval <= 0) {
+        return;
+      }
+
+      state.autoCloseBasicTimer -= dt;
+      if (state.autoCloseBasicTimer > 0) {
+        return;
+      }
+
+      const basic = state.openPopups.find(popup => popup.def.type === "basic");
+      if (basic) {
+        closePopup(basic.id);
+      }
+      state.autoCloseBasicTimer = Math.max(2, state.stats.autoCloseBasicInterval);
+    }
+
+    function updateGame(dt) {
+      if (state.gameOver || state.paused) {
+        return;
+      }
+
+      state.elapsed += dt;
+      updatePlayer(dt);
+      updateEnemies(dt);
+      updateBossSpawns();
+      updateAutoAttack(dt);
+      updateMines(dt);
+      updatePickups(dt);
+      updateAttacks(dt);
+      updatePopupTimers(dt);
+    }
+
+    function endGame() {
+      if (state.gameOver) {
+        return;
+      }
+
+      state.gameOver = true;
+      state.paused = true;
+      state.player.hp = 0;
+      gameOverSummary.textContent = "생존 시간 " + formatTime(state.elapsed) + ", 도달 레벨 " + state.level + ", 보유 골드 " + state.gold + "G.";
+      gameOverOverlay.style.display = "flex";
+    }
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const rest = Math.floor(seconds % 60).toString().padStart(2, "0");
+      return minutes + ":" + rest;
+    }
+
+    function popupSizeFor(def) {
+      if (def.type === "terms") {
+        return { width: 318, height: 218 };
+      }
+      if (def.type === "timed_reward") {
+        return { width: 286, height: 168 };
+      }
+      if (def.type === "ad_buff" || def.type === "sponsored_ad") {
+        return { width: 300, height: 190 };
+      }
+      if (def.type === "infection") {
+        return { width: 286, height: 168 };
+      }
+      if (def.type === "trash_drag") {
+        return { width: 276, height: 142 };
+      }
+      if (def.type === "first_purchase_package") {
+        return { width: 336, height: 236 };
+      }
+      if (def.type === "interest_offer") {
+        return { width: 350, height: 250 };
+      }
+      if (def.type === "recurring_investment" || def.type === "loan_offer" || def.type === "stock_market") {
+        return { width: 342, height: 230 };
+      }
+      if (def.type === "clean_challenge") {
+        return { width: 320, height: 190 };
+      }
+      if (def.type === "volatile_popup") {
+        return { width: 310, height: 178 };
+      }
+      if (def.type === "popup_store") {
+        return { width: 326, height: 230 };
+      }
+      if (def.type === "boss_package_ad") {
+        return { width: 440, height: 430 };
+      }
+      if (def.type === "system_notice") {
+        return { width: 260, height: 120 };
+      }
+      return { width: 252, height: 132 };
+    }
+
+    function popupRectFromElement(popup) {
+      const fallbackSize = popupSizeFor(popup.def);
+      return {
+        x: Number.parseFloat(popup.element.style.left) || 0,
+        y: Number.parseFloat(popup.element.style.top) || 0,
+        w: popup.element.offsetWidth || fallbackSize.width,
+        h: popup.element.offsetHeight || fallbackSize.height
+      };
+    }
+
+    function overlapSize(a, b) {
+      return {
+        w: Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)),
+        h: Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+      };
+    }
+
+    function popupOverlapConflict(rect, ignoreId) {
+      for (const popup of state.openPopups) {
+        if (popup.id === ignoreId) {
+          continue;
+        }
+
+        const other = popupRectFromElement(popup);
+        const overlap = overlapSize(rect, other);
+        const maxWidth = Math.min(rect.w, other.w) * CONFIG.popupOverlapMaxWidthRatio;
+        const maxHeight = Math.min(rect.h, other.h) * CONFIG.popupOverlapMaxHeightRatio;
+        if (overlap.w > maxWidth && overlap.h > maxHeight) {
+          return { other, overlap, maxWidth, maxHeight };
+        }
+      }
+      return null;
+    }
+
+    function popupPlacementScore(rect, safeRect, ignoreId) {
+      let score = rectsOverlap(rect, safeRect) ? 100000 : 0;
+      for (const popup of state.openPopups) {
+        if (popup.id === ignoreId) {
+          continue;
+        }
+
+        const other = popupRectFromElement(popup);
+        const overlap = overlapSize(rect, other);
+        const maxWidth = Math.min(rect.w, other.w) * CONFIG.popupOverlapMaxWidthRatio;
+        const maxHeight = Math.min(rect.h, other.h) * CONFIG.popupOverlapMaxHeightRatio;
+        const excessWidth = Math.max(0, overlap.w - maxWidth);
+        const excessHeight = Math.max(0, overlap.h - maxHeight);
+        score += excessWidth * excessHeight;
+      }
+      return score;
+    }
+
+    function pushRectOutOfPopupOverlap(rect, margin, layerWidth, layerHeight, ignoreId) {
+      const moved = { ...rect };
+      for (let i = 0; i < 10; i += 1) {
+        const conflict = popupOverlapConflict(moved, ignoreId);
+        if (!conflict) {
+          break;
+        }
+
+        const centerX = moved.x + moved.w / 2;
+        const centerY = moved.y + moved.h / 2;
+        const otherCenterX = conflict.other.x + conflict.other.w / 2;
+        const otherCenterY = conflict.other.y + conflict.other.h / 2;
+        const pushX = conflict.overlap.w - conflict.maxWidth + 10;
+        const pushY = conflict.overlap.h - conflict.maxHeight + 10;
+
+        if (pushX <= pushY) {
+          moved.x += centerX >= otherCenterX ? pushX : -pushX;
+        } else {
+          moved.y += centerY >= otherCenterY ? pushY : -pushY;
+        }
+
+        moved.x = clamp(moved.x, margin, Math.max(margin, layerWidth - moved.w - margin));
+        moved.y = clamp(moved.y, margin, Math.max(margin, layerHeight - moved.h - margin));
+      }
+      return moved;
+    }
+
+    function choosePopupPosition(width, height) {
+      const layerWidth = popupLayer.clientWidth || CONFIG.canvasWidth;
+      const layerHeight = popupLayer.clientHeight || CONFIG.canvasHeight;
+      const safeScale = Math.max(0.5, 1 + state.stats.safeZoneMultiplier);
+      const safeWidth = layerWidth * CONFIG.centralSafeZoneWidthRatio * safeScale;
+      const safeHeight = layerHeight * CONFIG.centralSafeZoneHeightRatio * safeScale;
+      const playerScreen = worldToScreen(state.player);
+      const centerX = clamp(playerScreen.x, 0, layerWidth);
+      const centerY = clamp(playerScreen.y, 0, layerHeight);
+      const safeRect = {
+        x: centerX - safeWidth / 2,
+        y: centerY - safeHeight / 2,
+        w: safeWidth,
+        h: safeHeight
+      };
+      const margin = 12;
+
+      const candidates = [
+        () => ({ x: randomRange(margin, layerWidth * 0.28), y: randomRange(margin, layerHeight * 0.25) }),
+        () => ({ x: randomRange(layerWidth * 0.66, layerWidth - width - margin), y: randomRange(margin, layerHeight * 0.25) }),
+        () => ({ x: randomRange(margin, layerWidth * 0.28), y: randomRange(layerHeight * 0.66, layerHeight - height - margin) }),
+        () => ({ x: randomRange(layerWidth * 0.66, layerWidth - width - margin), y: randomRange(layerHeight * 0.66, layerHeight - height - margin) }),
+        () => ({ x: randomRange(margin, layerWidth - width - margin), y: randomRange(margin, layerHeight * 0.16) }),
+        () => ({ x: randomRange(margin, layerWidth - width - margin), y: randomRange(layerHeight * 0.82, layerHeight - height - margin) })
+      ];
+
+      let best = null;
+      let bestScore = Infinity;
+
+      for (let i = 0; i < 40; i += 1) {
+        const candidate = candidates[i % candidates.length]();
+        const x = clamp(candidate.x, margin, layerWidth - width - margin);
+        const y = clamp(candidate.y, margin, layerHeight - height - margin);
+        const pushed = pushRectOutOfPopupOverlap({ x, y, w: width, h: height }, margin, layerWidth, layerHeight);
+        const score = popupPlacementScore(pushed, safeRect);
+
+        if (score < bestScore) {
+          best = pushed;
+          bestScore = score;
+        }
+
+        if (score === 0) {
+          return { x: pushed.x, y: pushed.y };
+        }
+      }
+
+      if (best) {
+        return { x: best.x, y: best.y };
+      }
+
+      const fallback = pushRectOutOfPopupOverlap({
+        x: clamp(layerWidth - width - margin, margin, layerWidth - width - margin),
+        y: margin,
+        w: width,
+        h: height
+      }, margin, layerWidth, layerHeight);
+      return { x: fallback.x, y: fallback.y };
+    }
+
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function initializePopupRuntimeState(popup) {
+      if (popup.def.type === "interest_offer") {
+        popup.interestAccepted = false;
+        popup.interestMatured = false;
+        popup.depositOptions = [
+          { label: "소액 예치", ratio: 0.25, bonus: 0.2 },
+          { label: "중간 예치", ratio: 0.5, bonus: 0.35 },
+          { label: "대형 예치", ratio: 0.75, bonus: 0.55 }
+        ];
+        popup.interestPrincipal = 0;
+        popup.interestPayout = 0;
+        popup.interestMaturityType = "time";
+        popup.interestMaturityTarget = 24;
+        popup.interestMaturityProgress = 0;
+        popup.interestStartKills = state.killCount;
+      }
+
+      if (popup.def.type === "popup_store") {
+        popup.storeProducts = buildPopupStoreProducts();
+      }
+
+      if (popup.def.type === "boss_package_ad") {
+        popup.bossPackageTier = popup.def.tier || 1;
+        popup.bossPackageCost = popup.def.packageCost || bossPackageCost(popup.bossPackageTier);
+        popup.bossPackageItems = popup.def.packageItems || chooseBossPackageItems();
+      }
+
+      if (popup.def.type === "sponsored_ad") {
+        popup.sponsoredElapsed = 0;
+        popup.sponsoredCompleted = false;
+      }
+
+      if (popup.def.type === "recurring_investment") {
+        popup.investment = {
+          accepted: false,
+          elapsed: 0,
+          duration: popup.def.duration || 30,
+          accumulated: 0,
+          redirectRatio: popup.def.redirectRatio || 0.3,
+          maturityBonus: popup.def.maturityBonus || 0.3,
+          matured: false
+        };
+      }
+
+      if (popup.def.type === "loan_offer") {
+        popup.loan = {
+          accepted: false,
+          resolved: false,
+          elapsed: 0,
+          ...loanTermsByCredit(state.creditScore)
+        };
+      }
+
+      if (popup.def.type === "stock_market") {
+        popup.stock = {
+          invested: false,
+          principal: 0,
+          currentValue: 0,
+          elapsed: 0,
+          tickTimer: 1,
+          volatility: popup.def.volatility || 0.06,
+          drift: popup.def.drift || 0.003,
+          lastTrend: "대기 중"
+        };
+      }
+
+      if (popup.def.type === "clean_challenge") {
+        popup.cleanProgress = 0;
+        popup.cleanElapsed = 0;
+      }
+
+      if (popup.def.type === "volatile_popup") {
+        popup.volatileElapsed = 0;
+        popup.volatileExpired = false;
+      }
+    }
+
+    function createPopup(def) {
+      const size = popupSizeFor(def);
+      const pos = choosePopupPosition(size.width, size.height);
+      const id = popupIdSeed++;
+      const popup = {
+        id,
+        def,
+        elapsed: 0,
+        rewarded: false,
+        element: document.createElement("div")
+      };
+      initializePopupRuntimeState(popup);
+
+      popup.element.className = "popupWindow " + def.type;
+      popup.element.style.width = size.width + "px";
+      popup.element.style.left = pos.x + "px";
+      popup.element.style.top = pos.y + "px";
+      popup.element.style.zIndex = (++zSeed).toString();
+      popup.element.dataset.popupId = String(id);
+
+      const titleBar = document.createElement("div");
+      titleBar.className = "titleBar";
+      titleBar.innerHTML = "<span>" + def.title + "</span>";
+
+      const close = document.createElement("button");
+      close.className = "popupClose";
+      close.type = "button";
+      close.textContent = "x";
+      close.addEventListener("click", event => {
+        event.stopPropagation();
+        requestClosePopup(id);
+      });
+      if (def.type !== "trash_drag") {
+        titleBar.appendChild(close);
+      }
+
+      const body = document.createElement("div");
+      body.className = "popupBody";
+      body.appendChild(document.createTextNode(def.body));
+      buildPopupControls(def, body, id, popup);
+
+      popup.element.append(titleBar, body);
+      popup.element.addEventListener("mousedown", () => bringPopupToFront(popup));
+      attachDrag(popup, titleBar);
+
+      state.openPopups.push(popup);
+      popupLayer.appendChild(popup.element);
+    }
+
+    function createSystemGrowthPopup(title, detail) {
+      createPopup({
+        id: "system_notice_" + Date.now(),
+        title: "성장 알림",
+        body: title + "\n" + detail,
+        type: "system_notice",
+        category: "system",
+        autoClose: 3.4,
+        weight: 0
+      });
+    }
+
+    function isPopupLocked(popup) {
+      return Boolean(
+        (popup.def.type === "interest_offer" && popup.interestAccepted && !popup.interestMatured) ||
+        (popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured) ||
+        (popup.def.type === "loan_offer" && popup.loan?.accepted && !popup.loan?.resolved) ||
+        (popup.def.type === "stock_market" && popup.stock?.invested)
+      );
+    }
+
+    function requestClosePopup(id) {
+      const popup = state.openPopups.find(item => item.id === id);
+      if (popup && isPopupLocked(popup)) {
+        createSystemGrowthPopup("정산 필요", "돈이 걸린 팝업은 내부의 정산/상환/매도 버튼으로 처리해야 닫을 수 있습니다.");
+        return;
+      }
+      closePopup(id);
+    }
+
+    function renderInterestOfferControls(body, popup) {
+      const summary = document.createElement("div");
+      summary.style.marginTop = "8px";
+
+      if (!popup.interestAccepted) {
+        summary.innerHTML =
+          "<strong>현재 골드 비율 예치</strong><br>" +
+          "만기 조건: " + interestMaturityText(popup) + "<br>" +
+          "중도 해지 시 원금 40%만 반환, 신용도 감소";
+        const warning = document.createElement("div");
+        warning.className = "popupWarning";
+        warning.textContent = "수락 전에는 손실 없이 닫을 수 있습니다. 수락 후에는 정산 전까지 잠깁니다.";
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+
+        for (const option of popup.depositOptions) {
+          const principal = Math.floor(state.gold * option.ratio);
+          const payout = Math.round(principal * (1 + option.bonus));
+          const accept = document.createElement("button");
+          accept.type = "button";
+          accept.className = "interestAcceptButton";
+          accept.dataset.ratio = String(option.ratio);
+          accept.dataset.bonus = String(option.bonus);
+          accept.dataset.label = option.label;
+          accept.dataset.cost = String(principal);
+          accept.textContent = option.label + " - " + principal + "G -> " + payout + "G";
+          accept.disabled = principal < 30 || state.gold < principal;
+          accept.addEventListener("click", () => acceptInterestOffer(popup.id, option));
+          controls.appendChild(accept);
+        }
+
+        const reject = document.createElement("button");
+        reject.type = "button";
+        reject.textContent = "닫기";
+        reject.addEventListener("click", () => closePopup(popup.id));
+
+        controls.appendChild(reject);
+        body.append(summary, warning, controls);
+        return;
+      }
+
+      summary.innerHTML =
+        "<strong>예치금 " + popup.interestPrincipal + "G</strong><br>" +
+        "만기 조건: " + interestMaturityText(popup) + "<br>" +
+        "만기 지급: " + interestPayout(popup) + "G";
+
+      const warning = document.createElement("div");
+      warning.className = "popupWarning";
+      warning.textContent = "예치 완료. 만기 전 중도 해지하면 원금 40%만 반환됩니다.";
+
+      const progress = document.createElement("div");
+      progress.className = "popupProgress";
+      progress.innerHTML = "<div class=\"popupProgressFill interestProgressFill\"></div>";
+
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const label = document.createElement("strong");
+      label.className = "interestProgressLabel";
+      label.textContent = "0 / " + popup.interestMaturityTarget;
+
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "중도 해지";
+      cancel.addEventListener("click", () => {
+        if (confirm("중도 해지 시 예치 원금 40%만 반환됩니다. 해지하시겠습니까?")) {
+          cancelInterestOffer(popup);
+          closePopup(popup.id);
+        }
+      });
+
+      controls.append(label, cancel);
+      body.append(summary, warning, progress, controls);
+      updateInterestPopupUI(popup);
+    }
+
+    function renderPopupStoreControls(body, popup) {
+      const timer = document.createElement("div");
+      timer.className = "popupProgress";
+      timer.innerHTML = "<div class=\"popupProgressFill storeProgressFill\"></div>";
+
+      const note = document.createElement("div");
+      note.className = "popupWarning";
+      note.textContent = "구매하면 미확인 아이템 1개를 즉시 얻습니다. 팝업 스토어는 Heat를 올리지 않습니다.";
+
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+
+      for (const product of popup.storeProducts) {
+        const cost = popupStorePrice(product);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "popupProduct popupStoreButton";
+        button.dataset.cost = String(cost);
+        button.innerHTML = rarityBadge(product.rarity) + " " + product.label + " - " + cost + "G";
+        button.disabled = state.gold < cost;
+        button.addEventListener("click", () => purchasePopupStoreItem(popup.id, product));
+        controls.appendChild(button);
+      }
+
+      body.append(timer, note, controls);
+    }
+
+    function renderBossPackageControls(body, popup) {
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+      summary.innerHTML =
+        "패키지 가격: <strong>" + popup.bossPackageCost + "G</strong><br>" +
+        "선결제 후 별도 선택 화면에서 아이템 6개 중 2개를 고릅니다.";
+
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const pay = document.createElement("button");
+      pay.type = "button";
+      pay.className = "bossPackagePayButton";
+      pay.textContent = "결제하고 보상 선택 - " + popup.bossPackageCost + "G";
+      pay.dataset.cost = String(popup.bossPackageCost);
+      pay.disabled = state.gold < popup.bossPackageCost;
+      pay.addEventListener("click", () => purchaseBossPackage(popup.id));
+      controls.append(pay);
+
+      body.append(summary, controls);
+    }
+
+    function sponsoredRewardText(reward) {
+      if (reward.type === "gold") return reward.value + "G";
+      if (reward.type === "itemDiscount") return "다음 아이템 비용 -" + Math.round(reward.value * 100) + "%";
+      if (reward.type === "freeSampleItem") return (reward.rarity || "Common") + " 샘플 x" + (reward.count || 1);
+      if (reward.type === "extraItemChoice") return "다음 아이템 선택지 +" + (reward.value || 1);
+      return reward.type;
+    }
+
+    function renderSponsoredAdControls(body, popup) {
+      const def = popup.def;
+      const progress = document.createElement("div");
+      progress.className = "popupProgress";
+      progress.innerHTML = "<div class=\"popupProgressFill sponsoredProgressFill\"></div>";
+
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+      const buffs = (def.ongoingBuffs || []).map(buff => itemStatLabel(buff.stat) + " " + formatSignedPercent(buff.value)).join(", ");
+      const rewards = (def.completionRewards || []).map(sponsoredRewardText).join(", ");
+      summary.innerHTML =
+        (buffs ? "열려 있는 동안: <strong>" + buffs + "</strong><br>" : "") +
+        (rewards ? "완료 보상: <strong>" + rewards + "</strong><br>" : "") +
+        "Heat 없음. 중간에 닫으면 완료 보상은 취소됩니다.";
+
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const label = document.createElement("strong");
+      label.className = "sponsoredTimeLabel";
+      label.textContent = (def.duration || 18).toFixed(1) + "초";
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "닫기";
+      close.addEventListener("click", () => closePopup(popup.id));
+
+      controls.append(label, close);
+      body.append(summary, progress, controls);
+    }
+
+    function rerenderPopupBody(popup, renderer) {
+      const body = popup.element.querySelector(".popupBody");
+      if (!body) {
+        return;
+      }
+      body.replaceChildren(document.createTextNode(popup.def.body));
+      renderer(body, popup);
+    }
+
+    function renderRecurringInvestmentControls(body, popup) {
+      const investment = popup.investment;
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+
+      if (!investment.accepted) {
+        summary.innerHTML =
+          "수락 후 " + investment.duration + "초 동안 새로 얻는 골드의 " + Math.round(investment.redirectRatio * 100) + "%를 자동 투자합니다.<br>" +
+          "만기 시 적립액 +" + Math.round(investment.maturityBonus * 100) + "%를 돌려받습니다. Heat 없음.";
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        const accept = document.createElement("button");
+        accept.type = "button";
+        accept.textContent = "자동 적립 시작";
+        accept.addEventListener("click", () => acceptRecurringInvestment(popup.id));
+        const close = document.createElement("button");
+        close.type = "button";
+        close.textContent = "닫기";
+        close.addEventListener("click", () => closePopup(popup.id));
+        controls.append(accept, close);
+        body.append(summary, controls);
+        return;
+      }
+
+      summary.innerHTML =
+        "적립 중: 새 골드의 " + Math.round(investment.redirectRatio * 100) + "% 자동 예치<br>" +
+        "현재 적립: <strong class=\"recurringAccumulatedLabel\">" + investment.accumulated + "G</strong>";
+      const progress = document.createElement("div");
+      progress.className = "popupProgress";
+      progress.innerHTML = "<div class=\"popupProgressFill recurringProgressFill\"></div>";
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const label = document.createElement("strong");
+      label.className = "recurringTimeLabel";
+      label.textContent = Math.max(0, investment.duration - investment.elapsed).toFixed(1) + "초";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "중도 해지";
+      cancel.addEventListener("click", () => cancelRecurringInvestment(popup));
+      controls.append(label, cancel);
+      body.append(summary, progress, controls);
+      updateRecurringInvestmentUI(popup);
+    }
+
+    function acceptRecurringInvestment(popupId) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || popup.investment.accepted || state.gameOver) {
+        return;
+      }
+      popup.investment.accepted = true;
+      popup.investment.elapsed = 0;
+      addCreditScore(2, "자동 적립 투자 시작");
+      rerenderPopupBody(popup, renderRecurringInvestmentControls);
+      updateUI();
+    }
+
+    function updateRecurringInvestmentUI(popup) {
+      const investment = popup.investment;
+      const ratio = clamp(investment.elapsed / investment.duration, 0, 1);
+      const progress = popup.element.querySelector(".recurringProgressFill");
+      const label = popup.element.querySelector(".recurringTimeLabel");
+      const accumulated = popup.element.querySelector(".recurringAccumulatedLabel");
+      if (progress) {
+        progress.style.width = (ratio * 100).toFixed(1) + "%";
+        progress.style.background = "#35a866";
+      }
+      if (label) {
+        label.textContent = Math.max(0, investment.duration - investment.elapsed).toFixed(1) + "초";
+      }
+      if (accumulated) {
+        accumulated.textContent = investment.accumulated + "G";
+      }
+    }
+
+    function completeRecurringInvestment(popup) {
+      if (!popup || popup.investment.matured) {
+        return;
+      }
+      const investment = popup.investment;
+      investment.matured = true;
+      const payout = Math.round(investment.accumulated * (1 + investment.maturityBonus));
+      state.investedGold = Math.max(0, state.investedGold - investment.accumulated);
+      if (payout > 0) {
+        addGold(payout, "investmentPayout");
+      }
+      addCreditScore(7, "자동 적립 투자 만기");
+      closePopup(popup.id);
+    }
+
+    function cancelRecurringInvestment(popup) {
+      if (!popup || !popup.investment.accepted || popup.investment.matured) {
+        return;
+      }
+      const investment = popup.investment;
+      investment.matured = true;
+      const refund = Math.floor(investment.accumulated * 0.6);
+      state.investedGold = Math.max(0, state.investedGold - investment.accumulated);
+      if (refund > 0) {
+        addGold(refund, "investmentPayout");
+      }
+      addCreditScore(-5, "자동 적립 중도 해지");
+      closePopup(popup.id);
+    }
+
+    function renderLoanControls(body, popup) {
+      const loan = popup.loan;
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+
+      if (!loan.accepted) {
+        summary.innerHTML =
+          "신용 등급: <strong>" + creditGrade(state.creditScore) + "</strong><br>" +
+          "즉시 수령: " + loan.receive + "G / 상환액: " + loan.repay + "G / 기한: " + loan.deadline + "초";
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        const accept = document.createElement("button");
+        accept.type = "button";
+        accept.textContent = "대출 받기 +" + loan.receive + "G";
+        accept.addEventListener("click", () => acceptLoan(popup.id));
+        const close = document.createElement("button");
+        close.type = "button";
+        close.textContent = "닫기";
+        close.addEventListener("click", () => closePopup(popup.id));
+        controls.append(accept, close);
+        body.append(summary, controls);
+        return;
+      }
+
+      summary.innerHTML =
+        "상환 필요: <strong>" + loan.repay + "G</strong><br>" +
+        "미상환 시 보유 골드 절반 손실, 30초간 아이템 가격 +20%, 신용도 하락";
+      const progress = document.createElement("div");
+      progress.className = "popupProgress";
+      progress.innerHTML = "<div class=\"popupProgressFill loanProgressFill\"></div>";
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const label = document.createElement("strong");
+      label.className = "loanTimeLabel";
+      label.textContent = Math.max(0, loan.deadline - loan.elapsed).toFixed(1) + "초";
+      const repay = document.createElement("button");
+      repay.type = "button";
+      repay.className = "loanRepayButton";
+      repay.dataset.cost = String(loan.repay);
+      repay.textContent = "상환 - " + loan.repay + "G";
+      repay.disabled = state.gold < loan.repay;
+      repay.addEventListener("click", () => repayLoan(popup.id));
+      controls.append(label, repay);
+      body.append(summary, progress, controls);
+      updateLoanUI(popup);
+    }
+
+    function acceptLoan(popupId) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || popup.loan.accepted || state.gameOver) {
+        return;
+      }
+      popup.loan.accepted = true;
+      popup.loan.elapsed = 0;
+      addGold(popup.loan.receive, "loan");
+      state.debtGold += popup.loan.repay;
+      rerenderPopupBody(popup, renderLoanControls);
+      updateUI();
+    }
+
+    function updateLoanUI(popup) {
+      const loan = popup.loan;
+      const ratio = clamp(loan.elapsed / loan.deadline, 0, 1);
+      const progress = popup.element.querySelector(".loanProgressFill");
+      const label = popup.element.querySelector(".loanTimeLabel");
+      if (progress) {
+        progress.style.width = (ratio * 100).toFixed(1) + "%";
+        progress.style.background = ratio > 0.75 ? "#d84e4e" : "#35a866";
+      }
+      if (label) {
+        label.textContent = Math.max(0, loan.deadline - loan.elapsed).toFixed(1) + "초";
+      }
+    }
+
+    function repayLoan(popupId) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || !popup.loan.accepted || popup.loan.resolved || state.gold < popup.loan.repay) {
+        return;
+      }
+      state.gold -= popup.loan.repay;
+      state.debtGold = Math.max(0, state.debtGold - popup.loan.repay);
+      popup.loan.resolved = true;
+      addCreditScore(9, "대출 정상 상환");
+      closePopup(popup.id);
+    }
+
+    function defaultLoan(popup) {
+      if (!popup || popup.loan.resolved) {
+        return;
+      }
+      popup.loan.resolved = true;
+      state.debtGold = Math.max(0, state.debtGold - popup.loan.repay);
+      state.gold = Math.floor(state.gold * 0.5);
+      state.timedEffects.push({ stat: "debtItemCostMultiplier", value: 0.2, remaining: 30 });
+      addCreditScore(-18, "대출 미상환");
+      closePopup(popup.id);
+    }
+
+    function renderStockControls(body, popup) {
+      const stock = popup.stock;
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+
+      if (!stock.invested) {
+        summary.innerHTML =
+          "변동성: " + Math.round(stock.volatility * 100) + "% / 기대 흐름: " + formatSignedPercent(stock.drift) + "<br>" +
+          "투자 후 매도 전까지 창이 잠깁니다.";
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        for (const principal of popup.def.principalOptions || [50, 100, 150]) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "stockInvestButton";
+          button.dataset.cost = String(principal);
+          button.textContent = principal + "G 투자";
+          button.disabled = state.gold < principal;
+          button.addEventListener("click", () => investStock(popup.id, principal));
+          controls.appendChild(button);
+        }
+        const close = document.createElement("button");
+        close.type = "button";
+        close.textContent = "닫기";
+        close.addEventListener("click", () => closePopup(popup.id));
+        controls.appendChild(close);
+        body.append(summary, controls);
+        return;
+      }
+
+      summary.innerHTML =
+        "원금: " + stock.principal + "G<br>" +
+        "현재 평가액: <strong class=\"stockValueLabel\">" + Math.floor(stock.currentValue) + "G</strong><br>" +
+        "흐름: <span class=\"stockTrendLabel\">" + stock.lastTrend + "</span>";
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const sell = document.createElement("button");
+      sell.type = "button";
+      sell.textContent = "매도";
+      sell.addEventListener("click", () => sellStock(popup.id));
+      controls.appendChild(sell);
+      body.append(summary, controls);
+      updateStockUI(popup);
+    }
+
+    function investStock(popupId, principal) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || popup.stock.invested || state.gold < principal || state.gameOver) {
+        return;
+      }
+      state.gold -= principal;
+      state.investedGold += principal;
+      popup.stock.invested = true;
+      popup.stock.principal = principal;
+      popup.stock.currentValue = principal;
+      popup.stock.elapsed = 0;
+      popup.stock.tickTimer = 0;
+      popup.stock.lastTrend = "매수 완료";
+      rerenderPopupBody(popup, renderStockControls);
+      updateUI();
+    }
+
+    function updateStockUI(popup) {
+      const stock = popup.stock;
+      const value = popup.element.querySelector(".stockValueLabel");
+      const trend = popup.element.querySelector(".stockTrendLabel");
+      if (value) {
+        value.textContent = Math.floor(stock.currentValue) + "G";
+      }
+      if (trend) {
+        trend.textContent = stock.lastTrend;
+      }
+    }
+
+    function sellStock(popupId) {
+      const popup = state.openPopups.find(item => item.id === popupId);
+      if (!popup || !popup.stock.invested) {
+        return;
+      }
+      const stock = popup.stock;
+      const payout = Math.max(1, Math.floor(stock.currentValue));
+      const profit = payout - stock.principal;
+      state.investedGold = Math.max(0, state.investedGold - stock.principal);
+      addGold(payout, "stock");
+      if (profit >= 0) {
+        addCreditScore(5, "주식 수익 매도");
+      } else {
+        addCreditScore(-8, "주식 손실 매도");
+        if (popup.def.cursedLossHeat) {
+          state.heat += popup.def.cursedLossHeat;
+        }
+      }
+      stock.invested = false;
+      closePopup(popup.id);
+    }
+
+    function renderCleanChallengeControls(body, popup) {
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+      summary.innerHTML =
+        "목표: 열린 팝업 " + popup.def.targetOpenPopups + "개 이하를 " + popup.def.duration + "초 유지<br>" +
+        "보상: 다음 아이템 비용 -" + Math.round((popup.def.reward?.value || 0) * 100) + "%";
+      const progress = document.createElement("div");
+      progress.className = "popupProgress";
+      progress.innerHTML = "<div class=\"popupProgressFill cleanProgressFill\"></div>";
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const label = document.createElement("strong");
+      label.className = "cleanProgressLabel";
+      label.textContent = "0.0 / " + popup.def.duration + "초";
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "포기";
+      close.addEventListener("click", () => closePopup(popup.id));
+      controls.append(label, close);
+      body.append(summary, progress, controls);
+    }
+
+    function updateCleanChallengeUI(popup) {
+      const duration = popup.def.duration || 10;
+      const ratio = clamp(popup.cleanProgress / duration, 0, 1);
+      const progress = popup.element.querySelector(".cleanProgressFill");
+      const label = popup.element.querySelector(".cleanProgressLabel");
+      if (progress) {
+        progress.style.width = (ratio * 100).toFixed(1) + "%";
+        progress.style.background = "#49a7c7";
+      }
+      if (label) {
+        label.textContent = Math.min(popup.cleanProgress, duration).toFixed(1) + " / " + duration + "초";
+      }
+    }
+
+    function completeCleanChallenge(popup) {
+      if (!popup || popup.cleanCompleted) {
+        return;
+      }
+      popup.cleanCompleted = true;
+      applyRewardEffect(popup.def.reward || { type: "itemDiscount", value: 0.2, uses: 1 });
+      addCreditScore(3, "청소 의뢰 완료");
+      closePopup(popup.id);
+    }
+
+    function renderVolatileControls(body, popup) {
+      const summary = document.createElement("div");
+      summary.className = "popupWarning";
+      summary.innerHTML =
+        "시간 안에 닫기: 주변 " + popup.def.closeRadius + "px 적에게 " + popup.def.closeDamage + " 피해<br>" +
+        "시간 초과: 기본 팝업이 추가로 생길 수 있습니다.";
+      const progress = document.createElement("div");
+      progress.className = "popupProgress";
+      progress.innerHTML = "<div class=\"popupProgressFill volatileProgressFill\"></div>";
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const label = document.createElement("strong");
+      label.className = "volatileTimeLabel";
+      label.textContent = (popup.def.duration || 8).toFixed(1) + "초";
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "지금 닫기";
+      close.addEventListener("click", () => closePopup(popup.id));
+      controls.append(label, close);
+      body.append(summary, progress, controls);
+    }
+
+    function updateVolatileUI(popup) {
+      const duration = popup.def.duration || 8;
+      const ratio = clamp(popup.volatileElapsed / duration, 0, 1);
+      const progress = popup.element.querySelector(".volatileProgressFill");
+      const label = popup.element.querySelector(".volatileTimeLabel");
+      if (progress) {
+        progress.style.width = (ratio * 100).toFixed(1) + "%";
+        progress.style.background = ratio > 0.72 ? "#d84e4e" : "#df6c36";
+      }
+      if (label) {
+        label.textContent = Math.max(0, duration - popup.volatileElapsed).toFixed(1) + "초";
+      }
+    }
+
+    function triggerVolatilePopupClose(popup) {
+      const radius = popup.def.closeRadius || 150;
+      const damage = popup.def.closeDamage || 25;
+      state.metrics.volatileClosures += 1;
+      addCircleAttack(state.player.x, state.player.y, radius, "rgba(255, 136, 72, ", 0.2);
+      for (const enemy of state.enemies) {
+        if (!enemy.dead && distance(enemy, state.player) <= radius + enemy.radius) {
+          damageEnemy(enemy, damage, null);
+        }
+      }
+    }
+
+    function buildPopupControls(def, body, id, popup) {
+      if (def.type === "basic") {
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "닫기";
+        button.addEventListener("click", () => closePopup(id));
+        controls.appendChild(button);
+        body.appendChild(controls);
+      }
+
+      if (def.type === "ad_buff") {
+        const note = document.createElement("div");
+        note.style.marginTop = "8px";
+        note.style.fontWeight = "800";
+        note.textContent = "이 창이 열려 있는 동안 효과가 유지됩니다.";
+        body.appendChild(note);
+      }
+
+      if (def.type === "sponsored_ad") {
+        renderSponsoredAdControls(body, popup);
+      }
+
+      if (def.type === "timed_reward") {
+        const progress = document.createElement("div");
+        progress.className = "popupProgress";
+        progress.innerHTML = "<div class=\"popupProgressFill\"></div>";
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        const label = document.createElement("strong");
+        label.className = "timerLabel";
+        label.textContent = timedRewardDuration(def).toFixed(1) + "초";
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.textContent = "취소";
+        cancel.addEventListener("click", () => closePopup(id));
+        controls.append(label, cancel);
+        body.append(progress, controls);
+      }
+
+      if (def.type === "terms") {
+        const clause = document.createElement("label");
+        clause.className = "termsClause";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = true;
+        checkbox.className = "termsDangerCheck";
+        const text = document.createElement("span");
+        text.textContent = def.dangerClauseText || "위험 조항에 동의합니다.";
+        clause.append(checkbox, text);
+
+        const note = document.createElement("div");
+        note.className = "popupWarning";
+        note.innerHTML =
+          "체크 상태로 수락: 높은 보상 + 위험 패널티 + Heat 증가<br>" +
+          "체크 해제 후 수락: 낮은 보상, 패널티 없음";
+
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+
+        const accept = document.createElement("button");
+        accept.type = "button";
+        accept.textContent = "수락";
+        accept.addEventListener("click", () => {
+          const popup = state.openPopups.find(item => item.id === id);
+          const checked = popup ? popup.element.querySelector(".termsDangerCheck").checked : true;
+          acceptTermsPopup(id, def, checked);
+        });
+
+        const reject = document.createElement("button");
+        reject.type = "button";
+        reject.textContent = "거절";
+        reject.addEventListener("click", () => closePopup(id));
+
+        controls.append(accept, reject);
+        body.append(clause, note, controls);
+      }
+
+      if (def.type === "infection") {
+        const progress = document.createElement("div");
+        progress.className = "popupProgress";
+        progress.innerHTML = "<div class=\"popupProgressFill\"></div>";
+        const note = document.createElement("div");
+        note.style.marginTop = "8px";
+        note.style.fontWeight = "800";
+        note.textContent = "초록 막대가 차면 팝업을 퍼뜨립니다.";
+        body.append(progress, note);
+      }
+
+      if (def.type === "trash_drag") {
+        const note = document.createElement("div");
+        note.style.marginTop = "8px";
+        note.style.fontWeight = "800";
+        note.textContent = "아래쪽 쓰레기통 영역에 놓으면 제거됩니다.";
+        body.appendChild(note);
+      }
+
+      if (def.type === "interest_offer") {
+        renderInterestOfferControls(body, popup);
+      }
+
+      if (def.type === "recurring_investment") {
+        renderRecurringInvestmentControls(body, popup);
+      }
+
+      if (def.type === "loan_offer") {
+        renderLoanControls(body, popup);
+      }
+
+      if (def.type === "stock_market") {
+        renderStockControls(body, popup);
+      }
+
+      if (def.type === "clean_challenge") {
+        renderCleanChallengeControls(body, popup);
+      }
+
+      if (def.type === "volatile_popup") {
+        renderVolatileControls(body, popup);
+      }
+
+      if (def.type === "popup_store") {
+        renderPopupStoreControls(body, popup);
+      }
+
+      if (def.type === "boss_package_ad") {
+        renderBossPackageControls(body, popup);
+      }
+
+      if (def.type === "system_notice") {
+        const note = document.createElement("div");
+        note.style.marginTop = "8px";
+        note.textContent = "적용 완료. 이 알림은 곧 사라집니다.";
+        body.appendChild(note);
+      }
+
+      if (def.type === "first_purchase_package") {
+        const intro = document.createElement("div");
+        intro.style.marginTop = "8px";
+        intro.style.fontWeight = "800";
+        intro.textContent = "런 초반 빌드 방향을 정하는 계약입니다. 실제 결제가 아니라 인게임 골드만 사용합니다.";
+        body.appendChild(intro);
+
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+
+        const pay = document.createElement("button");
+        const cost = FIRST_PURCHASE_PACKAGES[0]?.cost || 10;
+        pay.type = "button";
+        pay.className = "firstPurchaseButton";
+        pay.dataset.cost = String(cost);
+        pay.textContent = "인게임 첫 결제 - " + cost + "G";
+        pay.disabled = state.gold < cost || state.firstPurchasePaid;
+        pay.addEventListener("click", () => completeFirstPurchasePayment(id));
+
+        const reject = document.createElement("button");
+        reject.type = "button";
+        reject.textContent = "거절";
+        reject.addEventListener("click", () => rejectFirstPurchasePackage(id));
+        controls.append(pay, reject);
+        body.appendChild(controls);
+      }
+    }
+
+    function bringPopupToFront(popup) {
+      popup.element.style.zIndex = (++zSeed).toString();
+    }
+
+    function attachDrag(popup, titleBar) {
+      titleBar.addEventListener("pointerdown", event => {
+        if (event.pointerType === "mouse" && event.button !== 0) {
+          return;
+        }
+        bringPopupToFront(popup);
+        const rect = popup.element.getBoundingClientRect();
+        const shellRect = shell.getBoundingClientRect();
+        state.draggingPopup = {
+          popup,
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          originX: rect.left - shellRect.left,
+          originY: rect.top - shellRect.top
+        };
+        if (titleBar.setPointerCapture) {
+          titleBar.setPointerCapture(event.pointerId);
+        }
+        event.preventDefault();
+      });
+    }
+
+    function closePopup(id) {
+      const index = state.openPopups.findIndex(popup => popup.id === id);
+      if (index < 0) {
+        return;
+      }
+      const popup = state.openPopups[index];
+      if (popup.def.type === "interest_offer" && popup.interestAccepted && !popup.interestMatured) {
+        cancelInterestOffer(popup);
+      }
+      if (popup.def.type === "volatile_popup" && !popup.volatileExpired) {
+        triggerVolatilePopupClose(popup);
+      }
+      popup.element.remove();
+      state.openPopups.splice(index, 1);
+      if (!state.gameOver && popup.def.category !== "system") {
+        addGold(state.stats.goldPerPopupClose, "popupClose");
+        applyPopupCloseDamage();
+        checkLevelUp();
+      }
+      if (!state.gameOver && popup.def.category !== "system" && state.moduleSynergy === "popup_trigger") {
+        triggerModuleAttack("primary", true);
+      }
+    }
+
+    function emergencyCloseOldestPopup() {
+      if (state.gameOver || state.selectingItem || state.selectingPerk || state.selectingModule || state.openPopups.length === 0 || state.emergencyTimer > 0 || state.stats.emergencyCloseDisabled > 0) {
+        return;
+      }
+      const target = state.stats.smartEmergencyClose > 0
+        ? (state.openPopups.find(popup => popup.def.type !== "basic" && !isPopupLocked(popup)) || state.openPopups.find(popup => !isPopupLocked(popup)))
+        : state.openPopups.find(popup => !isPopupLocked(popup));
+      if (!target) {
+        createSystemGrowthPopup("긴급 닫기 실패", "열린 팝업이 모두 정산 필요 상태입니다.");
+        return;
+      }
+      closePopup(target.id);
+      state.emergencyBoostTimer = 5;
+      state.emergencyTimer = CONFIG.emergencyCloseCooldown * Math.max(0.25, 1 + state.stats.emergencyCooldownMultiplier);
+    }
+
+    function applyPopupCloseDamage() {
+      if (state.stats.popupCloseDamage <= 0) {
+        return;
+      }
+
+      for (const enemy of state.enemies) {
+        if (distance(enemy, state.player) <= 145) {
+          damageEnemy(enemy, state.stats.popupCloseDamage, null);
+        }
+      }
+    }
+
+    function clampPopupToLayer(element, x, y) {
+      const layerWidth = popupLayer.clientWidth || CONFIG.canvasWidth;
+      const layerHeight = popupLayer.clientHeight || CONFIG.canvasHeight;
+      const width = element.offsetWidth;
+      const height = element.offsetHeight;
+      return {
+        x: clamp(x, 4, Math.max(4, layerWidth - width - 4)),
+        y: clamp(y, 4, Math.max(4, layerHeight - height - 4))
+      };
+    }
+
+    function settleDraggedPopup(popup) {
+      const layerWidth = popupLayer.clientWidth || CONFIG.canvasWidth;
+      const layerHeight = popupLayer.clientHeight || CONFIG.canvasHeight;
+      const rect = popupRectFromElement(popup);
+      const settled = pushRectOutOfPopupOverlap(rect, 4, layerWidth, layerHeight, popup.id);
+      popup.element.style.left = settled.x + "px";
+      popup.element.style.top = settled.y + "px";
+    }
+
+    function draggedPopupOverTrash(popup) {
+      if (popup.def.type !== "trash_drag") {
+        return false;
+      }
+
+      const popupRect = popup.element.getBoundingClientRect();
+      const trashRect = trashZone.getBoundingClientRect();
+      return popupRect.left < trashRect.right &&
+        popupRect.right > trashRect.left &&
+        popupRect.top < trashRect.bottom &&
+        popupRect.bottom > trashRect.top;
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = "#101720";
+      ctx.fillRect(0, 0, CONFIG.canvasWidth, CONFIG.canvasHeight);
+
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.045)";
+      ctx.lineWidth = 1;
+      const grid = 40;
+      const startX = Math.floor(state.camera.x / grid) * grid;
+      const endX = state.camera.x + CONFIG.canvasWidth + grid;
+      const startY = Math.floor(state.camera.y / grid) * grid;
+      const endY = state.camera.y + CONFIG.canvasHeight + grid;
+      for (let wx = startX; wx <= endX; wx += grid) {
+        const x = wx - state.camera.x;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, CONFIG.canvasHeight);
+        ctx.stroke();
+      }
+      for (let wy = startY; wy <= endY; wy += grid) {
+        const y = wy - state.camera.y;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(CONFIG.canvasWidth, y);
+        ctx.stroke();
+      }
+
+      const safeW = CONFIG.canvasWidth * CONFIG.centralSafeZoneWidthRatio;
+      const safeH = CONFIG.canvasHeight * CONFIG.centralSafeZoneHeightRatio;
+      const playerScreen = worldToScreen(state.player);
+      ctx.fillStyle = "rgba(72, 213, 151, 0.035)";
+      ctx.fillRect(playerScreen.x - safeW / 2, playerScreen.y - safeH / 2, safeW, safeH);
+    }
+
+    function drawPickups() {
+      for (const pickup of state.pickups) {
+        const screen = worldToScreen(pickup);
+        ctx.beginPath();
+        ctx.fillStyle = pickup.type === "gold" ? "#f3c84b" : "#4aa8ff";
+        ctx.arc(screen.x, screen.y, pickup.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawEnemies() {
+      for (const enemy of state.enemies) {
+        const screen = worldToScreen(enemy);
+        ctx.beginPath();
+        ctx.fillStyle = enemy.type === "boss" ? "#9b2140" : "#d7474c";
+        ctx.arc(screen.x, screen.y, enemy.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        const hpRatio = clamp(enemy.hp / enemy.maxHP, 0, 1);
+        const barWidth = enemy.type === "boss" ? 58 : 28;
+        const barY = screen.y - enemy.radius - 10;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.fillRect(screen.x - barWidth / 2, barY, barWidth, 5);
+        ctx.fillStyle = "#ffb2b6";
+        ctx.fillRect(screen.x - barWidth / 2, barY, barWidth * hpRatio, 5);
+      }
+    }
+
+    function drawMines() {
+      for (const mine of state.mines) {
+        const screen = worldToScreen(mine);
+        ctx.beginPath();
+        ctx.fillStyle = "#b8ff7b";
+        ctx.arc(screen.x, screen.y, mine.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(184, 255, 123, 0.18)";
+        ctx.arc(screen.x, screen.y, mine.explosionRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function drawPlayer() {
+      const screen = worldToScreen(state.player);
+
+      const primaryStats = moduleCombatStats("primary");
+      if (primaryStats) {
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(72, 213, 151, 0.18)";
+        ctx.lineWidth = 2;
+        ctx.arc(screen.x, screen.y, primaryStats.range, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const secondaryStats = moduleCombatStats("secondary");
+      if (secondaryStats) {
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(97, 211, 255, 0.2)";
+        ctx.lineWidth = 2;
+        ctx.arc(screen.x, screen.y, secondaryStats.range, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.fillStyle = state.player.hitFlash > 0 ? "#ffffff" : "#48d597";
+      ctx.arc(screen.x, screen.y, state.player.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.strokeStyle = "#123524";
+      ctx.lineWidth = 3;
+      ctx.arc(screen.x, screen.y, state.player.radius + 1, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function drawAttacks() {
+      for (const attack of state.attacks) {
+        const alpha = clamp(attack.ttl / attack.maxTtl, 0, 1);
+        if (attack.type === "circle") {
+          const screen = worldToScreen(attack);
+          ctx.strokeStyle = attack.color + alpha + ")";
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, attack.radius, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          const start = worldToScreen({ x: attack.x1, y: attack.y1 });
+          const end = worldToScreen({ x: attack.x2, y: attack.y2 });
+          ctx.strokeStyle = "rgba(255, 246, 163, " + alpha + ")";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawPausedText() {
+      if (!state.paused || state.selectingItem || state.selectingPerk || state.selectingModule || state.gameOver) {
+        return;
+      }
+      ctx.fillStyle = "rgba(0, 0, 0, 0.48)";
+      ctx.fillRect(0, 0, CONFIG.canvasWidth, CONFIG.canvasHeight);
+      ctx.fillStyle = "#edf2f7";
+      ctx.font = "bold 34px Malgun Gothic, Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("일시정지", CONFIG.canvasWidth / 2, CONFIG.canvasHeight / 2);
+      ctx.textAlign = "left";
+    }
+
+    function render() {
+      drawBackground();
+      drawPickups();
+      drawMines();
+      drawEnemies();
+      drawAttacks();
+      drawPlayer();
+      drawPausedText();
+    }
+
+    function itemStatLabel(stat) {
+      if (stat === "damageMultiplier") return "피해량";
+      if (stat === "attackIntervalMultiplier") return "공격 간격";
+      if (stat === "attackRangeMultiplier") return "공격 사거리";
+      if (stat === "moveSpeedMultiplier") return "이동 속도";
+      if (stat === "maxHP") return "최대 HP";
+      if (stat === "extraTargets") return "추가 타격";
+      if (stat === "popupSpawnRateMultiplier") return "팝업 생성률";
+      if (stat === "popupDragSpeedMultiplier") return "팝업 드래그";
+      if (stat === "maxOpenPopups") return "최대 팝업";
+      if (stat === "interestPopupWeightMultiplier") return "이자 상품 출현";
+      if (stat === "interestPayoutMultiplier") return "이자 지급";
+      if (stat === "popupStoreWeightMultiplier") return "팝업 상점 출현";
+      if (stat === "popupStoreDiscountMultiplier") return "상점 할인";
+      return stat;
+    }
+
+    function rarityBadge(rarity) {
+      const safe = rarity || "Common";
+      return "<em class=\"rarityBadge rarity" + safe + "\">" + safe + "</em>";
+    }
+
+    function primaryDisplayEffect(item) {
+      if (item.effect) {
+        return item.effect;
+      }
+      const effects = item.effects || [];
+      return effects.find(effect => (
+        effect.stat === "damageMultiplier" ||
+        effect.stat === "attackIntervalMultiplier" ||
+        effect.stat === "attackRangeMultiplier" ||
+        effect.stat === "moveSpeedMultiplier" ||
+        effect.stat === "maxHP" ||
+        effect.stat === "extraTargets" ||
+        effect.stat === "popupSpawnRateMultiplier" ||
+        effect.stat === "popupDragSpeedMultiplier" ||
+        effect.stat === "maxOpenPopups" ||
+        effect.stat === "interestPopupWeightMultiplier" ||
+        effect.stat === "interestPayoutMultiplier" ||
+        effect.stat === "popupStoreWeightMultiplier" ||
+        effect.stat === "popupStoreDiscountMultiplier"
+      ));
+    }
+
+    function formatSignedPercent(value) {
+      const rounded = Math.round(value * 100);
+      return (rounded > 0 ? "+" : "") + rounded + "%";
+    }
+
+    function formatSignedNumber(value) {
+      return (value > 0 ? "+" : "") + value;
+    }
+
+    function describeItemCurrent(item, extraStacks) {
+      const displayEffect = primaryDisplayEffect(item);
+      if (!displayEffect) {
+        return item.description;
+      }
+
+      const stacks = (state.itemCounts[item.id] || 0) + extraStacks;
+      const label = itemStatLabel(displayEffect.stat);
+      if (stacks <= 0) {
+        return label + " 변화 없음";
+      }
+
+      const total = displayEffect.value * stacks;
+      if (displayEffect.stat.indexOf("Multiplier") >= 0) {
+        return label + " " + formatSignedPercent(total);
+      }
+      return label + " " + formatSignedNumber(total);
+    }
+
+    function renderItemInventory() {
+      const ownedItems = ITEMS.filter(item => state.itemCounts[item.id] > 0);
+      if (ownedItems.length === 0) {
+        return "보유 아이템 없음";
+      }
+
+      return ownedItems.map(item => {
+        const count = state.itemCounts[item.id];
+        return "<div class=\"inventoryRow\"><span>" + rarityBadge(item.rarity) + " " + item.name + "<br><small>" + describeItemCurrent(item, 0) + "</small></span><strong>x" + count + "</strong></div>";
+      }).join("");
+    }
+
+    function nextGrowthChoiceLabel() {
+      if (!state.primaryModule) return "시작 1차 모듈";
+      if (state.level < 5 || !state.secondaryModule) return "Lv.5 보조 모듈";
+      if (state.level < 9 || !state.primaryDeepening) return "Lv.9 1차 심화";
+      if (state.level < 13 || !state.secondaryDeepening) return "Lv.13 보조 심화";
+      if (state.level < 17 || !state.moduleSynergy) return "Lv.17 공격 연계";
+      return "선택 성장 완료";
+    }
+
+    function updateUI() {
+      const itemCost = currentItemRollCost();
+      hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
+      goldText.textContent = state.gold.toString();
+      levelText.textContent = state.level.toString();
+      xpText.textContent = state.xp + " / " + state.xpNeed;
+      xpFill.style.width = clamp((state.xp / state.xpNeed) * 100, 0, 100).toFixed(1) + "%";
+      primaryModuleText.textContent = state.primaryModule ? moduleName(state.primaryModule) : "미선택";
+      secondaryModuleText.textContent = state.secondaryModule ? moduleName(state.secondaryModule) : "없음";
+      primaryMasteryText.textContent = state.primaryMastery.toString();
+      secondaryMasteryText.textContent = state.secondaryModule ? state.secondaryMastery.toString() : "-";
+      nextChoiceText.textContent = nextGrowthChoiceLabel();
+      popupCountText.textContent = state.openPopups.length + " / " + maxOpenPopups();
+      itemCostText.textContent = itemCost + "G";
+      rollItemButton.textContent = "아이템 뽑기 - " + itemCost + "G";
+      rollItemButton.disabled = state.gameOver || state.paused || state.selectingItem || state.selectingPerk || state.selectingModule || state.gold < itemCost;
+      lastItem.innerHTML = state.lastItemText;
+      itemInventory.innerHTML = renderItemInventory();
+      recentPerk.innerHTML = state.recentPerkText;
+      trashZone.classList.toggle("active", state.openPopups.some(popup => popup.def.type === "trash_drag"));
+
+      const emergency = state.emergencyTimer > 0 ? state.emergencyTimer.toFixed(1) + "초" : "준비됨";
+      const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
+      const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
+      runStats.innerHTML =
+        "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
+        "<br>Heat: " + state.heat.toFixed(1) +
+        " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
+        "<br>투자금: " + state.investedGold + "G / 부채: " + state.debtGold + "G" +
+        "<br>1차: " + (state.primaryModule ? moduleName(state.primaryModule) + " 숙련 " + state.primaryMastery : "미선택") +
+        " / 보조: " + (state.secondaryModule ? moduleName(state.secondaryModule) + " 숙련 " + state.secondaryMastery : "없음") +
+        "<br>피해: " + effectiveDamage().toFixed(1) +
+        " / 사거리: " + Math.round(effectiveAttackRange()) +
+        " / 공격 간격: " + effectiveAttackInterval().toFixed(2) + "초" +
+        "<br>다음 팝업: " + Math.max(0, state.popupTimer).toFixed(1) + "초" +
+        " / 긴급 닫기: " + (state.stats.emergencyCloseDisabled > 0 ? "비활성" : emergency) +
+        "<br>난장판: " + clutterTierLabel() +
+        " / 다음 할인: " + Math.round((pendingDiscount + clutterThresholdBonuses().itemDiscount) * 100) + "%" +
+        " / 추가 선택지: +" + state.nextItemExtraChoices +
+        "<br>구매 횟수: " + state.itemRollCount +
+        " / 처치: " + state.killCount +
+        " / 약관 패널티: " + state.termsPenaltyCount +
+        " / 광고 완료: " + state.sponsoredCompletions;
+      debugStats.innerHTML =
+        "현재 가격: " + itemCost + "G" +
+        "<br>배속: x" + state.timeScale +
+        "<br>구매 횟수: " + state.itemRollCount +
+        "<br>처치 수: " + state.killCount +
+        "<br>Heat: " + state.heat.toFixed(1) +
+        "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
+        "<br>투자금/부채: " + state.investedGold + "G / " + state.debtGold + "G" +
+        "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
+        "<br>부채 가격 페널티: " + Math.round(debtPenalty * 100) + "%" +
+        "<br>스폰서 완료/보상: " + state.sponsoredCompletions + " / " + state.metrics.sponsoredRewards +
+        "<br>난장판 티어: " + clutterTierLabel() +
+        "<br>첫 계약: " + (state.firstPurchasePackageChosen || "미선택") +
+        "<br>보스 처치/패키지: " + state.metrics.bossKills + " / " + state.metrics.bossPackagesPurchased +
+        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + state.heat * 0.015).toFixed(2) +
+        "<br>약관 패널티: " + state.termsPenaltyCount +
+        "<br>이자 수락/완료/손실: " + state.metrics.interestAccepted + " / " + state.metrics.interestCompleted + " / " + state.metrics.interestLost +
+        "<br>팝업 상점 구매: " + state.metrics.popupStorePurchases +
+        "<br>불안정 창 닫기: " + state.metrics.volatileClosures +
+        "<br>수동 외 골드: " + state.metrics.passiveGoldEarned + "G" +
+        "<br>광고 유지 누적: " + Math.floor(state.adOpenTime) + "초";
+
+      document.querySelectorAll(".firstPurchaseButton").forEach(button => {
+        const cost = Number.parseInt(button.dataset.cost, 10) || 0;
+        button.disabled = state.gold < cost || state.gameOver || state.firstPurchasePaid;
+      });
+      document.querySelectorAll(".interestAcceptButton").forEach(button => {
+        const ratio = Number.parseFloat(button.dataset.ratio);
+        const bonus = Number.parseFloat(button.dataset.bonus);
+        if (Number.isFinite(ratio) && Number.isFinite(bonus)) {
+          const principal = Math.floor(state.gold * ratio);
+          const payout = Math.round(principal * (1 + bonus));
+          button.dataset.cost = String(principal);
+          button.textContent = (button.dataset.label || "예치") + " - " + principal + "G -> " + payout + "G";
+          button.disabled = principal < 30 || state.gold < principal || state.gameOver;
+        }
+      });
+      document.querySelectorAll(".popupStoreButton, .loanRepayButton, .stockInvestButton").forEach(button => {
+        const cost = Number.parseInt(button.dataset.cost, 10) || 0;
+        button.disabled = state.gold < cost || state.gameOver;
+      });
+      document.querySelectorAll(".bossPackagePayButton").forEach(button => {
+        const cost = Number.parseInt(button.dataset.cost, 10) || 0;
+        button.disabled = state.gold < cost || state.gameOver;
+      });
+      const mobileEmergencyBlocked =
+        state.gameOver ||
+        state.selectingItem ||
+        state.selectingPerk ||
+        state.selectingModule ||
+        state.openPopups.length === 0 ||
+        state.emergencyTimer > 0 ||
+        state.stats.emergencyCloseDisabled > 0;
+      mobileEmergencyButton.disabled = mobileEmergencyBlocked;
+      mobileEmergencyButton.textContent = state.emergencyTimer > 0
+        ? "대기 " + state.emergencyTimer.toFixed(1)
+        : "긴급 닫기";
+    }
+
+    function frame(now) {
+      const dt = Math.min(0.04, (now - lastFrameTime) / 1000);
+      lastFrameTime = now;
+      updateGame(dt * state.timeScale);
+      render();
+      updateUI();
+      requestAnimationFrame(frame);
+    }
+
+    function setupSpeedSelect() {
+      speedSelect.replaceChildren();
+      for (let value = 1; value <= 10; value += 1) {
+        const option = document.createElement("option");
+        option.value = String(value);
+        option.textContent = value + "x";
+        speedSelect.appendChild(option);
+      }
+      speedSelect.value = "1";
+    }
+
+    rollItemButton.addEventListener("click", rollItem);
+
+    speedSelect.addEventListener("change", () => {
+      state.timeScale = Number.parseInt(speedSelect.value, 10) || 1;
+      updateUI();
+    });
+
+    debugToggleButton.addEventListener("click", () => {
+      const minimized = !debugPanel.classList.contains("minimized");
+      debugPanel.classList.toggle("minimized", minimized);
+      debugToggleButton.textContent = minimized ? "+" : "−";
+      debugToggleButton.title = minimized ? "디버그 패널 펼치기" : "디버그 패널 접기";
+    });
+
+    debugButtons.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) {
+        return;
+      }
+
+      const popupId = button.dataset.popup;
+      if (popupId) {
+        const def = POPUP_DEFINITIONS.find(item => item.id === popupId);
+        if (def && state.openPopups.length < maxOpenPopups()) {
+          createPopup(def);
+        }
+        return;
+      }
+
+      if (button.dataset.debug === "gold") {
+        addGold(25, "debug");
+      } else if (button.dataset.debug === "gold100") {
+        addGold(100, "debug");
+      } else if (button.dataset.debug === "xp10") {
+        state.xp += 10;
+        checkLevelUp();
+      } else if (button.dataset.debug === "xp") {
+        state.xp += state.xpNeed;
+        checkLevelUp();
+      } else if (button.dataset.debug === "forceLevel") {
+        state.xp = state.xpNeed;
+        checkLevelUp();
+      } else if (button.dataset.debug === "boss") {
+        spawnBoss(Math.max(1, state.metrics.bossKills + 1));
+      } else if (button.dataset.debug === "bossPackage") {
+        addGold(bossPackageCost(Math.max(1, state.metrics.bossKills + 1)), "debug");
+        createBossPackagePopup(Math.max(1, state.metrics.bossKills + 1));
+      } else if (button.dataset.debug === "rate") {
+        state.stats.popupSpawnRateMultiplier += 1;
+      } else if (button.dataset.debug === "heat") {
+        state.heat += 1;
+      } else if (button.dataset.debug === "creditPlus") {
+        addCreditScore(10, "디버그 조정");
+      } else if (button.dataset.debug === "creditMinus") {
+        addCreditScore(-10, "디버그 조정");
+      } else if (button.dataset.debug === "clear") {
+        clearAllPopupsForDebug();
+      }
+      updateUI();
+    });
+
+    function clearAllPopupsForDebug() {
+      for (const popup of state.openPopups) {
+        popup.element.remove();
+      }
+      state.openPopups = [];
+    }
+
+    function joystickRadius() {
+      return Math.max(34, (mobileJoystick.clientWidth || 118) * 0.36);
+    }
+
+    function setJoystickKnob(x, y) {
+      mobileJoystickKnob.style.transform = "translate(calc(-50% + " + x.toFixed(1) + "px), calc(-50% + " + y.toFixed(1) + "px))";
+    }
+
+    function updateJoystickInput(event) {
+      const rect = mobileJoystick.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const max = joystickRadius();
+      const rawX = event.clientX - centerX;
+      const rawY = event.clientY - centerY;
+      const length = Math.hypot(rawX, rawY);
+      const scale = length > max ? max / length : 1;
+      const knobX = rawX * scale;
+      const knobY = rawY * scale;
+      state.mobileInput.x = clamp(rawX / max, -1, 1);
+      state.mobileInput.y = clamp(rawY / max, -1, 1);
+      if (length > max) {
+        state.mobileInput.x = knobX / max;
+        state.mobileInput.y = knobY / max;
+      }
+      setJoystickKnob(knobX, knobY);
+    }
+
+    function resetJoystickInput() {
+      state.mobileInput.active = false;
+      state.mobileInput.pointerId = null;
+      state.mobileInput.x = 0;
+      state.mobileInput.y = 0;
+      setJoystickKnob(0, 0);
+    }
+
+    function updateDraggedPopup(event) {
+      if (!state.draggingPopup || state.draggingPopup.pointerId !== event.pointerId) {
+        return;
+      }
+
+      const drag = state.draggingPopup;
+      const multiplier = Math.max(0.5, 1 + state.stats.popupDragSpeedMultiplier);
+      const rawX = drag.originX + (event.clientX - drag.startX) * multiplier;
+      const rawY = drag.originY + (event.clientY - drag.startY) * multiplier;
+      const pos = clampPopupToLayer(drag.popup.element, rawX, rawY);
+      drag.popup.element.style.left = pos.x + "px";
+      drag.popup.element.style.top = pos.y + "px";
+      event.preventDefault();
+    }
+
+    function finishDraggedPopup(event) {
+      if (!state.draggingPopup || state.draggingPopup.pointerId !== event.pointerId) {
+        return;
+      }
+
+      if (draggedPopupOverTrash(state.draggingPopup.popup)) {
+        closePopup(state.draggingPopup.popup.id);
+      } else {
+        settleDraggedPopup(state.draggingPopup.popup);
+      }
+      state.draggingPopup = null;
+      event.preventDefault();
+    }
+
+    mobileJoystick.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+      state.mobileInput.active = true;
+      state.mobileInput.pointerId = event.pointerId;
+      if (mobileJoystick.setPointerCapture) {
+        mobileJoystick.setPointerCapture(event.pointerId);
+      }
+      updateJoystickInput(event);
+      event.preventDefault();
+    });
+
+    mobileJoystick.addEventListener("pointermove", event => {
+      if (!state.mobileInput.active || state.mobileInput.pointerId !== event.pointerId) {
+        return;
+      }
+      updateJoystickInput(event);
+      event.preventDefault();
+    });
+
+    mobileJoystick.addEventListener("pointerup", event => {
+      if (state.mobileInput.pointerId === event.pointerId) {
+        resetJoystickInput();
+        event.preventDefault();
+      }
+    });
+
+    mobileJoystick.addEventListener("pointercancel", event => {
+      if (state.mobileInput.pointerId === event.pointerId) {
+        resetJoystickInput();
+      }
+    });
+
+    mobileEmergencyButton.addEventListener("click", () => {
+      emergencyCloseOldestPopup();
+      updateUI();
+    });
+
+    restartButton.addEventListener("click", resetGame);
+
+    window.addEventListener("keydown", event => {
+      const key = event.key.toLowerCase();
+
+      if (key === "r" && state.gameOver) {
+        resetGame();
+        event.preventDefault();
+        return;
+      }
+
+      if (key === "p" && !state.gameOver && !state.selectingItem && !state.selectingPerk && !state.selectingModule) {
+        state.paused = !state.paused;
+        event.preventDefault();
+        return;
+      }
+
+      if (event.code === "Space") {
+        emergencyCloseOldestPopup();
+        event.preventDefault();
+        return;
+      }
+
+      if (key === "w" || key === "a" || key === "s" || key === "d") {
+        keys[key] = true;
+        event.preventDefault();
+      }
+    });
+
+    window.addEventListener("keyup", event => {
+      const key = event.key.toLowerCase();
+      if (key === "w" || key === "a" || key === "s" || key === "d") {
+        keys[key] = false;
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener("pointermove", updateDraggedPopup);
+    document.addEventListener("pointerup", finishDraggedPopup);
+    document.addEventListener("pointercancel", finishDraggedPopup);
+
+    window.addEventListener("blur", () => {
+      keys.w = false;
+      keys.a = false;
+      keys.s = false;
+      keys.d = false;
+      resetJoystickInput();
+      state.draggingPopup = null;
+    });
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      updateUI();
+    });
+
+    setupSpeedSelect();
+    resetGame();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

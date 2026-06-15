@@ -1,0 +1,21 @@
+# Keep this repository as the lightweight HTML prototype / GitHub Pages repo.
+
+# Unity project folders copied alongside the prototype.
+Prototype_HTML/
+Assets/
+Packages/
+ProjectSettings/
+Library/
+Logs/
+Temp/
+UserSettings/
+
+# Unity / IDE generated files.
+*.csproj
+*.sln
+.vs/
+.vsconfig
+
+# OS noise.
+Thumbs.db
+Desktop.ini
