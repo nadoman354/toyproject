@@ -407,16 +407,24 @@
 
     #mobileJoystick {
       position: absolute;
-      left: max(12px, env(safe-area-inset-left));
-      bottom: max(12px, env(safe-area-inset-bottom));
+      left: 0;
+      top: 0;
       width: 86px;
       height: 86px;
       border: 2px solid rgba(255, 255, 255, 0.28);
       border-radius: 50%;
       background: rgba(12, 18, 27, 0.58);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34);
-      pointer-events: auto;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.92);
+      pointer-events: none;
       touch-action: none;
+      transition: opacity 0.08s ease, transform 0.08s ease;
+    }
+
+    #mobileJoystick.active {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
     }
 
     #mobileJoystickKnob {
@@ -556,7 +564,8 @@
 
     .popupWindow.recurring_investment,
     .popupWindow.loan_offer,
-    .popupWindow.stock_market {
+    .popupWindow.stock_market,
+    .popupWindow.stock_broker_app {
       background: #eaf7ef;
       border-color: #35a866;
     }
@@ -634,7 +643,8 @@
 
     .recurring_investment .titleBar,
     .loan_offer .titleBar,
-    .stock_market .titleBar {
+    .stock_market .titleBar,
+    .stock_broker_app .titleBar {
       background: #217748;
     }
 
@@ -804,6 +814,43 @@
       font-weight: 800;
     }
 
+    .stockChart {
+      display: block;
+      width: 100%;
+      height: 86px;
+      margin-top: 8px;
+      border-radius: 7px;
+    }
+
+    .stockTabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .stockTabs button.selected {
+      background: #d9f5e4;
+      border-color: #217748;
+      color: #163a26;
+    }
+
+    .stockPortfolioBox {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.65);
+      color: #153524;
+      font-weight: 700;
+    }
+
+    .stockTradeGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
     .muted {
       color: var(--muted);
     }
@@ -936,6 +983,22 @@
       .popupControls {
         gap: 4px;
         margin-top: 5px;
+      }
+
+      .stockChart {
+        height: 64px;
+        margin-top: 5px;
+      }
+
+      .stockTabs,
+      .stockTradeGrid {
+        gap: 4px;
+        margin-top: 5px;
+      }
+
+      .stockPortfolioBox {
+        margin-top: 5px;
+        padding: 5px;
       }
 
       #itemPanel,
@@ -1092,12 +1155,12 @@
             <button type="button" data-debug="creditMinus">신용도 -10</button>
             <button type="button" data-debug="clear">팝업 제거</button>
             <button type="button" data-popup="first_purchase_package">첫 계약</button>
+            <button type="button" data-debug="investorMode">투자자 모드</button>
+            <button type="button" data-debug="clearPlaystyle">계약 해제</button>
             <button type="button" data-popup="interest_offer">이자 상품</button>
             <button type="button" data-popup="recurring_investment">자동 투자</button>
             <button type="button" data-popup="loan_offer">대출</button>
-            <button type="button" data-popup="stock_stable">안정주</button>
-            <button type="button" data-popup="stock_momentum">성장주</button>
-            <button type="button" data-popup="stock_cursed">저주주</button>
+            <button type="button" data-popup="stock_broker_app">증권 앱</button>
             <button type="button" data-popup="popup_store">팝업 상점</button>
             <button type="button" data-popup="basic_ad">기본 팝업</button>
             <button type="button" data-popup="ad_buff">광고 버프</button>
@@ -1142,8 +1205,8 @@
 
       <div id="perkOverlay">
         <div id="perkPanel">
-          <h2>특전 선택</h2>
-          <div class="muted">레벨 성장은 UI 규칙, 팝업 경제, 플레이 방식을 바꿉니다.</div>
+          <h2>공격 성장 선택</h2>
+          <div class="muted">레벨 성장은 공격 모듈을 강화합니다.</div>
           <div id="perkChoices"></div>
         </div>
       </div>
@@ -1533,6 +1596,7 @@
         title: "첫 빌드 계약",
         body: "한 런에 한 번만 뜨는 초반 빌드 계약입니다. 실제 결제가 아니라 인게임 골드 계약입니다.",
         type: "first_purchase_package",
+        families: ["system"],
         weight: 0
       },
       {
@@ -1540,6 +1604,7 @@
         title: "보스 처치 기념 한정 성장 패키지",
         body: "다음 구간 생존을 위한 필수 패키지입니다. 아이템 6개 중 2개를 선택하세요.",
         type: "boss_package_ad",
+        families: ["system"],
         weight: 0
       },
       {
@@ -1547,6 +1612,7 @@
         title: "광고 메시지",
         body: "닫거나 구석으로 치워 두세요.",
         type: "basic",
+        families: ["generic"],
         weight: 40
       },
       {
@@ -1554,6 +1620,7 @@
         title: "스폰서 광고: 공격력 캠페인",
         body: "광고가 열려 있는 동안 공격력이 증가합니다.",
         type: "sponsored_ad",
+        families: ["sponsored"],
         adRole: "ongoing_buff",
         weight: 14,
         duration: 20,
@@ -1567,6 +1634,7 @@
         title: "스폰서 광고: 할인 쿠폰",
         body: "광고를 끝까지 시청하면 다음 아이템 머신 비용이 할인됩니다.",
         type: "sponsored_ad",
+        families: ["sponsored"],
         adRole: "completion_reward",
         weight: 14,
         duration: 18,
@@ -1580,6 +1648,7 @@
         title: "스폰서 광고: 무료 샘플",
         body: "광고를 끝까지 시청하면 보급형 아이템 샘플을 받습니다.",
         type: "sponsored_ad",
+        families: ["sponsored"],
         adRole: "completion_reward",
         weight: 12,
         duration: 18,
@@ -1593,6 +1662,7 @@
         title: "스폰서 광고: 프리미엄 샘플",
         body: "광고 중에는 공격 속도가 증가하고, 끝까지 보면 선택지가 늘어납니다.",
         type: "sponsored_ad",
+        families: ["sponsored"],
         adRole: "hybrid",
         weight: 8,
         duration: 22,
@@ -1609,6 +1679,7 @@
         title: "한정 보상",
         body: "15초 동안 열어 두면 30G를 얻습니다.",
         type: "timed_reward",
+        families: ["generic"],
         weight: 20,
         duration: 15,
         rewardGold: 30
@@ -1618,6 +1689,7 @@
         title: "약관 동의",
         body: "수락하기 전에 위험 조항 체크를 해제하세요.",
         type: "terms",
+        families: ["curse"],
         termsKind: "personal_data",
         weight: 15,
         dangerClauseText: "개인 데이터를 판매하고 위험 약관을 더 자주 받는 데 동의합니다.",
@@ -1631,6 +1703,7 @@
         title: "광고 추적 동의",
         body: "광고 보상을 키울 수 있지만 추적 조항은 위험합니다.",
         type: "terms",
+        families: ["curse", "sponsored"],
         termsKind: "ad_tracking",
         weight: 8,
         dangerClauseText: "광고 추적을 허용하고 스폰서 광고 압박을 늘리는 데 동의합니다.",
@@ -1644,6 +1717,7 @@
         title: "긴급 닫기 포기 각서",
         body: "보상은 커지지만 긴급 닫기 능력이 크게 약해집니다.",
         type: "terms",
+        families: ["curse"],
         termsKind: "emergency_waiver",
         weight: 7,
         dangerClauseText: "긴급 닫기 쿨타임 증가와 보상 강화에 동의합니다.",
@@ -1657,6 +1731,7 @@
         title: "악성 최적화 동의서",
         body: "전투 성능은 좋아지지만 팝업 압박과 Heat가 오릅니다.",
         type: "terms",
+        families: ["curse", "clutter"],
         termsKind: "malicious_optimization",
         weight: 8,
         dangerClauseText: "악성 최적화와 팝업 압박 증가에 동의합니다.",
@@ -1670,6 +1745,7 @@
         title: "고수익 예치 상품",
         body: "현재 골드의 일부를 예치하고 만기까지 버티면 이자를 받습니다.",
         type: "interest_offer",
+        families: ["investor"],
         weight: 10
       },
       {
@@ -1677,6 +1753,7 @@
         title: "자동 적립 투자",
         body: "일정 시간 동안 새로 얻는 골드 일부를 자동 투자합니다.",
         type: "recurring_investment",
+        families: ["investor"],
         weight: 8,
         duration: 30,
         redirectRatio: 0.3,
@@ -1687,15 +1764,25 @@
         title: "즉시 대출 제안",
         body: "골드를 지금 받고 나중에 더 많이 갚습니다.",
         type: "loan_offer",
+        families: ["investor"],
         weight: 8
+      },
+      {
+        id: "stock_broker_app",
+        title: "팝업 증권 앱",
+        body: "종목을 고르고 매수/매도 타이밍을 관리하세요.",
+        type: "stock_broker_app",
+        families: ["investor"],
+        weight: 9
       },
       {
         id: "stock_stable",
         title: "안정 배당주",
         body: "낮은 변동성과 약한 상승 흐름을 가진 주식입니다.",
         type: "stock_market",
+        families: ["investor"],
         stockKind: "stable",
-        weight: 7,
+        weight: 0,
         volatility: 0.035,
         drift: 0.006,
         principalOptions: [40, 80, 120]
@@ -1705,8 +1792,9 @@
         title: "모멘텀 성장주",
         body: "변동성이 크고 수익/손실 폭이 큽니다.",
         type: "stock_market",
+        families: ["investor"],
         stockKind: "momentum",
-        weight: 7,
+        weight: 0,
         volatility: 0.09,
         drift: 0.004,
         principalOptions: [50, 100, 150]
@@ -1716,8 +1804,9 @@
         title: "저주 조작주",
         body: "고위험 주식입니다. 손실 매도 시 Heat가 오릅니다.",
         type: "stock_market",
+        families: ["investor", "curse"],
         stockKind: "cursed",
-        weight: 3,
+        weight: 0,
         volatility: 0.14,
         drift: 0.008,
         principalOptions: [60, 120, 180],
@@ -1728,6 +1817,7 @@
         title: "팝업 스토어",
         body: "등급과 가격만 보고 미확인 아이템을 하나 구매합니다.",
         type: "popup_store",
+        families: ["generic"],
         weight: 10,
         duration: 18
       },
@@ -1736,6 +1826,7 @@
         title: "청소 의뢰",
         body: "10초 동안 열린 팝업을 1개 이하로 유지하세요.",
         type: "clean_challenge",
+        families: ["clean"],
         weight: 8,
         duration: 10,
         targetOpenPopups: 1,
@@ -1746,6 +1837,7 @@
         title: "불안정한 창",
         body: "시간 안에 닫으면 주변 적에게 피해를 줍니다.",
         type: "volatile_popup",
+        families: ["executioner"],
         weight: 8,
         duration: 8,
         closeDamage: 25,
@@ -1757,6 +1849,7 @@
         title: "움직이는 닫기 버튼",
         body: "닫기 버튼이 천천히 움직입니다. 침착하게 눌러 보세요.",
         type: "moving_close",
+        families: ["generic"],
         weight: 12
       },
       {
@@ -1764,6 +1857,7 @@
         title: "감염된 팝업",
         body: "8초 동안 방치하면 기본 팝업을 하나 퍼뜨립니다.",
         type: "infection",
+        families: ["generic", "clutter"],
         weight: 12,
         duration: 8
       },
@@ -1772,6 +1866,7 @@
         title: "버려야 하는 창",
         body: "닫기 버튼이 없습니다. 화면 아래 쓰레기통으로 끌어 버리세요.",
         type: "trash_drag",
+        families: ["generic"],
         weight: 12
       }
     ];
@@ -1994,6 +2089,8 @@
         firstPurchaseOfferShown: false,
         firstPurchasePaid: false,
         firstPurchasePackageChosen: null,
+        activePlaystyle: null,
+        activePlaystyleName: "미선택",
         firstPurchaseTimer: randomRange(3, 5),
         lastItemText: "최근 아이템: 없음",
         recentPerkText: "공격 모듈을 선택하세요.",
@@ -2033,6 +2130,46 @@
           bossPackagesPurchased: 0,
           sponsoredRewards: 0,
           volatileClosures: 0
+        },
+        stockMarket: {
+          selectedSymbol: "STB",
+          tickTimer: 1,
+          symbols: [
+            {
+              symbol: "STB",
+              name: "안정 배당주",
+              price: 100,
+              history: [100],
+              volatility: 0.025,
+              drift: 0.003,
+              shares: 0,
+              avgCost: 0,
+              kind: "stable"
+            },
+            {
+              symbol: "MTM",
+              name: "모멘텀 성장주",
+              price: 100,
+              history: [100],
+              volatility: 0.075,
+              drift: 0.002,
+              shares: 0,
+              avgCost: 0,
+              kind: "momentum"
+            },
+            {
+              symbol: "CRS",
+              name: "저주 조작주",
+              price: 100,
+              history: [100],
+              volatility: 0.12,
+              drift: 0.006,
+              shares: 0,
+              avgCost: 0,
+              kind: "cursed",
+              cursedLossHeat: 1
+            }
+          ]
         },
         player: {
           x: 0,
@@ -2097,6 +2234,8 @@
         mobileInput: {
           active: false,
           pointerId: null,
+          baseX: 0,
+          baseY: 0,
           x: 0,
           y: 0
         },
@@ -2197,12 +2336,43 @@
         weight *= Math.max(0.1, 1 + state.stats.termsPopupWeightMultiplier + (state.heat >= 5 ? 0.25 : 0));
       } else if (item.type === "sponsored_ad") {
         weight *= Math.max(0.1, 1 + state.stats.sponsoredPopupWeightMultiplier);
-      } else if (item.type === "interest_offer" || item.type === "recurring_investment" || item.type === "loan_offer" || item.type === "stock_market") {
+      } else if (item.type === "interest_offer" || item.type === "recurring_investment" || item.type === "loan_offer" || item.type === "stock_market" || item.type === "stock_broker_app") {
         weight *= Math.max(0.1, 1 + state.stats.interestPopupWeightMultiplier);
       } else if (item.type === "popup_store") {
         weight *= Math.max(0.1, 1 + state.stats.popupStoreWeightMultiplier);
       }
       return weight;
+    }
+
+    function popupInFamily(def, family) {
+      return Array.isArray(def.families) && def.families.includes(family);
+    }
+
+    function availablePopupDefinitions() {
+      const defs = POPUP_DEFINITIONS.filter(def => (def.weight ?? 0) > 0);
+      if (!state.activePlaystyle) {
+        return defs;
+      }
+
+      if (state.activePlaystyle === "investor_starter") {
+        return defs.filter(def => popupInFamily(def, "investor") || popupInFamily(def, "system"));
+      }
+      if (state.activePlaystyle === "sponsored_starter") {
+        return defs.filter(def => popupInFamily(def, "sponsored") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+      }
+      if (state.activePlaystyle === "clean_desk_starter") {
+        return defs.filter(def => popupInFamily(def, "clean") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+      }
+      if (state.activePlaystyle === "clutter_chaos_starter") {
+        return defs.filter(def => popupInFamily(def, "clutter") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+      }
+      if (state.activePlaystyle === "popup_executioner_starter") {
+        return defs.filter(def => popupInFamily(def, "executioner") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+      }
+      if (state.activePlaystyle === "risky_terms_starter") {
+        return defs.filter(def => popupInFamily(def, "curse") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+      }
+      return defs;
     }
 
     function activeTimedMultiplier(stat) {
@@ -2620,6 +2790,8 @@
 
       applyEffects(packageDef);
       state.firstPurchasePackageChosen = packageDef.name;
+      state.activePlaystyle = packageDef.id;
+      state.activePlaystyleName = packageDef.name;
       state.recentPerkText = "<strong>첫 계약:</strong> " + packageDef.name + "<br>" + packageDef.description;
       closeItemLikeOverlay();
     }
@@ -3456,12 +3628,7 @@
     }
 
     function countOpenAdPopups() {
-      return state.openPopups.filter(popup =>
-        popup.def.type === "sponsored_ad" ||
-        popup.def.type === "ad_buff" ||
-        popup.def.type === "basic" ||
-        popup.def.id === "basic_ad"
-      ).length;
+      return state.openPopups.filter(popup => popup.def.type === "sponsored_ad").length;
     }
 
     function updatePopupTimers(dt) {
@@ -3477,7 +3644,10 @@
       if (state.popupTimer <= 0) {
         if (state.openPopups.length < maxOpenPopups()) {
           if (state.popupFreezeTimer <= 0) {
-            createPopup(pickWeighted(POPUP_DEFINITIONS));
+            const pool = availablePopupDefinitions();
+            if (pool.length > 0) {
+              createPopup(pickWeighted(pool));
+            }
           }
         }
         state.popupTimer = effectivePopupInterval() * randomRange(0.9, 1.12);
@@ -3559,6 +3729,8 @@
     }
 
     function updateSpecialPopups(dt) {
+      updateStockMarket(dt);
+
       const pendingBasicSpawns = [];
       const completedInterest = [];
       const completedSponsored = [];
@@ -3826,6 +3998,9 @@
       }
       if (def.type === "recurring_investment" || def.type === "loan_offer" || def.type === "stock_market") {
         return { width: 342, height: 230 };
+      }
+      if (def.type === "stock_broker_app") {
+        return { width: 390, height: 430 };
       }
       if (def.type === "clean_challenge") {
         return { width: 320, height: 190 };
@@ -4120,6 +4295,7 @@
         body: title + "\n" + detail,
         type: "system_notice",
         category: "system",
+        families: ["system"],
         autoClose: 3.4,
         weight: 0
       });
@@ -4130,13 +4306,18 @@
         (popup.def.type === "interest_offer" && popup.interestAccepted && !popup.interestMatured) ||
         (popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured) ||
         (popup.def.type === "loan_offer" && popup.loan?.accepted && !popup.loan?.resolved) ||
-        (popup.def.type === "stock_market" && popup.stock?.invested)
+        (popup.def.type === "stock_market" && popup.stock?.invested) ||
+        (popup.def.type === "stock_broker_app" && hasAnyStockHoldings())
       );
     }
 
     function requestClosePopup(id) {
       const popup = state.openPopups.find(item => item.id === id);
       if (popup && isPopupLocked(popup)) {
+        if (popup.def.type === "stock_broker_app" && hasAnyStockHoldings()) {
+          createSystemGrowthPopup("증권 앱 잠김", "보유 주식이 있습니다. 전량 매도해야 증권 앱을 닫을 수 있습니다.");
+          return;
+        }
         createSystemGrowthPopup("정산 필요", "돈이 걸린 팝업은 내부의 정산/상환/매도 버튼으로 처리해야 닫을 수 있습니다.");
         return;
       }
@@ -4611,6 +4792,275 @@
       closePopup(popup.id);
     }
 
+    function stockBySymbol(symbol) {
+      return state.stockMarket?.symbols.find(stock => stock.symbol === symbol);
+    }
+
+    function selectedStock() {
+      return stockBySymbol(state.stockMarket?.selectedSymbol) || state.stockMarket?.symbols[0] || null;
+    }
+
+    function hasAnyStockHoldings() {
+      return Boolean(state.stockMarket?.symbols.some(stock => stock.shares > 0));
+    }
+
+    function totalStockHoldingsValue() {
+      if (!state.stockMarket) {
+        return 0;
+      }
+      return state.stockMarket.symbols.reduce((sum, stock) => sum + stock.shares * stock.price, 0);
+    }
+
+    function totalStockPrincipal() {
+      if (!state.stockMarket) {
+        return 0;
+      }
+      return state.stockMarket.symbols.reduce((sum, stock) => sum + stock.shares * stock.avgCost, 0);
+    }
+
+    function updateStockMarket(dt) {
+      const market = state.stockMarket;
+      if (!market) {
+        return;
+      }
+
+      const hasBrokerOpen = state.openPopups.some(popup => popup.def.type === "stock_broker_app");
+      if (!hasBrokerOpen && !hasAnyStockHoldings()) {
+        return;
+      }
+
+      market.tickTimer -= dt;
+      if (market.tickTimer > 0) {
+        return;
+      }
+
+      market.tickTimer = 1;
+      for (const stock of market.symbols) {
+        let shock = 0;
+        if (stock.kind === "momentum" && Math.random() < 0.12) {
+          shock = randomRange(-stock.volatility * 1.8, stock.volatility * 1.8);
+        }
+        if (stock.kind === "cursed" && Math.random() < 0.16) {
+          shock = randomRange(-stock.volatility * 2.2, stock.volatility * 2.2);
+        }
+
+        const change = stock.drift + randomRange(-stock.volatility, stock.volatility) + shock;
+        stock.price = Math.max(1, stock.price * (1 + change));
+        stock.lastChange = change;
+        stock.history.push(stock.price);
+        if (stock.history.length > 60) {
+          stock.history.shift();
+        }
+      }
+
+      rerenderOpenStockBrokerApps();
+    }
+
+    function buyStock(symbol, shares) {
+      const stock = stockBySymbol(symbol);
+      if (!stock || shares <= 0 || state.gameOver) {
+        return;
+      }
+
+      const price = Math.ceil(stock.price);
+      const cost = price * shares;
+      if (state.gold < cost) {
+        return;
+      }
+
+      const previousCost = stock.avgCost * stock.shares;
+      state.gold -= cost;
+      stock.shares += shares;
+      stock.avgCost = (previousCost + cost) / stock.shares;
+      state.investedGold += cost;
+      rerenderOpenStockBrokerApps();
+      updateUI();
+    }
+
+    function buyMaxStock(symbol) {
+      const stock = stockBySymbol(symbol);
+      if (!stock || state.gameOver) {
+        return;
+      }
+
+      const price = Math.ceil(stock.price);
+      const shares = Math.floor(state.gold / Math.max(1, price));
+      if (shares > 0) {
+        buyStock(symbol, shares);
+      }
+    }
+
+    function sellStockShares(symbol, shares) {
+      const stock = stockBySymbol(symbol);
+      if (!stock || shares <= 0 || stock.shares <= 0 || state.gameOver) {
+        return;
+      }
+
+      const sellShares = Math.min(shares, stock.shares);
+      const price = Math.floor(stock.price);
+      const payout = Math.max(1, price * sellShares);
+      const principal = stock.avgCost * sellShares;
+      const profit = payout - principal;
+
+      stock.shares -= sellShares;
+      if (stock.shares <= 0) {
+        stock.shares = 0;
+        stock.avgCost = 0;
+      }
+      state.investedGold = Math.max(0, state.investedGold - principal);
+      addGold(payout, "stock");
+
+      if (profit >= 0) {
+        addCreditScore(4, "주식 수익 매도");
+      } else {
+        addCreditScore(-6, "주식 손실 매도");
+        if (stock.kind === "cursed" && stock.cursedLossHeat) {
+          state.heat += stock.cursedLossHeat;
+        }
+      }
+
+      rerenderOpenStockBrokerApps();
+      updateUI();
+    }
+
+    function sellAllStock(symbol) {
+      const stock = stockBySymbol(symbol);
+      if (stock) {
+        sellStockShares(symbol, stock.shares);
+      }
+    }
+
+    function renderStockGraph(svg, history) {
+      if (!svg || !history || history.length < 2) {
+        if (svg) {
+          svg.innerHTML = "<rect x=\"0\" y=\"0\" width=\"260\" height=\"80\" rx=\"6\" fill=\"rgba(0,0,0,0.10)\"></rect>";
+        }
+        return;
+      }
+
+      const min = Math.min(...history);
+      const max = Math.max(...history);
+      const range = Math.max(1, max - min);
+      const points = history.map((price, index) => {
+        const x = (index / Math.max(1, history.length - 1)) * 260;
+        const y = 76 - ((price - min) / range) * 72;
+        return x.toFixed(1) + "," + y.toFixed(1);
+      }).join(" ");
+
+      svg.innerHTML =
+        "<rect x=\"0\" y=\"0\" width=\"260\" height=\"80\" rx=\"6\" fill=\"rgba(0,0,0,0.10)\"></rect>" +
+        "<polyline points=\"" + points + "\" fill=\"none\" stroke=\"#217748\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></polyline>";
+    }
+
+    function renderStockBrokerControls(body, popup) {
+      const market = state.stockMarket;
+      const stock = selectedStock();
+      if (!market || !stock) {
+        const warning = document.createElement("div");
+        warning.className = "popupWarning";
+        warning.textContent = "주식시장 데이터를 찾을 수 없습니다.";
+        body.appendChild(warning);
+        return;
+      }
+
+      const header = document.createElement("div");
+      header.className = "popupWarning";
+      header.innerHTML =
+        "<strong>" + stock.name + " (" + stock.symbol + ")</strong><br>" +
+        "현재가: " + Math.ceil(stock.price) + "G<br>" +
+        "직전 변동: " + formatSignedPercent(stock.lastChange || 0);
+
+      const tabs = document.createElement("div");
+      tabs.className = "stockTabs";
+      for (const option of market.symbols) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = option.name;
+        button.className = option.symbol === stock.symbol ? "selected" : "";
+        button.addEventListener("click", () => {
+          state.stockMarket.selectedSymbol = option.symbol;
+          rerenderOpenStockBrokerApps();
+        });
+        tabs.appendChild(button);
+      }
+
+      const chart = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      chart.setAttribute("class", "stockChart");
+      chart.setAttribute("viewBox", "0 0 260 80");
+      chart.setAttribute("width", "260");
+      chart.setAttribute("height", "80");
+      renderStockGraph(chart, stock.history);
+
+      const ownedValue = stock.shares * stock.price;
+      const ownedPrincipal = stock.shares * stock.avgCost;
+      const profit = ownedValue - ownedPrincipal;
+      const profitRate = ownedPrincipal > 0 ? profit / ownedPrincipal : 0;
+      const portfolio = document.createElement("div");
+      portfolio.className = "stockPortfolioBox";
+      portfolio.innerHTML = stock.shares > 0
+        ? "보유: " + stock.shares + "주<br>" +
+          "평단: " + Math.round(stock.avgCost) + "G<br>" +
+          "평가액: " + Math.floor(ownedValue) + "G<br>" +
+          "손익: " + (profit >= 0 ? "+" : "") + Math.round(profit) + "G (" + formatSignedPercent(profitRate) + ")<br>" +
+          "총 주식 평가액: " + Math.floor(totalStockHoldingsValue()) + "G<br>" +
+          "총 원금: " + Math.round(totalStockPrincipal()) + "G"
+        : "보유 없음<br>" +
+          "총 주식 평가액: " + Math.floor(totalStockHoldingsValue()) + "G<br>" +
+          "총 원금: " + Math.round(totalStockPrincipal()) + "G";
+
+      const price = Math.ceil(stock.price);
+      const tradeGrid = document.createElement("div");
+      tradeGrid.className = "stockTradeGrid";
+      const buyOne = document.createElement("button");
+      buyOne.type = "button";
+      buyOne.className = "stockBuyButton";
+      buyOne.dataset.cost = String(price);
+      buyOne.textContent = "1주 매수";
+      buyOne.disabled = state.gold < price;
+      buyOne.addEventListener("click", () => buyStock(stock.symbol, 1));
+
+      const buyFive = document.createElement("button");
+      buyFive.type = "button";
+      buyFive.className = "stockBuyButton";
+      buyFive.dataset.cost = String(price * 5);
+      buyFive.textContent = "5주 매수";
+      buyFive.disabled = state.gold < price * 5;
+      buyFive.addEventListener("click", () => buyStock(stock.symbol, 5));
+
+      const buyMax = document.createElement("button");
+      buyMax.type = "button";
+      buyMax.className = "stockBuyButton";
+      buyMax.dataset.cost = String(price);
+      buyMax.textContent = "최대 매수";
+      buyMax.disabled = state.gold < price;
+      buyMax.addEventListener("click", () => buyMaxStock(stock.symbol));
+
+      const sellOne = document.createElement("button");
+      sellOne.type = "button";
+      sellOne.className = "stockSellButton";
+      sellOne.textContent = "1주 매도";
+      sellOne.disabled = stock.shares <= 0;
+      sellOne.addEventListener("click", () => sellStockShares(stock.symbol, 1));
+
+      const sellAll = document.createElement("button");
+      sellAll.type = "button";
+      sellAll.className = "stockSellButton";
+      sellAll.textContent = "전량 매도";
+      sellAll.disabled = stock.shares <= 0;
+      sellAll.addEventListener("click", () => sellAllStock(stock.symbol));
+
+      tradeGrid.append(buyOne, buyFive, buyMax, sellOne, sellAll);
+      body.append(header, tabs, chart, portfolio, tradeGrid);
+    }
+
+    function rerenderOpenStockBrokerApps() {
+      for (const popup of state.openPopups) {
+        if (popup.def.type === "stock_broker_app") {
+          rerenderPopupBody(popup, renderStockBrokerControls);
+        }
+      }
+    }
+
     function renderCleanChallengeControls(body, popup) {
       const summary = document.createElement("div");
       summary.className = "popupWarning";
@@ -4819,6 +5269,10 @@
         renderStockControls(body, popup);
       }
 
+      if (def.type === "stock_broker_app") {
+        renderStockBrokerControls(body, popup);
+      }
+
       if (def.type === "clean_challenge") {
         renderCleanChallengeControls(body, popup);
       }
@@ -4929,6 +5383,10 @@
         ? (state.openPopups.find(popup => popup.def.type !== "basic" && !isPopupLocked(popup)) || state.openPopups.find(popup => !isPopupLocked(popup)))
         : state.openPopups.find(popup => !isPopupLocked(popup));
       if (!target) {
+        if (state.openPopups.some(popup => popup.def.type === "stock_broker_app" && hasAnyStockHoldings())) {
+          createSystemGrowthPopup("증권 앱 잠김", "보유 주식이 있습니다. 전량 매도해야 증권 앱을 닫을 수 있습니다.");
+          return;
+        }
         createSystemGrowthPopup("긴급 닫기 실패", "열린 팝업이 모두 정산 필요 상태입니다.");
         return;
       }
@@ -5253,11 +5711,15 @@
       const emergency = state.emergencyTimer > 0 ? state.emergencyTimer.toFixed(1) + "초" : "준비됨";
       const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
       const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
+      const stockValue = Math.floor(totalStockHoldingsValue());
+      const stockPrincipal = Math.round(totalStockPrincipal());
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
+        "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>Heat: " + state.heat.toFixed(1) +
         " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
-        "<br>투자금: " + state.investedGold + "G / 부채: " + state.debtGold + "G" +
+        "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 부채: " + state.debtGold + "G" +
+        "<br>주식 원금: " + stockPrincipal + "G" +
         "<br>1차: " + (state.primaryModule ? moduleName(state.primaryModule) + " 숙련 " + state.primaryMastery : "미선택") +
         " / 보조: " + (state.secondaryModule ? moduleName(state.secondaryModule) + " 숙련 " + state.secondaryMastery : "없음") +
         "<br>피해: " + effectiveDamage().toFixed(1) +
@@ -5279,7 +5741,8 @@
         "<br>처치 수: " + state.killCount +
         "<br>Heat: " + state.heat.toFixed(1) +
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
-        "<br>투자금/부채: " + state.investedGold + "G / " + state.debtGold + "G" +
+        "<br>빌드 계약: " + state.activePlaystyleName +
+        "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
         "<br>부채 가격 페널티: " + Math.round(debtPenalty * 100) + "%" +
         "<br>스폰서 완료/보상: " + state.sponsoredCompletions + " / " + state.metrics.sponsoredRewards +
@@ -5309,7 +5772,7 @@
           button.disabled = principal < 30 || state.gold < principal || state.gameOver;
         }
       });
-      document.querySelectorAll(".popupStoreButton, .loanRepayButton, .stockInvestButton").forEach(button => {
+      document.querySelectorAll(".popupStoreButton, .loanRepayButton, .stockInvestButton, .stockBuyButton").forEach(button => {
         const cost = Number.parseInt(button.dataset.cost, 10) || 0;
         button.disabled = state.gold < cost || state.gameOver;
       });
@@ -5408,6 +5871,14 @@
         addCreditScore(-10, "디버그 조정");
       } else if (button.dataset.debug === "clear") {
         clearAllPopupsForDebug();
+      } else if (button.dataset.debug === "investorMode") {
+        state.activePlaystyle = "investor_starter";
+        state.activePlaystyleName = "투자자 스타터 계약";
+        state.firstPurchasePackageChosen = state.activePlaystyleName;
+      } else if (button.dataset.debug === "clearPlaystyle") {
+        state.activePlaystyle = null;
+        state.activePlaystyleName = "미선택";
+        state.firstPurchasePackageChosen = null;
       }
       updateUI();
     });
@@ -5423,14 +5894,30 @@
       return Math.max(28, (mobileJoystick.clientWidth || 86) * 0.36);
     }
 
+    function isMobileJoystickBlockedTarget(target) {
+      return Boolean(target.closest(
+        ".panel, .popupWindow, button, input, select, textarea, a, label, #itemOverlay, #perkOverlay, #gameOverOverlay, #mobileEmergencyButton, #mobileFullscreenButton"
+      ));
+    }
+
+    function positionFloatingJoystick(event) {
+      const shellRect = shell.getBoundingClientRect();
+      const half = Math.max(36, (mobileJoystick.clientWidth || 86) / 2);
+      const localX = clamp(event.clientX - shellRect.left, half + 4, shellRect.width - half - 4);
+      const localY = clamp(event.clientY - shellRect.top, half + 4, shellRect.height - half - 4);
+      mobileJoystick.style.left = localX + "px";
+      mobileJoystick.style.top = localY + "px";
+      state.mobileInput.baseX = shellRect.left + localX;
+      state.mobileInput.baseY = shellRect.top + localY;
+    }
+
     function setJoystickKnob(x, y) {
       mobileJoystickKnob.style.transform = "translate(calc(-50% + " + x.toFixed(1) + "px), calc(-50% + " + y.toFixed(1) + "px))";
     }
 
     function updateJoystickInput(event) {
-      const rect = mobileJoystick.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+      const centerX = state.mobileInput.baseX;
+      const centerY = state.mobileInput.baseY;
       const max = joystickRadius();
       const rawX = event.clientX - centerX;
       const rawY = event.clientY - centerY;
@@ -5450,9 +5937,51 @@
     function resetJoystickInput() {
       state.mobileInput.active = false;
       state.mobileInput.pointerId = null;
+      state.mobileInput.baseX = 0;
+      state.mobileInput.baseY = 0;
       state.mobileInput.x = 0;
       state.mobileInput.y = 0;
+      mobileJoystick.classList.remove("active");
       setJoystickKnob(0, 0);
+    }
+
+    function startFloatingJoystick(event) {
+      if (event.pointerType === "mouse" || state.mobileInput.active || isMobileJoystickBlockedTarget(event.target)) {
+        return;
+      }
+
+      state.mobileInput.active = true;
+      state.mobileInput.pointerId = event.pointerId;
+      positionFloatingJoystick(event);
+      mobileJoystick.classList.add("active");
+      if (shell.setPointerCapture) {
+        shell.setPointerCapture(event.pointerId);
+      }
+      updateJoystickInput(event);
+      event.preventDefault();
+    }
+
+    function updateFloatingJoystick(event) {
+      if (!state.mobileInput.active || state.mobileInput.pointerId !== event.pointerId) {
+        return;
+      }
+      updateJoystickInput(event);
+      event.preventDefault();
+    }
+
+    function finishFloatingJoystick(event) {
+      if (state.mobileInput.pointerId !== event.pointerId) {
+        return;
+      }
+      if (shell.releasePointerCapture) {
+        try {
+          shell.releasePointerCapture(event.pointerId);
+        } catch (error) {
+          // Some browsers release touch capture automatically.
+        }
+      }
+      resetJoystickInput();
+      event.preventDefault();
     }
 
     function updateDraggedPopup(event) {
@@ -5484,39 +6013,10 @@
       event.preventDefault();
     }
 
-    mobileJoystick.addEventListener("pointerdown", event => {
-      if (event.pointerType === "mouse" && event.button !== 0) {
-        return;
-      }
-      state.mobileInput.active = true;
-      state.mobileInput.pointerId = event.pointerId;
-      if (mobileJoystick.setPointerCapture) {
-        mobileJoystick.setPointerCapture(event.pointerId);
-      }
-      updateJoystickInput(event);
-      event.preventDefault();
-    });
-
-    mobileJoystick.addEventListener("pointermove", event => {
-      if (!state.mobileInput.active || state.mobileInput.pointerId !== event.pointerId) {
-        return;
-      }
-      updateJoystickInput(event);
-      event.preventDefault();
-    });
-
-    mobileJoystick.addEventListener("pointerup", event => {
-      if (state.mobileInput.pointerId === event.pointerId) {
-        resetJoystickInput();
-        event.preventDefault();
-      }
-    });
-
-    mobileJoystick.addEventListener("pointercancel", event => {
-      if (state.mobileInput.pointerId === event.pointerId) {
-        resetJoystickInput();
-      }
-    });
+    shell.addEventListener("pointerdown", startFloatingJoystick);
+    document.addEventListener("pointermove", updateFloatingJoystick);
+    document.addEventListener("pointerup", finishFloatingJoystick);
+    document.addEventListener("pointercancel", finishFloatingJoystick);
 
     mobileEmergencyButton.addEventListener("click", () => {
       emergencyCloseOldestPopup();
