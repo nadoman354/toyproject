@@ -1178,6 +1178,8 @@
             <button type="button" data-debug="mechanicSelect">Lv.13 기믹 선택</button>
             <button type="button" data-debug="scalingSelect">Lv.17 최적화</button>
             <button type="button" data-debug="executionWindow">처형 창 +4초</button>
+            <button type="button" data-debug="invested100">투자금 +100</button>
+            <button type="button" data-debug="sponsoredStacks">후원탄 +5</button>
             <button type="button" data-debug="boss">보스 소환</button>
             <button type="button" data-debug="bossPackage">보스 패키지</button>
             <button type="button" data-debug="rate">팝업 x2</button>
@@ -2154,6 +2156,7 @@
         investedGold: 0,
         debtGold: 0,
         sponsoredCompletions: 0,
+        sponsoredAttackBoostStacks: 0,
         nextItemDiscounts: [],
         nextItemExtraChoices: 0,
         killCount: 0,
@@ -2487,7 +2490,7 @@
     }
 
     function globalDamageMultiplier() {
-      let multiplier = state.stats.damageMultiplier + getOpenAdBuffMultiplier() + activeTimedMultiplier("damageMultiplier") + sponsoredBuff("damageMultiplier") + clutterThresholdBonuses().damageBonus;
+      let multiplier = state.stats.damageMultiplier + getOpenAdBuffMultiplier() + activeTimedMultiplier("damageMultiplier") + sponsoredBuff("damageMultiplier") + clutterThresholdBonuses().damageBonus + activeStarterCombatBonuses().damageMultiplier;
       if (state.stats.cleanDeskDamageMultiplier > 0 && state.openPopups.length <= 2) {
         multiplier += state.stats.cleanDeskDamageMultiplier;
       }
@@ -2665,9 +2668,10 @@
       const mastery = state[slot + "Mastery"] || 0;
       const deepening = deepeningFor(slot) || {};
       const secondaryScale = slot === "secondary" ? 0.72 : 1;
+      const starterBonuses = activeStarterCombatBonuses();
       const damageMultiplier = globalDamageMultiplier() + mastery * 0.08 + (deepening.damage || 0);
-      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0);
-      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0);
+      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0) + starterBonuses.rangeMultiplier;
+      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0) + starterBonuses.cooldownMultiplier;
       cooldownMultiplier += sponsoredBuff("attackIntervalMultiplier") + clutterThresholdBonuses().attackIntervalBonus;
       if (state.stats.clutterAttackIntervalPerPopup < 0) {
         cooldownMultiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
@@ -2854,6 +2858,86 @@
         }
       }
       return total;
+    }
+
+    function totalInvestorPowerGold() {
+      return Math.max(0, state.investedGold || 0);
+    }
+
+    function activeStarterCombatBonuses() {
+      const bonuses = {
+        damageMultiplier: 0,
+        rangeMultiplier: 0,
+        cooldownMultiplier: 0,
+        popupCloseDamageBonus: 0,
+        notes: []
+      };
+
+      if (state.activePlaystyle === "investor_starter") {
+        const investedDamage = Math.min(0.6, Math.floor(totalInvestorPowerGold() / 50) * 0.04);
+        const creditCooldown = state.creditScore >= 80 ? -0.1 : state.creditScore >= 60 ? -0.05 : 0;
+        const heldGoldRange = Math.min(0.15, Math.floor(state.gold / 100) * 0.03);
+        bonuses.damageMultiplier += investedDamage;
+        bonuses.cooldownMultiplier += creditCooldown;
+        bonuses.rangeMultiplier += heldGoldRange;
+        if (investedDamage > 0) bonuses.notes.push("투자 피해 " + formatSignedPercent(investedDamage));
+        if (creditCooldown < 0) bonuses.notes.push("신용 템포 " + formatSignedPercent(creditCooldown));
+        if (heldGoldRange > 0) bonuses.notes.push("자금 사거리 " + formatSignedPercent(heldGoldRange));
+      } else if (state.activePlaystyle === "sponsored_starter") {
+        if (countOpenAdPopups() > 0) {
+          bonuses.damageMultiplier += 0.1;
+          bonuses.notes.push("광고 중 피해 +10%");
+        }
+        if (state.sponsoredAttackBoostStacks > 0) {
+          bonuses.notes.push("후원탄 " + state.sponsoredAttackBoostStacks + "스택");
+        }
+      } else if (state.activePlaystyle === "clutter_chaos_starter") {
+        const count = state.openPopups.length;
+        if (count >= 3) bonuses.rangeMultiplier += 0.1;
+        if (count >= 5) bonuses.damageMultiplier += 0.15;
+        if (count >= 7) bonuses.cooldownMultiplier += -0.1;
+        if (count >= 7) {
+          bonuses.notes.push("과밀 III");
+        } else if (count >= 5) {
+          bonuses.notes.push("과밀 II");
+        } else if (count >= 3) {
+          bonuses.notes.push("과밀 I");
+        }
+      } else if (state.activePlaystyle === "clean_desk_starter") {
+        const count = state.openPopups.length;
+        if (count === 0) {
+          bonuses.damageMultiplier += 0.25;
+          bonuses.rangeMultiplier += 0.15;
+          bonuses.notes.push("완전 정리");
+        } else if (count <= 1) {
+          bonuses.damageMultiplier += 0.15;
+          bonuses.rangeMultiplier += 0.1;
+          bonuses.notes.push("정밀화 활성");
+        }
+      } else if (state.activePlaystyle === "popup_executioner_starter") {
+        if (state.popupExecutionWindow > 0) {
+          const emptySlots = Math.max(0, maxOpenPopups() - state.openPopups.length);
+          bonuses.damageMultiplier += emptySlots * 0.05;
+          bonuses.rangeMultiplier += emptySlots * 0.03;
+          bonuses.notes.push("처형 창 " + state.popupExecutionWindow.toFixed(1) + "초");
+          bonuses.notes.push("빈 슬롯 " + emptySlots);
+        }
+      } else if (state.activePlaystyle === "risky_terms_starter") {
+        const heatDamage = state.heat * 0.04 + (state.heat >= 5 ? 0.1 : 0);
+        if (heatDamage > 0) {
+          bonuses.damageMultiplier += heatDamage;
+          bonuses.notes.push("Heat 화력 " + formatSignedPercent(heatDamage));
+        }
+      }
+
+      if (bonuses.notes.length === 0) {
+        bonuses.notes.push(state.activePlaystyle ? "대기 중" : "미적용");
+      }
+      return bonuses;
+    }
+
+    function starterCombatBonusSummary() {
+      return activeStarterCombatBonuses().notes.join(" / ");
     }
 
     function grantSponsoredReward(reward) {
@@ -3968,6 +4052,7 @@
       boosted.consumeOvercharge = false;
       boosted.consumeCompressed = false;
       boosted.consumePrimed = false;
+      boosted.consumeSponsoredStack = false;
 
       if (stats.mechanic?.id === "overcharge" && state.moduleCharge[slot] >= 5) {
         multiplier += 0.5;
@@ -3982,6 +4067,10 @@
         multiplier += 0.25;
         boosted.consumePrimed = true;
         boosted.primedDamageMultiplier = 0.25;
+      }
+      if (slot === "primary" && state.activePlaystyle === "sponsored_starter" && state.sponsoredAttackBoostStacks > 0) {
+        multiplier += 0.2;
+        boosted.consumeSponsoredStack = true;
       }
 
       boosted.damage = stats.damage * Math.max(0.1, 1 + multiplier);
@@ -4008,6 +4097,9 @@
       }
       if (stats.consumePrimed) {
         state.popupCloseAttackPrimed = false;
+      }
+      if (stats.consumeSponsoredStack) {
+        state.sponsoredAttackBoostStacks = Math.max(0, state.sponsoredAttackBoostStacks - 1);
       }
       if (!forced) {
         state.moduleTimers[slot] = stats.cooldown;
@@ -4728,6 +4820,9 @@
           grantSponsoredReward(reward);
         }
         state.sponsoredCompletions += 1;
+        if (state.activePlaystyle === "sponsored_starter") {
+          state.sponsoredAttackBoostStacks = Math.min(20, state.sponsoredAttackBoostStacks + 5);
+        }
         closePopup(popup.id);
       }
 
@@ -6720,10 +6815,12 @@
         ? "주가: " + Math.ceil(stock.price) + "G " + formatSignedPercent(stock.lastChange || 0) + " / 손익: " + (stockInfo.profit >= 0 ? "+" : "") + Math.round(stockInfo.profit) + "G"
         : "주가: 없음";
       const upgradeLabels = primaryUpgradeLabels();
+      const starterSummary = starterCombatBonusSummary();
       const executionWindowText = state.popupExecutionWindow > 0 ? " / 처형 창: " + state.popupExecutionWindow.toFixed(1) + "초" : "";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
+        "<br>계약 특전: " + starterSummary +
         "<br>Heat: " + state.heat.toFixed(1) +
         " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 부채: " + state.debtGold + "G" +
@@ -6754,13 +6851,14 @@
         "<br>Heat: " + state.heat.toFixed(1) +
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>빌드 계약: " + state.activePlaystyleName +
+        "<br>계약 특전: " + starterSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
         "<br>처형 창/닫기 연계: " + state.popupExecutionWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
         "<br>부채 가격 페널티: " + Math.round(debtPenalty * 100) + "%" +
-        "<br>스폰서 완료/보상: " + state.sponsoredCompletions + " / " + state.metrics.sponsoredRewards +
+        "<br>스폰서 완료/보상/후원탄: " + state.sponsoredCompletions + " / " + state.metrics.sponsoredRewards + " / " + state.sponsoredAttackBoostStacks +
         "<br>난장판 티어: " + clutterTierLabel() +
         "<br>첫 계약: " + (state.firstPurchasePackageChosen || "미선택") +
         "<br>보스 처치/패키지: " + state.metrics.bossKills + " / " + state.metrics.bossPackagesPurchased +
@@ -6896,6 +6994,10 @@
         }
       } else if (button.dataset.debug === "executionWindow") {
         state.popupExecutionWindow = 4;
+      } else if (button.dataset.debug === "invested100") {
+        state.investedGold += 100;
+      } else if (button.dataset.debug === "sponsoredStacks") {
+        state.sponsoredAttackBoostStacks = Math.min(20, state.sponsoredAttackBoostStacks + 5);
       } else if (button.dataset.debug === "boss") {
         spawnBoss(Math.max(1, state.metrics.bossKills + 1));
       } else if (button.dataset.debug === "bossPackage") {
