@@ -229,6 +229,14 @@
       color: #ffe7a1;
     }
 
+    #openInventoryButton {
+      width: 100%;
+      margin: 6px 0 8px;
+      background: #233247;
+      border-color: rgba(115, 191, 255, 0.45);
+      color: #dceeff;
+    }
+
     #lastItem,
     #recentPerk,
     #itemInventory {
@@ -256,6 +264,37 @@
 
     .inventoryRow:last-child {
       border-bottom: 0;
+    }
+
+    .inventoryGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+      grid-column: 1 / -1;
+    }
+
+    .inventoryCard {
+      padding: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 7px;
+      background: #1f2a3b;
+      color: #c8d5e7;
+    }
+
+    .inventoryCard strong {
+      display: block;
+      color: #ffe29a;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .inventoryCard small {
+      display: block;
+      margin-top: 5px;
+      color: #f6d477;
+      font-size: 11px;
+      line-height: 1.35;
     }
 
     #itemOverlay,
@@ -1115,6 +1154,15 @@
         margin-top: 7px;
       }
 
+      .inventoryGrid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .inventoryCard {
+        padding: 7px;
+      }
+
       .itemChoice,
       .perkChoice {
         min-height: 74px;
@@ -1229,6 +1277,7 @@
         <h2 class="panelTitle">아이템 머신</h2>
         <div class="statRow"><span>비용</span><strong id="itemCostText">25G</strong></div>
         <button id="rollItemButton">아이템 뽑기 - 25G</button>
+        <button id="openInventoryButton" type="button">보유 아이템 보기</button>
         <div id="lastItem">최근 아이템: 없음</div>
         <h2 class="panelTitle" style="margin-top: 12px;">아이템 목록</h2>
         <div id="itemInventory">보유 아이템 없음</div>
@@ -2378,6 +2427,7 @@
     const popupCountText = document.getElementById("popupCountText");
     const itemCostText = document.getElementById("itemCostText");
     const rollItemButton = document.getElementById("rollItemButton");
+    const openInventoryButton = document.getElementById("openInventoryButton");
     const lastItem = document.getElementById("lastItem");
     const itemInventory = document.getElementById("itemInventory");
     const recentPerk = document.getElementById("recentPerk");
@@ -3540,7 +3590,7 @@
       state.firstPurchasePaid = true;
       state.firstPurchasePackageChosen = "결제 완료, 계약 선택 대기";
       popup.firstPurchasePaid = true;
-      closePopup(popupId);
+      closePopup(popupId, { force: true });
       openFirstPurchasePackageSelection();
       updateUI();
     }
@@ -3580,7 +3630,7 @@
 
     function rejectFirstPurchasePackage(popupId) {
       state.firstPurchasePackageChosen = "거절";
-      closePopup(popupId);
+      closePopup(popupId, { force: true });
       updateUI();
     }
 
@@ -5657,7 +5707,7 @@
         event.stopPropagation();
         requestClosePopup(id);
       });
-      if (def.type !== "trash_drag" && def.type !== "stock_broker_app") {
+      if (def.type !== "trash_drag" && def.type !== "stock_broker_app" && def.type !== "first_purchase_package") {
         titleBar.appendChild(close);
       }
 
@@ -5721,12 +5771,13 @@
         (popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured) ||
         (popup.def.type === "loan_offer" && popup.loan?.accepted && !popup.loan?.resolved) ||
         (popup.def.type === "stock_market" && popup.stock?.invested) ||
+        popup.def.type === "first_purchase_package" ||
         popup.def.type === "stock_broker_app"
       );
     }
 
     function isEmergencyClosablePopup(popup) {
-      if (popup.def.type === "stock_broker_app") {
+      if (popup.def.type === "stock_broker_app" || popup.def.type === "first_purchase_package") {
         return false;
       }
       if (isPopupLocked(popup)) {
@@ -5739,6 +5790,10 @@
       const popup = state.openPopups.find(item => item.id === id);
       if (popup?.def.type === "stock_broker_app") {
         createSystemGrowthPopup("증권 앱 고정", "증권 앱은 닫을 수 없습니다. 최소화하거나 전량 매도만 할 수 있습니다.");
+        return;
+      }
+      if (popup?.def.type === "first_purchase_package") {
+        createSystemGrowthPopup("첫 결제 대기", "첫 결제 팝업은 X나 긴급 닫기로 닫을 수 없습니다. 결제하거나 거절을 선택하세요.");
         return;
       }
       if (popup && isPopupLocked(popup)) {
@@ -6793,12 +6848,16 @@
       });
     }
 
-    function closePopup(id) {
+    function closePopup(id, options = {}) {
       const index = state.openPopups.findIndex(popup => popup.id === id);
       if (index < 0) {
         return;
       }
       const popup = state.openPopups[index];
+      if (popup.def.type === "first_purchase_package" && !options.force) {
+        createSystemGrowthPopup("첫 결제 대기", "첫 결제 팝업은 창 닫기로 제거할 수 없습니다. 결제하거나 거절을 선택하세요.");
+        return;
+      }
       if (popup.def.type === "stock_broker_app") {
         createSystemGrowthPopup("증권 앱 고정", "증권 앱은 닫을 수 없습니다. 최소화하거나 전량 매도만 할 수 있습니다.");
         return;
@@ -6811,14 +6870,14 @@
       }
       popup.element.remove();
       state.openPopups.splice(index, 1);
-      if (!state.gameOver && popup.def.category !== "system") {
+      if (!state.gameOver && popup.def.category !== "system" && popup.def.type !== "first_purchase_package") {
         state.popupExecutionWindow = 4;
         state.popupCloseAttackPrimed = true;
         addGold(state.stats.goldPerPopupClose, "popupClose");
         applyPopupCloseDamage();
         checkLevelUp();
       }
-      if (!state.gameOver && popup.def.category !== "system" && state.moduleSynergy === "popup_trigger") {
+      if (!state.gameOver && popup.def.category !== "system" && popup.def.type !== "first_purchase_package" && state.moduleSynergy === "popup_trigger") {
         triggerModuleAttack("primary", true);
       }
     }
@@ -7244,6 +7303,40 @@
       }).join("");
     }
 
+    function renderInventoryOverview() {
+      const ownedItems = ITEMS.filter(item => state.itemCounts[item.id] > 0);
+      if (ownedItems.length === 0) {
+        return "<div class=\"choiceMeta\">아직 보유한 아이템이 없습니다.</div>";
+      }
+      return "<div class=\"inventoryGrid\">" + ownedItems.map(item => {
+        const count = state.itemCounts[item.id];
+        return "<div class=\"inventoryCard\">" +
+          rarityBadge(item.rarity) +
+          renderItemTagChips(item) +
+          "<strong>" + item.name + " x" + count + "</strong>" +
+          "<span>" + item.description + "</span>" +
+          "<small>현재: " + describeItemCurrent(item, 0) + "</small>" +
+        "</div>";
+      }).join("") + "</div>";
+    }
+
+    function openInventoryOverview() {
+      if (state.selectingItem || state.selectingPerk || state.selectingModule || state.selectingPaidReward || state.gameOver) {
+        return;
+      }
+      state.selectingItem = true;
+      state.paused = true;
+      openItemLikeOverlay("보유 아이템", "현재 보유 중인 아이템과 태그, 적용 중인 효과를 한눈에 확인합니다.");
+      itemChoices.innerHTML = renderInventoryOverview();
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "itemChoice";
+      close.style.minHeight = "44px";
+      close.innerHTML = "<strong>닫기</strong><span>게임으로 돌아갑니다.</span>";
+      close.addEventListener("click", closeItemLikeOverlay);
+      itemChoices.appendChild(close);
+    }
+
     function primaryUpgradeLabels() {
       const form = selectedFormForSlot("primary");
       const mechanic = selectedMechanicForSlot("primary");
@@ -7280,6 +7373,7 @@
       itemCostText.textContent = itemCost + "G";
       rollItemButton.textContent = "아이템 뽑기 - " + itemCost + "G";
       rollItemButton.disabled = state.gameOver || state.paused || state.selectingItem || state.selectingPerk || state.selectingModule || state.gold < itemCost;
+      openInventoryButton.disabled = state.gameOver || state.selectingItem || state.selectingPerk || state.selectingModule || state.selectingPaidReward;
       lastItem.innerHTML = state.lastItemText;
       itemInventory.innerHTML = renderItemInventory();
       recentPerk.innerHTML = state.recentPerkText;
@@ -7412,6 +7506,7 @@
     }
 
     rollItemButton.addEventListener("click", rollItem);
+    openInventoryButton.addEventListener("click", openInventoryOverview);
 
     speedSelect.addEventListener("change", () => {
       state.timeScale = Number.parseInt(speedSelect.value, 10) || 1;
@@ -7519,12 +7614,12 @@
 
     function clearAllPopupsForDebug() {
       for (const popup of state.openPopups) {
-        if (popup.def.type === "stock_broker_app") {
+        if (popup.def.type === "stock_broker_app" || popup.def.type === "first_purchase_package") {
           continue;
         }
         popup.element.remove();
       }
-      state.openPopups = state.openPopups.filter(popup => popup.def.type === "stock_broker_app");
+      state.openPopups = state.openPopups.filter(popup => popup.def.type === "stock_broker_app" || popup.def.type === "first_purchase_package");
     }
 
     function joystickRadius() {
