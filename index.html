@@ -104,6 +104,18 @@
       color: var(--muted);
     }
 
+    #statusPanel.minimized {
+      width: 132px;
+      right: auto;
+      padding: 8px 10px;
+      max-height: 42px;
+      overflow: hidden;
+    }
+
+    #statusPanel.minimized #statusBody {
+      display: none;
+    }
+
     #debugPanel {
       right: 12px;
       bottom: 12px;
@@ -1156,9 +1168,15 @@
       </section>
 
       <section id="statusPanel" class="panel">
-        <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
-        <div class="statRow" style="margin-top: 8px;"><span>배속</span><select id="speedSelect" class="compactSelect"></select></div>
-        <div id="runStats" style="margin-top: 8px;"></div>
+        <div class="panelHeader">
+          <h2 class="panelTitle">조작/상태</h2>
+          <button id="statusToggleButton" class="panelToggle" type="button" title="조작 패널 접기">−</button>
+        </div>
+        <div id="statusBody">
+          <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
+          <div class="statRow" style="margin-top: 8px;"><span>배속</span><select id="speedSelect" class="compactSelect"></select></div>
+          <div id="runStats" style="margin-top: 8px;"></div>
+        </div>
       </section>
 
       <section id="debugPanel" class="panel">
@@ -2115,6 +2133,8 @@
     const lastItem = document.getElementById("lastItem");
     const itemInventory = document.getElementById("itemInventory");
     const recentPerk = document.getElementById("recentPerk");
+    const statusPanel = document.getElementById("statusPanel");
+    const statusToggleButton = document.getElementById("statusToggleButton");
     const runStats = document.getElementById("runStats");
     const debugPanel = document.getElementById("debugPanel");
     const debugToggleButton = document.getElementById("debugToggleButton");
@@ -6932,6 +6952,13 @@
     speedSelect.addEventListener("change", () => {
       state.timeScale = Number.parseInt(speedSelect.value, 10) || 1;
       updateUI();
+    });
+
+    statusToggleButton.addEventListener("click", () => {
+      const minimized = !statusPanel.classList.contains("minimized");
+      statusPanel.classList.toggle("minimized", minimized);
+      statusToggleButton.textContent = minimized ? "+" : "−";
+      statusToggleButton.title = minimized ? "조작 패널 펼치기" : "조작 패널 접기";
     });
 
     debugToggleButton.addEventListener("click", () => {
