@@ -881,6 +881,47 @@
       font-weight: 800;
     }
 
+    .contractPreview {
+      display: grid;
+      gap: 7px;
+      margin-top: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .contractPreviewItem {
+      padding: 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.64);
+      color: #2d1c1f;
+      font-weight: 800;
+    }
+
+    .contractPreviewItem span {
+      display: block;
+      margin-top: 2px;
+      color: #60484d;
+      font-size: 11px;
+    }
+
+    .contractBenefits {
+      margin: 5px 0 0;
+      padding-left: 16px;
+      color: #4d353b;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .itemChoice .contractBenefits {
+      color: #d8e3f2;
+      font-size: 11px;
+    }
+
+    .contractBenefits li {
+      margin-bottom: 3px;
+    }
+
     .stockChart {
       display: block;
       width: 100%;
@@ -2133,6 +2174,11 @@
         name: "스폰서 스타터 계약",
         theme: "광고 수익 빌드",
         description: "광고를 열어둘수록 돈과 힘을 얻지만, 화면이 더러워집니다.",
+        benefits: [
+          "계약 효과: 광고 유지 골드 +1/s, 광고 버프 +20%, 팝업 생성률 +15%",
+          "전투 특전: 스폰서 광고가 열려 있으면 피해 +10%, 광고 완료 시 후원탄 +5스택",
+          "아이템 풀: 스폰서/광고 유지/광고 완료 태그 아이템이 더 자주 등장"
+        ],
         cost: 10,
         effects: [
           { stat: "adGoldPerSecond", value: 1 },
@@ -2145,6 +2191,11 @@
         name: "클린 데스크 스타터 계약",
         theme: "낮은 팝업 수 유지 빌드",
         description: "열린 팝업을 적게 유지하면 전투력이 오르고 안전 구역이 넓어집니다.",
+        benefits: [
+          "계약 효과: 저팝업 피해 +20%, 안전 구역 확대, 긴급 닫기 쿨타임 -10%",
+          "전투 특전: 팝업 1개 이하 피해 +15%/사거리 +10%, 0개면 피해 +25%/사거리 +15%",
+          "아이템 풀: 클린/저팝업/안전/사거리 태그 아이템이 더 자주 등장"
+        ],
         cost: 10,
         effects: [
           { stat: "cleanDeskDamageMultiplier", value: 0.2 },
@@ -2157,6 +2208,11 @@
         name: "난장판 스타터 계약",
         theme: "화면 과밀 적응 빌드",
         description: "팝업을 어느 정도 열어둘수록 공격 속도와 보상이 좋아지지만 관리 부담이 커집니다.",
+        benefits: [
+          "계약 효과: 최대 팝업 +2, 팝업당 공격 간격 감소, 과밀 골드 +15%, 팝업 생성률 +18%",
+          "전투 특전: 팝업 3개 이상 사거리 +10%, 5개 이상 피해 +15%, 7개 이상 공격 간격 -10%",
+          "아이템 풀: 난장판/팝업 수/광역/사거리 태그 아이템이 더 자주 등장"
+        ],
         cost: 10,
         effects: [
           { stat: "maxOpenPopups", value: 2 },
@@ -2170,6 +2226,11 @@
         name: "팝업 처형자 스타터 계약",
         theme: "닫기/처리 보상 빌드",
         description: "팝업을 닫을 때마다 골드와 전투 보조 효과를 얻지만, 팝업이 조금 더 자주 옵니다.",
+        benefits: [
+          "계약 효과: 팝업 닫기 +2G, 닫기 피해 8, 긴급 닫기 쿨타임 -15%, 팝업 생성률 +10%",
+          "전투 특전: 팝업을 닫은 뒤 4초 동안 빈 슬롯 1개당 피해 +5%/사거리 +3%",
+          "아이템 풀: 처형자/닫기/빈 슬롯/긴급 닫기 태그 아이템이 더 자주 등장"
+        ],
         cost: 10,
         effects: [
           { stat: "goldPerPopupClose", value: 2 },
@@ -2183,6 +2244,11 @@
         name: "투자자 스타터 계약",
         theme: "이자/투자/대출 경제 빌드",
         description: "돈을 묶어 두고 정산하는 팝업이 더 자주 나오며, 이자 지급과 상점 효율이 좋아집니다.",
+        benefits: [
+          "계약 효과: 투자자 팝업 풀 활성화, 이자 상품 출현 +55%, 이자 지급 +18%, 상점 할인 +10%",
+          "전투 특전: 투자 중 골드 50G당 피해 +4%, 신용 60/80 이상 공격 템포 강화, 보유 골드 사거리 보너스",
+          "전용 UI: 증권 LIVE 앱이 자동으로 열리고, 이후 자연 스폰은 투자자 팝업 중심으로 전환"
+        ],
         cost: 10,
         effects: [
           { stat: "interestPopupWeightMultiplier", value: 0.55 },
@@ -2195,6 +2261,11 @@
         name: "위험 약관 스타터 계약",
         theme: "약관/저주 빌드",
         description: "위험 약관과 저주를 이용해 빠르게 성장합니다.",
+        benefits: [
+          "계약 효과: 약관 패널티 보상 +60G, 약관 출현 +50%, 패널티 보호 1회, 시작 Heat +2",
+          "전투 특전: Heat 1당 피해 +4%, Heat 5 이상이면 추가 피해 +10%",
+          "아이템 풀: 저주/Heat/약관/위험 태그 아이템이 더 자주 등장"
+        ],
         cost: 10,
         effects: [
           { stat: "goldPerTermsPenalty", value: 60 },
@@ -2672,7 +2743,7 @@
     function availablePopupDefinitions() {
       const defs = POPUP_DEFINITIONS.filter(def => (def.weight ?? 0) > 0);
       if (!state.activePlaystyle) {
-        return defs;
+        return defs.filter(def => !popupInFamily(def, "investor"));
       }
 
       if (state.activePlaystyle === "investor_starter") {
@@ -3184,14 +3255,21 @@
     }
 
     function activeRecurringInvestment() {
-      return state.openPopups.find(popup => popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured);
+      return activeRecurringInvestments()[0] || null;
+    }
+
+    function activeRecurringInvestments() {
+      return state.openPopups.filter(popup => popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured);
     }
 
     function addGold(amount, source) {
       let remaining = amount;
-      const recurring = source !== "investmentPayout" ? activeRecurringInvestment() : null;
-      if (recurring && amount > 0) {
-        const redirected = Math.floor(amount * recurring.investment.redirectRatio);
+      const recurringPopups = source !== "investmentPayout" ? activeRecurringInvestments() : [];
+      for (const recurring of recurringPopups) {
+        if (remaining <= 0 || amount <= 0) {
+          break;
+        }
+        const redirected = Math.min(remaining, Math.floor(amount * recurring.investment.redirectRatio));
         if (redirected > 0) {
           recurring.investment.accumulated += redirected;
           state.investedGold += redirected;
@@ -3319,6 +3397,16 @@
     function itemPoolBiasSummary() {
       const buildTag = activeBuildItemTag();
       return buildTag ? tagLabel(buildTag) + " 태그 가중치 적용" : "기본 가중치";
+    }
+
+    function renderContractBenefits(packageDef) {
+      return "<ul class=\"contractBenefits\">" + (packageDef.benefits || []).map(text => "<li>" + text + "</li>").join("") + "</ul>";
+    }
+
+    function renderFirstPurchasePreview() {
+      return "<div class=\"contractPreview\">" + FIRST_PURCHASE_PACKAGES.map(packageDef => (
+        "<div class=\"contractPreviewItem\"><strong>" + packageDef.name + "</strong><span>" + packageDef.theme + "</span>" + renderContractBenefits(packageDef) + "</div>"
+      )).join("") + "</div>";
     }
 
     function grantSponsoredReward(reward) {
@@ -3497,7 +3585,8 @@
         button.className = "itemChoice";
         button.innerHTML =
           "<strong>" + packageDef.name + "</strong>" +
-          "<span>" + packageDef.theme + "<br>" + packageDef.description + "</span>";
+          "<span>" + packageDef.theme + "<br>" + packageDef.description + "</span>" +
+          renderContractBenefits(packageDef);
         button.addEventListener("click", () => applyFirstPurchasePackage(packageDef));
         itemChoices.appendChild(button);
       }
@@ -6685,6 +6774,9 @@
         intro.style.fontWeight = "800";
         intro.textContent = "런 초반 빌드 방향을 정하는 계약입니다. 실제 결제가 아니라 인게임 골드만 사용합니다.";
         body.appendChild(intro);
+        const preview = document.createElement("div");
+        preview.innerHTML = renderFirstPurchasePreview();
+        body.appendChild(preview);
 
         const controls = document.createElement("div");
         controls.className = "popupControls";
