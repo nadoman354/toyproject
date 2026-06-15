@@ -668,7 +668,24 @@
       cursor: grabbing;
     }
 
+    .popupTitleText {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .popupClose {
+      width: 24px;
+      height: 22px;
+      padding: 0;
+      border-radius: 4px;
+      color: white;
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .popupMinimize {
       width: 24px;
       height: 22px;
       padding: 0;
@@ -817,31 +834,33 @@
     .stockChart {
       display: block;
       width: 100%;
-      height: 86px;
-      margin-top: 8px;
+      height: 58px;
+      margin-top: 7px;
       border-radius: 7px;
     }
 
-    .stockTabs {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-
-    .stockTabs button.selected {
-      background: #d9f5e4;
-      border-color: #217748;
-      color: #163a26;
-    }
-
     .stockPortfolioBox {
-      margin-top: 8px;
-      padding: 8px;
+      margin-top: 7px;
+      padding: 7px;
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.65);
       color: #153524;
       font-weight: 700;
+    }
+
+    .stockTickerCompact {
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #153524;
+    }
+
+    .stockBrokerHeader {
+      margin-top: 7px;
+      font-weight: 900;
+      color: #153524;
     }
 
     .stockTradeGrid {
@@ -849,6 +868,15 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 6px;
       margin-top: 8px;
+    }
+
+    .stock_broker_app.minimized .titleBar {
+      min-height: 24px;
+      padding: 4px 7px;
+    }
+
+    .stock_broker_app.minimized .popupBody {
+      padding: 6px 8px;
     }
 
     .muted {
@@ -986,11 +1014,10 @@
       }
 
       .stockChart {
-        height: 64px;
+        height: 48px;
         margin-top: 5px;
       }
 
-      .stockTabs,
       .stockTradeGrid {
         gap: 4px;
         margin-top: 5px;
@@ -1773,8 +1800,8 @@
       },
       {
         id: "stock_broker_app",
-        title: "팝업 증권 앱",
-        body: "종목을 고르고 매수/매도 타이밍을 관리하세요.",
+        title: "팝업 증권 LIVE",
+        body: "주가를 지켜보며 매수/매도 타이밍을 관리하세요.",
         type: "stock_broker_app",
         families: ["investor"],
         weight: 9
@@ -2136,44 +2163,19 @@
           volatileClosures: 0
         },
         stockMarket: {
-          selectedSymbol: "STB",
+          selectedSymbol: "POP",
           tickTimer: 1,
-          symbols: [
-            {
-              symbol: "STB",
-              name: "안정 배당주",
-              price: 100,
-              history: [100],
-              volatility: 0.025,
-              drift: 0.003,
-              shares: 0,
-              avgCost: 0,
-              kind: "stable"
-            },
-            {
-              symbol: "MTM",
-              name: "모멘텀 성장주",
-              price: 100,
-              history: [100],
-              volatility: 0.075,
-              drift: 0.002,
-              shares: 0,
-              avgCost: 0,
-              kind: "momentum"
-            },
-            {
-              symbol: "CRS",
-              name: "저주 조작주",
-              price: 100,
-              history: [100],
-              volatility: 0.12,
-              drift: 0.006,
-              shares: 0,
-              avgCost: 0,
-              kind: "cursed",
-              cursedLossHeat: 1
-            }
-          ]
+          stock: {
+            symbol: "POP",
+            name: "팝업 테마주",
+            price: 100,
+            history: [100],
+            volatility: 0.065,
+            drift: 0.002,
+            shares: 0,
+            avgCost: 0,
+            lastChange: 0
+          }
         },
         player: {
           x: 0,
@@ -2582,6 +2584,10 @@
       }
     }
 
+    function stockMarketStock() {
+      return state.stockMarket?.stock || state.stockMarket?.symbols?.[0] || null;
+    }
+
     function activeRecurringInvestment() {
       return state.openPopups.find(popup => popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured);
     }
@@ -2827,6 +2833,9 @@
       state.activePlaystyle = packageDef.id;
       state.activePlaystyleName = packageDef.name;
       state.recentPerkText = "<strong>첫 계약:</strong> " + packageDef.name + "<br>" + packageDef.description;
+      if (packageDef.id === "investor_starter") {
+        ensureStockBrokerApp();
+      }
       closeItemLikeOverlay();
     }
 
@@ -3786,6 +3795,14 @@
       return state.openPopups.filter(popup => popup.def.type === "sponsored_ad").length;
     }
 
+    function createNaturalPopup(def) {
+      if (def.type === "stock_broker_app") {
+        ensureStockBrokerApp();
+        return;
+      }
+      createPopup(def);
+    }
+
     function updatePopupTimers(dt) {
       state.popupTimer -= dt;
       state.emergencyTimer = Math.max(0, state.emergencyTimer - dt);
@@ -3801,7 +3818,7 @@
           if (state.popupFreezeTimer <= 0) {
             const pool = availablePopupDefinitions();
             if (pool.length > 0) {
-              createPopup(pickWeighted(pool));
+              createNaturalPopup(pickWeighted(pool));
             }
           }
         }
@@ -4156,7 +4173,7 @@
         return { width: 342, height: 230 };
       }
       if (def.type === "stock_broker_app") {
-        return { width: 390, height: 430 };
+        return { width: 300, height: 260 };
       }
       if (def.type === "clean_challenge") {
         return { width: 320, height: 190 };
@@ -4393,9 +4410,23 @@
         popup.volatileElapsed = 0;
         popup.volatileExpired = false;
       }
+
+      if (popup.def.type === "stock_broker_app") {
+        popup.stockApp = {
+          minimized: false
+        };
+      }
     }
 
     function createPopup(def) {
+      if (def.type === "stock_broker_app") {
+        const existing = getOpenStockBrokerApp();
+        if (existing) {
+          bringPopupToFront(existing);
+          return existing;
+        }
+      }
+
       const size = popupSizeFor(def);
       const pos = choosePopupPosition(size.width, size.height);
       const id = popupIdSeed++;
@@ -4417,7 +4448,10 @@
 
       const titleBar = document.createElement("div");
       titleBar.className = "titleBar";
-      titleBar.innerHTML = "<span>" + def.title + "</span>";
+      const titleText = document.createElement("span");
+      titleText.className = "popupTitleText";
+      titleText.textContent = def.title;
+      titleBar.appendChild(titleText);
 
       const close = document.createElement("button");
       close.className = "popupClose";
@@ -4427,8 +4461,20 @@
         event.stopPropagation();
         requestClosePopup(id);
       });
-      if (def.type !== "trash_drag") {
+      if (def.type !== "trash_drag" && def.type !== "stock_broker_app") {
         titleBar.appendChild(close);
+      }
+
+      if (def.type === "stock_broker_app") {
+        const minimize = document.createElement("button");
+        minimize.className = "popupMinimize";
+        minimize.type = "button";
+        minimize.textContent = "－";
+        minimize.addEventListener("click", event => {
+          event.stopPropagation();
+          toggleStockBrokerMinimized(popup.id);
+        });
+        titleBar.appendChild(minimize);
       }
 
       const body = document.createElement("div");
@@ -4442,6 +4488,22 @@
 
       state.openPopups.push(popup);
       popupLayer.appendChild(popup.element);
+      return popup;
+    }
+
+    function getOpenStockBrokerApp() {
+      return state.openPopups.find(popup => popup.def.type === "stock_broker_app");
+    }
+
+    function ensureStockBrokerApp() {
+      const existing = getOpenStockBrokerApp();
+      if (existing) {
+        bringPopupToFront(existing);
+        return existing;
+      }
+
+      const def = POPUP_DEFINITIONS.find(item => item.id === "stock_broker_app");
+      return def ? createPopup(def) : null;
     }
 
     function createSystemGrowthPopup(title, detail) {
@@ -4463,17 +4525,27 @@
         (popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured) ||
         (popup.def.type === "loan_offer" && popup.loan?.accepted && !popup.loan?.resolved) ||
         (popup.def.type === "stock_market" && popup.stock?.invested) ||
-        (popup.def.type === "stock_broker_app" && hasAnyStockHoldings())
+        popup.def.type === "stock_broker_app"
       );
+    }
+
+    function isEmergencyClosablePopup(popup) {
+      if (popup.def.type === "stock_broker_app") {
+        return false;
+      }
+      if (isPopupLocked(popup)) {
+        return false;
+      }
+      return true;
     }
 
     function requestClosePopup(id) {
       const popup = state.openPopups.find(item => item.id === id);
+      if (popup?.def.type === "stock_broker_app") {
+        createSystemGrowthPopup("증권 앱 고정", "증권 앱은 닫을 수 없습니다. 최소화하거나 전량 매도만 할 수 있습니다.");
+        return;
+      }
       if (popup && isPopupLocked(popup)) {
-        if (popup.def.type === "stock_broker_app" && hasAnyStockHoldings()) {
-          createSystemGrowthPopup("증권 앱 잠김", "보유 주식이 있습니다. 전량 매도해야 증권 앱을 닫을 수 있습니다.");
-          return;
-        }
         createSystemGrowthPopup("정산 필요", "돈이 걸린 팝업은 내부의 정산/상환/매도 버튼으로 처리해야 닫을 수 있습니다.");
         return;
       }
@@ -4949,39 +5021,65 @@
     }
 
     function stockBySymbol(symbol) {
-      return state.stockMarket?.symbols.find(stock => stock.symbol === symbol);
+      const stock = stockMarketStock();
+      return stock && (!symbol || stock.symbol === symbol) ? stock : null;
     }
 
     function selectedStock() {
-      return stockBySymbol(state.stockMarket?.selectedSymbol) || state.stockMarket?.symbols[0] || null;
+      return stockMarketStock();
     }
 
     function hasAnyStockHoldings() {
-      return Boolean(state.stockMarket?.symbols.some(stock => stock.shares > 0));
+      const stock = selectedStock();
+      return Boolean(stock && stock.shares > 0);
     }
 
     function totalStockHoldingsValue() {
-      if (!state.stockMarket) {
-        return 0;
-      }
-      return state.stockMarket.symbols.reduce((sum, stock) => sum + stock.shares * stock.price, 0);
+      const stock = selectedStock();
+      return stock ? stock.shares * stock.price : 0;
     }
 
     function totalStockPrincipal() {
-      if (!state.stockMarket) {
-        return 0;
+      const stock = selectedStock();
+      return stock ? stock.shares * stock.avgCost : 0;
+    }
+
+    function stockProfitInfo() {
+      const stock = selectedStock();
+      if (!stock) {
+        return { value: 0, principal: 0, profit: 0, rate: 0 };
       }
-      return state.stockMarket.symbols.reduce((sum, stock) => sum + stock.shares * stock.avgCost, 0);
+      const value = stock.shares * stock.price;
+      const principal = stock.shares * stock.avgCost;
+      const profit = value - principal;
+      return {
+        value,
+        principal,
+        profit,
+        rate: principal > 0 ? profit / principal : 0
+      };
+    }
+
+    function stockTickerText() {
+      const stock = selectedStock();
+      if (!stock) {
+        return "증권 LIVE 데이터 없음";
+      }
+      const info = stockProfitInfo();
+      const arrow = (stock.lastChange || 0) >= 0 ? "▲" : "▼";
+      const profitText = (info.profit >= 0 ? "+" : "") + Math.round(info.profit) + "G";
+      return stock.symbol + " " + Math.ceil(stock.price) + "G " + arrow + " " + formatSignedPercent(stock.lastChange || 0) +
+        " | " + stock.shares + "주 | 손익 " + profitText;
     }
 
     function updateStockMarket(dt) {
       const market = state.stockMarket;
-      if (!market) {
+      const stock = selectedStock();
+      if (!market || !stock) {
         return;
       }
 
-      const hasBrokerOpen = state.openPopups.some(popup => popup.def.type === "stock_broker_app");
-      if (!hasBrokerOpen && !hasAnyStockHoldings()) {
+      if (!getOpenStockBrokerApp() && !hasAnyStockHoldings()) {
         return;
       }
 
@@ -4991,22 +5089,13 @@
       }
 
       market.tickTimer = 1;
-      for (const stock of market.symbols) {
-        let shock = 0;
-        if (stock.kind === "momentum" && Math.random() < 0.12) {
-          shock = randomRange(-stock.volatility * 1.8, stock.volatility * 1.8);
-        }
-        if (stock.kind === "cursed" && Math.random() < 0.16) {
-          shock = randomRange(-stock.volatility * 2.2, stock.volatility * 2.2);
-        }
-
-        const change = stock.drift + randomRange(-stock.volatility, stock.volatility) + shock;
-        stock.price = Math.max(1, stock.price * (1 + change));
-        stock.lastChange = change;
-        stock.history.push(stock.price);
-        if (stock.history.length > 60) {
-          stock.history.shift();
-        }
+      const shock = Math.random() < 0.14 ? randomRange(-stock.volatility * 1.35, stock.volatility * 1.35) : 0;
+      const change = stock.drift + randomRange(-stock.volatility, stock.volatility) + shock;
+      stock.price = Math.max(1, stock.price * (1 + change));
+      stock.lastChange = change;
+      stock.history.push(stock.price);
+      if (stock.history.length > 60) {
+        stock.history.shift();
       }
 
       rerenderOpenStockBrokerApps();
@@ -5042,7 +5131,7 @@
       const price = Math.ceil(stock.price);
       const shares = Math.floor(state.gold / Math.max(1, price));
       if (shares > 0) {
-        buyStock(symbol, shares);
+        buyStock(stock.symbol, shares);
       }
     }
 
@@ -5070,9 +5159,6 @@
         addCreditScore(4, "주식 수익 매도");
       } else {
         addCreditScore(-6, "주식 손실 매도");
-        if (stock.kind === "cursed" && stock.cursedLossHeat) {
-          state.heat += stock.cursedLossHeat;
-        }
       }
 
       rerenderOpenStockBrokerApps();
@@ -5082,14 +5168,14 @@
     function sellAllStock(symbol) {
       const stock = stockBySymbol(symbol);
       if (stock) {
-        sellStockShares(symbol, stock.shares);
+        sellStockShares(stock.symbol, stock.shares);
       }
     }
 
     function renderStockGraph(svg, history) {
       if (!svg || !history || history.length < 2) {
         if (svg) {
-          svg.innerHTML = "<rect x=\"0\" y=\"0\" width=\"260\" height=\"80\" rx=\"6\" fill=\"rgba(0,0,0,0.10)\"></rect>";
+          svg.innerHTML = "<rect x=\"0\" y=\"0\" width=\"260\" height=\"52\" rx=\"6\" fill=\"rgba(0,0,0,0.10)\"></rect>";
         }
         return;
       }
@@ -5099,70 +5185,81 @@
       const range = Math.max(1, max - min);
       const points = history.map((price, index) => {
         const x = (index / Math.max(1, history.length - 1)) * 260;
-        const y = 76 - ((price - min) / range) * 72;
+        const y = 48 - ((price - min) / range) * 44;
         return x.toFixed(1) + "," + y.toFixed(1);
       }).join(" ");
 
       svg.innerHTML =
-        "<rect x=\"0\" y=\"0\" width=\"260\" height=\"80\" rx=\"6\" fill=\"rgba(0,0,0,0.10)\"></rect>" +
+        "<rect x=\"0\" y=\"0\" width=\"260\" height=\"52\" rx=\"6\" fill=\"rgba(0,0,0,0.10)\"></rect>" +
         "<polyline points=\"" + points + "\" fill=\"none\" stroke=\"#217748\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></polyline>";
     }
 
+    function applyStockBrokerLayout(popup) {
+      const minimized = Boolean(popup.stockApp?.minimized);
+      popup.element.classList.toggle("minimized", minimized);
+      popup.element.style.width = minimized ? "280px" : "300px";
+      const title = popup.element.querySelector(".popupTitleText");
+      if (title) {
+        title.textContent = minimized ? "증권 LIVE  " + stockTickerText() : "팝업 증권 LIVE";
+      }
+      const button = popup.element.querySelector(".popupMinimize");
+      if (button) {
+        button.textContent = minimized ? "＋" : "－";
+        button.title = minimized ? "증권 앱 펼치기" : "증권 앱 최소화";
+      }
+    }
+
+    function toggleStockBrokerMinimized(popupId) {
+      const popup = state.openPopups.find(item => item.id === popupId && item.def.type === "stock_broker_app");
+      if (!popup) {
+        return;
+      }
+      popup.stockApp.minimized = !popup.stockApp.minimized;
+      rerenderPopupBody(popup, renderStockBrokerControls);
+    }
+
     function renderStockBrokerControls(body, popup) {
-      const market = state.stockMarket;
+      body.replaceChildren();
       const stock = selectedStock();
-      if (!market || !stock) {
+      if (!stock) {
         const warning = document.createElement("div");
         warning.className = "popupWarning";
         warning.textContent = "주식시장 데이터를 찾을 수 없습니다.";
         body.appendChild(warning);
+        applyStockBrokerLayout(popup);
         return;
       }
 
+      if (popup.stockApp?.minimized) {
+        const ticker = document.createElement("div");
+        ticker.className = "stockTickerCompact";
+        ticker.textContent = stockTickerText();
+        body.appendChild(ticker);
+        applyStockBrokerLayout(popup);
+        return;
+      }
+
+      const info = stockProfitInfo();
+      const arrow = (stock.lastChange || 0) >= 0 ? "▲" : "▼";
       const header = document.createElement("div");
-      header.className = "popupWarning";
+      header.className = "stockBrokerHeader";
       header.innerHTML =
         "<strong>" + stock.name + " (" + stock.symbol + ")</strong><br>" +
-        "현재가: " + Math.ceil(stock.price) + "G<br>" +
-        "직전 변동: " + formatSignedPercent(stock.lastChange || 0);
+        "현재가: " + Math.ceil(stock.price) + "G " + arrow + " " + formatSignedPercent(stock.lastChange || 0);
 
-      const tabs = document.createElement("div");
-      tabs.className = "stockTabs";
-      for (const option of market.symbols) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = option.name;
-        button.className = option.symbol === stock.symbol ? "selected" : "";
-        button.addEventListener("click", () => {
-          state.stockMarket.selectedSymbol = option.symbol;
-          rerenderOpenStockBrokerApps();
-        });
-        tabs.appendChild(button);
-      }
+      const portfolio = document.createElement("div");
+      portfolio.className = "stockPortfolioBox";
+      portfolio.innerHTML =
+        "보유: " + stock.shares + "주 / 평단: " + Math.round(stock.avgCost) + "G<br>" +
+        "평가액: " + Math.floor(info.value) + "G<br>" +
+        "평가손익: " + (info.profit >= 0 ? "+" : "") + Math.round(info.profit) + "G (" + formatSignedPercent(info.rate) + ")";
 
       const chart = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       chart.setAttribute("class", "stockChart");
-      chart.setAttribute("viewBox", "0 0 260 80");
+      chart.setAttribute("viewBox", "0 0 260 52");
       chart.setAttribute("width", "260");
-      chart.setAttribute("height", "80");
+      chart.setAttribute("height", "52");
       renderStockGraph(chart, stock.history);
-
-      const ownedValue = stock.shares * stock.price;
-      const ownedPrincipal = stock.shares * stock.avgCost;
-      const profit = ownedValue - ownedPrincipal;
-      const profitRate = ownedPrincipal > 0 ? profit / ownedPrincipal : 0;
-      const portfolio = document.createElement("div");
-      portfolio.className = "stockPortfolioBox";
-      portfolio.innerHTML = stock.shares > 0
-        ? "보유: " + stock.shares + "주<br>" +
-          "평단: " + Math.round(stock.avgCost) + "G<br>" +
-          "평가액: " + Math.floor(ownedValue) + "G<br>" +
-          "손익: " + (profit >= 0 ? "+" : "") + Math.round(profit) + "G (" + formatSignedPercent(profitRate) + ")<br>" +
-          "총 주식 평가액: " + Math.floor(totalStockHoldingsValue()) + "G<br>" +
-          "총 원금: " + Math.round(totalStockPrincipal()) + "G"
-        : "보유 없음<br>" +
-          "총 주식 평가액: " + Math.floor(totalStockHoldingsValue()) + "G<br>" +
-          "총 원금: " + Math.round(totalStockPrincipal()) + "G";
 
       const price = Math.ceil(stock.price);
       const tradeGrid = document.createElement("div");
@@ -5174,14 +5271,6 @@
       buyOne.textContent = "1주 매수";
       buyOne.disabled = state.gold < price;
       buyOne.addEventListener("click", () => buyStock(stock.symbol, 1));
-
-      const buyFive = document.createElement("button");
-      buyFive.type = "button";
-      buyFive.className = "stockBuyButton";
-      buyFive.dataset.cost = String(price * 5);
-      buyFive.textContent = "5주 매수";
-      buyFive.disabled = state.gold < price * 5;
-      buyFive.addEventListener("click", () => buyStock(stock.symbol, 5));
 
       const buyMax = document.createElement("button");
       buyMax.type = "button";
@@ -5205,8 +5294,9 @@
       sellAll.disabled = stock.shares <= 0;
       sellAll.addEventListener("click", () => sellAllStock(stock.symbol));
 
-      tradeGrid.append(buyOne, buyFive, buyMax, sellOne, sellAll);
-      body.append(header, tabs, chart, portfolio, tradeGrid);
+      tradeGrid.append(buyOne, buyMax, sellOne, sellAll);
+      body.append(header, portfolio, chart, tradeGrid);
+      applyStockBrokerLayout(popup);
     }
 
     function rerenderOpenStockBrokerApps() {
@@ -5513,6 +5603,10 @@
         return;
       }
       const popup = state.openPopups[index];
+      if (popup.def.type === "stock_broker_app") {
+        createSystemGrowthPopup("증권 앱 고정", "증권 앱은 닫을 수 없습니다. 최소화하거나 전량 매도만 할 수 있습니다.");
+        return;
+      }
       if (popup.def.type === "interest_offer" && popup.interestAccepted && !popup.interestMatured) {
         cancelInterestOffer(popup);
       }
@@ -5536,11 +5630,11 @@
         return;
       }
       const target = state.stats.smartEmergencyClose > 0
-        ? (state.openPopups.find(popup => popup.def.type !== "basic" && !isPopupLocked(popup)) || state.openPopups.find(popup => !isPopupLocked(popup)))
-        : state.openPopups.find(popup => !isPopupLocked(popup));
+        ? (state.openPopups.find(popup => popup.def.type !== "basic" && isEmergencyClosablePopup(popup)) || state.openPopups.find(isEmergencyClosablePopup))
+        : state.openPopups.find(isEmergencyClosablePopup);
       if (!target) {
-        if (state.openPopups.some(popup => popup.def.type === "stock_broker_app" && hasAnyStockHoldings())) {
-          createSystemGrowthPopup("증권 앱 잠김", "보유 주식이 있습니다. 전량 매도해야 증권 앱을 닫을 수 있습니다.");
+        if (state.openPopups.some(popup => popup.def.type === "stock_broker_app")) {
+          createSystemGrowthPopup("긴급 닫기 실패", "증권 앱은 긴급 닫기 대상이 아닙니다.");
           return;
         }
         createSystemGrowthPopup("긴급 닫기 실패", "열린 팝업이 모두 정산 필요 상태입니다.");
@@ -5916,14 +6010,20 @@
       const emergency = state.emergencyTimer > 0 ? state.emergencyTimer.toFixed(1) + "초" : "준비됨";
       const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
       const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
+      const stock = selectedStock();
+      const stockInfo = stockProfitInfo();
       const stockValue = Math.floor(totalStockHoldingsValue());
       const stockPrincipal = Math.round(totalStockPrincipal());
+      const stockLine = stock
+        ? "주가: " + Math.ceil(stock.price) + "G " + formatSignedPercent(stock.lastChange || 0) + " / 손익: " + (stockInfo.profit >= 0 ? "+" : "") + Math.round(stockInfo.profit) + "G"
+        : "주가: 없음";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>Heat: " + state.heat.toFixed(1) +
         " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 부채: " + state.debtGold + "G" +
+        "<br>" + stockLine +
         "<br>주식 원금: " + stockPrincipal + "G" +
         "<br>1차: " + (state.primaryModule ? moduleName(state.primaryModule) + " 숙련 " + state.primaryMastery : "미선택") +
         " / 보조: " + (state.secondaryModule ? moduleName(state.secondaryModule) + " 숙련 " + state.secondaryMastery : "없음") +
@@ -5948,6 +6048,7 @@
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
+        "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
         "<br>부채 가격 페널티: " + Math.round(debtPenalty * 100) + "%" +
         "<br>스폰서 완료/보상: " + state.sponsoredCompletions + " / " + state.metrics.sponsoredRewards +
@@ -6041,6 +6142,11 @@
 
       const popupId = button.dataset.popup;
       if (popupId) {
+        if (popupId === "stock_broker_app") {
+          ensureStockBrokerApp();
+          updateUI();
+          return;
+        }
         const def = POPUP_DEFINITIONS.find(item => item.id === popupId);
         if (def && state.openPopups.length < maxOpenPopups()) {
           createPopup(def);
@@ -6080,6 +6186,7 @@
         state.activePlaystyle = "investor_starter";
         state.activePlaystyleName = "투자자 스타터 계약";
         state.firstPurchasePackageChosen = state.activePlaystyleName;
+        ensureStockBrokerApp();
       } else if (button.dataset.debug === "clearPlaystyle") {
         state.activePlaystyle = null;
         state.activePlaystyleName = "미선택";
@@ -6090,9 +6197,12 @@
 
     function clearAllPopupsForDebug() {
       for (const popup of state.openPopups) {
+        if (popup.def.type === "stock_broker_app") {
+          continue;
+        }
         popup.element.remove();
       }
-      state.openPopups = [];
+      state.openPopups = state.openPopups.filter(popup => popup.def.type === "stock_broker_app");
     }
 
     function joystickRadius() {
