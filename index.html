@@ -1174,6 +1174,10 @@
             <button type="button" data-debug="xp10">XP +10</button>
             <button type="button" data-debug="xp">XP +레벨</button>
             <button type="button" data-debug="forceLevel">강제 레벨업</button>
+            <button type="button" data-debug="formSelect">Lv.9 방식 선택</button>
+            <button type="button" data-debug="mechanicSelect">Lv.13 기믹 선택</button>
+            <button type="button" data-debug="scalingSelect">Lv.17 최적화</button>
+            <button type="button" data-debug="executionWindow">처형 창 +4초</button>
             <button type="button" data-debug="boss">보스 소환</button>
             <button type="button" data-debug="bossPackage">보스 패키지</button>
             <button type="button" data-debug="rate">팝업 x2</button>
@@ -2021,6 +2025,45 @@
       }
     ];
 
+    const ATTACK_FORMS = [
+      { id: "ranged_projectile", name: "기본 탄환", description: "가장 가까운 적을 자동 조준해 실제 탄환을 발사합니다.", compatibleModules: ["ranged"], tags: ["projectile", "targeted"] },
+      { id: "ranged_scatter", name: "산탄", description: "자동 조준 방향으로 탄환 3발을 퍼뜨려 발사합니다.", compatibleModules: ["ranged"], tags: ["projectile", "scatter"] },
+      { id: "ranged_bounce", name: "반사탄", description: "첫 적중 후 주변 적에게 추가 연쇄 피해를 줍니다.", compatibleModules: ["ranged"], tags: ["projectile", "bounce"] },
+      { id: "ranged_laser", name: "레이저", description: "자동 조준한 적 방향으로 즉시 관통 빔을 발사합니다.", compatibleModules: ["ranged"], tags: ["beam", "line", "targeted"] },
+      { id: "melee_forward_slash", name: "전방 참격", description: "현재 baseline처럼 전방 캡슐 범위를 베어냅니다.", compatibleModules: ["melee"], tags: ["melee", "line", "directional"] },
+      { id: "melee_circle_slash", name: "원형 베기", description: "명시적인 선택 보상으로 주변 전체를 베어냅니다.", compatibleModules: ["melee"], tags: ["melee", "area"] },
+      { id: "melee_sword_wave", name: "검기", description: "전방으로 짧은 사거리의 넓은 투사체를 날립니다.", compatibleModules: ["melee"], tags: ["melee", "projectile", "directional"] },
+      { id: "melee_dash_slash", name: "돌진 참격", description: "전방 긴 선분을 따라 강하게 베어냅니다. 현재는 이동 없이 판정만 적용합니다.", compatibleModules: ["melee"], tags: ["melee", "dash", "line"] },
+      { id: "aura_steady", name: "지속 오라", description: "현재 baseline처럼 상시 링과 주기 피해를 유지합니다.", compatibleModules: ["aura"], tags: ["aura", "area"] },
+      { id: "aura_pulse", name: "맥동 오라", description: "느리지만 강한 오라 파동을 냅니다.", compatibleModules: ["aura"], tags: ["aura", "pulse", "area"] },
+      { id: "aura_infection", name: "감염 오라", description: "Heat나 팝업 과밀 상태에서 더 강한 녹색 파동을 냅니다.", compatibleModules: ["aura"], tags: ["aura", "infection", "area"] },
+      { id: "aura_absorb", name: "흡수 오라", description: "오라로 적을 처치하면 소량의 골드를 흡수합니다.", compatibleModules: ["aura"], tags: ["aura", "area", "absorb"] },
+      { id: "deploy_mine", name: "반응 지뢰", description: "현재 baseline처럼 적 접근 즉시 폭발하는 지뢰를 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "mine", "explosion"] },
+      { id: "deploy_turret", name: "임시 포탑", description: "짧은 시간 자동 사격하는 포탑을 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "turret", "projectile"] },
+      { id: "deploy_maturity_bomb", name: "만기 폭탄", description: "오래 유지될수록 강해지는 반응 폭탄을 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "bomb", "charge", "explosion"] },
+      { id: "deploy_field", name: "장판 설치", description: "짧게 유지되는 피해 장판을 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "area", "field"] }
+    ];
+
+    const ATTACK_MECHANICS = [
+      { id: "bounce_plus", name: "추가 반사", description: "반사형 공격의 연쇄 횟수 +1", compatibleTags: ["projectile", "bounce"] },
+      { id: "overcharge", name: "과충전", description: "5초 이상 충전된 다음 공격 피해 +50%", compatibleTags: ["beam", "projectile", "turret", "charge"] },
+      { id: "kill_chain", name: "처치 연쇄", description: "이 공격으로 처치한 적 주변에 작은 2차 폭발을 냅니다.", compatibleTags: ["projectile", "beam", "melee", "area", "aura"] },
+      { id: "popup_close_trigger", name: "닫기 연계", description: "팝업을 닫으면 다음 1차 공격 피해 +25%", compatibleTags: ["any"] },
+      { id: "compressed_attack", name: "압축 공격", description: "3초 이상 공격하지 못한 모듈의 다음 공격 피해 +30%", compatibleTags: ["beam", "charge", "deploy", "melee", "projectile"] },
+      { id: "pierce", name: "관통", description: "투사체 관통 +1, 빔은 폭이 조금 넓어집니다.", compatibleTags: ["projectile", "beam"] }
+    ];
+
+    const BUILD_SCALINGS = [
+      { id: "investor_capital_amplifier", name: "자본 증폭", playstyle: "investor", description: "투자 중 골드 50G당 주 공격 피해 +5%, 최대 +60%", compatibleTags: ["any"] },
+      { id: "investor_credit_precision", name: "신용 정밀화", playstyle: "investor", description: "신용도가 높을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
+      { id: "sponsored_overcharge", name: "광고 과충전", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["projectile", "beam", "turret"] },
+      { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["area", "aura", "explosion", "beam", "field"] },
+      { id: "clean_precision", name: "정리 정밀화", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["projectile", "beam", "melee", "deploy", "line"] },
+      { id: "execution_empty_slot_reload", name: "공백 장전", playstyle: "executioner", description: "팝업을 닫은 뒤 빈 팝업 슬롯 수만큼 공격이 강화됩니다.", compatibleTags: ["any"] },
+      { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "Heat가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
+      { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["projectile", "beam", "line", "aura", "deploy"] }
+    ];
+
     const DEEPENING_OPTIONS = [
       { id: "power", name: "화력형", description: "해당 모듈 피해량 +30%", damage: 0.3 },
       { id: "tempo", name: "빈도형", description: "해당 모듈 쿨타임 -20%", cooldown: -0.2 },
@@ -2132,6 +2175,20 @@
         primaryDeepening: null,
         secondaryDeepening: null,
         moduleSynergy: null,
+        moduleUpgrades: {
+          primary: { form: null, mechanic: null, scaling: null },
+          secondary: { form: null, mechanic: null, scaling: null }
+        },
+        moduleCharge: {
+          primary: 0,
+          secondary: 0
+        },
+        moduleIdleTime: {
+          primary: 0,
+          secondary: 0
+        },
+        popupExecutionWindow: 0,
+        popupCloseAttackPrimed: false,
         moduleTimers: {
           primary: 0,
           secondary: 0
@@ -2234,6 +2291,8 @@
         },
         enemies: [],
         mines: [],
+        turrets: [],
+        fields: [],
         projectiles: [],
         pickups: [],
         attacks: [],
@@ -2442,6 +2501,161 @@
       return DEEPENING_OPTIONS.find(option => option.id === state[slot + "Deepening"]);
     }
 
+    function defaultFormForModule(moduleId) {
+      const defaults = {
+        ranged: "ranged_projectile",
+        melee: "melee_forward_slash",
+        aura: "aura_steady",
+        deploy: "deploy_mine"
+      };
+      return defaults[moduleId] || null;
+    }
+
+    function formById(id) {
+      return ATTACK_FORMS.find(form => form.id === id);
+    }
+
+    function mechanicById(id) {
+      return ATTACK_MECHANICS.find(mechanic => mechanic.id === id);
+    }
+
+    function scalingById(id) {
+      return BUILD_SCALINGS.find(scaling => scaling.id === id);
+    }
+
+    function selectedFormForSlot(slot) {
+      const module = moduleById(state[slot + "Module"]);
+      if (!module) {
+        return null;
+      }
+      const selected = formById(state.moduleUpgrades?.[slot]?.form);
+      if (selected && selected.compatibleModules.includes(module.id)) {
+        return selected;
+      }
+      return formById(defaultFormForModule(module.id));
+    }
+
+    function selectedMechanicForSlot(slot) {
+      return mechanicById(state.moduleUpgrades?.[slot]?.mechanic);
+    }
+
+    function selectedScalingForSlot(slot) {
+      return scalingById(state.moduleUpgrades?.[slot]?.scaling);
+    }
+
+    function tagsCompatible(compatibleTags, tags) {
+      if (!compatibleTags || compatibleTags.includes("any")) {
+        return true;
+      }
+      return compatibleTags.some(tag => tags.includes(tag));
+    }
+
+    function activePlaystyleKey() {
+      const map = {
+        investor_starter: "investor",
+        sponsored_starter: "sponsored",
+        clutter_chaos_starter: "clutter",
+        clean_desk_starter: "clean",
+        popup_executioner_starter: "executioner",
+        risky_terms_starter: "curse"
+      };
+      return map[state.activePlaystyle] || "generic";
+    }
+
+    function totalOwnedItemCount() {
+      return Object.values(state.itemCounts || {}).reduce((sum, count) => sum + count, 0);
+    }
+
+    function buildScalingContext() {
+      const maxPopups = maxOpenPopups();
+      return {
+        gold: state.gold,
+        investedGold: state.investedGold,
+        debtGold: state.debtGold,
+        creditScore: state.creditScore,
+        heat: state.heat,
+        openPopupCount: state.openPopups.length,
+        maxPopupCount: maxPopups,
+        emptyPopupSlots: Math.max(0, maxPopups - state.openPopups.length),
+        sponsoredCompletions: state.sponsoredCompletions,
+        openSponsoredAds: countOpenAdPopups(),
+        itemCount: totalOwnedItemCount(),
+        popupExecutionWindow: state.popupExecutionWindow,
+        activePlaystyle: state.activePlaystyle
+      };
+    }
+
+    function applyModuleUpgradeScaling(slot, stats) {
+      const form = selectedFormForSlot(slot);
+      const mechanic = selectedMechanicForSlot(slot);
+      const scaling = selectedScalingForSlot(slot);
+      const tags = form?.tags || [];
+      const context = buildScalingContext();
+      const upgraded = {
+        ...stats,
+        form,
+        mechanic,
+        scaling,
+        tags,
+        extraTargets: Math.max(0, Math.round(state.stats.extraTargets)),
+        bounceCount: form?.id === "ranged_bounce" ? 1 : 0,
+        beamWidth: form?.id === "ranged_laser" ? 18 : 14,
+        projectileCount: form?.id === "ranged_scatter" ? 3 : 1,
+        damageMultiplierFromUpgrade: 0,
+        rangeMultiplierFromUpgrade: 0,
+        cooldownMultiplierFromUpgrade: 0,
+        chargedDamageMultiplier: 0,
+        primedDamageMultiplier: 0
+      };
+
+      if (mechanic?.id === "bounce_plus" && tags.includes("bounce")) {
+        upgraded.bounceCount += 1;
+      }
+      if (mechanic?.id === "pierce") {
+        if (tags.includes("projectile")) {
+          upgraded.extraTargets += 1;
+        }
+        if (tags.includes("beam")) {
+          upgraded.beamWidth += 4;
+        }
+      }
+
+      if (slot === "primary" && scaling && tagsCompatible(scaling.compatibleTags, tags)) {
+        if (scaling.id === "investor_capital_amplifier") {
+          upgraded.damageMultiplierFromUpgrade += Math.min(0.6, Math.floor(context.investedGold / 50) * 0.05);
+        } else if (scaling.id === "investor_credit_precision") {
+          upgraded.cooldownMultiplierFromUpgrade += context.creditScore >= 80 ? -0.15 : context.creditScore >= 60 ? -0.08 : 0;
+        } else if (scaling.id === "sponsored_overcharge") {
+          upgraded.damageMultiplierFromUpgrade += Math.min(0.4, context.sponsoredCompletions * 0.03);
+        } else if (scaling.id === "clutter_resonance") {
+          upgraded.rangeMultiplierFromUpgrade += context.openPopupCount >= 7 ? 0.4 : context.openPopupCount >= 5 ? 0.25 : context.openPopupCount >= 3 ? 0.1 : 0;
+        } else if (scaling.id === "clean_precision") {
+          if (context.openPopupCount === 0) {
+            upgraded.damageMultiplierFromUpgrade += 0.25;
+            upgraded.rangeMultiplierFromUpgrade += 0.15;
+          } else if (context.openPopupCount <= 1) {
+            upgraded.damageMultiplierFromUpgrade += 0.15;
+            upgraded.rangeMultiplierFromUpgrade += 0.1;
+          }
+        } else if (scaling.id === "execution_empty_slot_reload" && context.popupExecutionWindow > 0) {
+          upgraded.damageMultiplierFromUpgrade += context.emptyPopupSlots * 0.06;
+          upgraded.rangeMultiplierFromUpgrade += context.emptyPopupSlots * 0.04;
+        } else if (scaling.id === "curse_heat_overload") {
+          upgraded.damageMultiplierFromUpgrade += context.heat * 0.04 + (context.heat >= 5 ? 0.1 : 0);
+        } else if (scaling.id === "gold_reserve_range") {
+          upgraded.rangeMultiplierFromUpgrade += Math.min(0.25, Math.floor(context.gold / 100) * 0.05);
+        }
+      }
+
+      upgraded.damage *= Math.max(0.1, 1 + upgraded.damageMultiplierFromUpgrade);
+      upgraded.range *= Math.max(0.1, 1 + upgraded.rangeMultiplierFromUpgrade);
+      upgraded.cooldown *= Math.max(0.2, 1 + upgraded.cooldownMultiplierFromUpgrade);
+      if (form?.id === "aura_pulse") {
+        upgraded.cooldown *= 1.25;
+      }
+      return upgraded;
+    }
+
     function moduleCombatStats(slot) {
       const module = moduleById(state[slot + "Module"]);
       if (!module) {
@@ -2462,12 +2676,13 @@
         cooldownMultiplier += state.stats.dragAttackIntervalMultiplier;
       }
 
-      return {
+      const stats = {
         module,
         damage: module.baseDamage * secondaryScale * Math.max(0.1, 1 + damageMultiplier),
         cooldown: module.baseCooldown * Math.max(0.2, 1 + cooldownMultiplier),
         range: module.baseRange * Math.max(0.25, 1 + rangeMultiplier)
       };
+      return applyModuleUpgradeScaling(slot, stats);
     }
 
     function effectiveDamage() {
@@ -3214,6 +3429,123 @@
       perkOverlay.style.display = "flex";
     }
 
+    function openAttackFormSelection(slot) {
+      const module = moduleById(state[slot + "Module"]);
+      if (!module) {
+        return;
+      }
+
+      state.selectingModule = true;
+      state.selectingPerk = true;
+      state.paused = true;
+      perkChoices.replaceChildren();
+
+      setModulePanelText(
+        "Lv.9 1차 공격 방식 선택",
+        "1차 공격 모듈의 기본 공격 형태를 바꿉니다."
+      );
+
+      for (const form of ATTACK_FORMS.filter(item => item.compatibleModules.includes(module.id))) {
+        const button = document.createElement("button");
+        button.className = "moduleChoice";
+        button.innerHTML =
+          "<strong>" + form.name + "</strong>" +
+          "<span>" + form.description + "<br>태그: " + form.tags.join(", ") + "</span>";
+        button.addEventListener("click", () => {
+          state.moduleUpgrades[slot].form = form.id;
+          state.recentPerkText = "<strong>공격 방식:</strong> " + module.name + " · " + form.name;
+          closeModuleSelection();
+        });
+        perkChoices.appendChild(button);
+      }
+
+      perkOverlay.style.display = "flex";
+    }
+
+    function openAttackMechanicSelection(slot) {
+      const form = selectedFormForSlot(slot);
+      if (!form) {
+        return;
+      }
+
+      state.selectingModule = true;
+      state.selectingPerk = true;
+      state.paused = true;
+      perkChoices.replaceChildren();
+
+      setModulePanelText(
+        "Lv.13 1차 공격 기믹 선택",
+        "선택한 공격 방식에 특수 규칙을 얹습니다."
+      );
+
+      const candidates = ATTACK_MECHANICS.filter(mechanic => {
+        if (mechanic.id === "bounce_plus" && !form.tags.includes("bounce")) {
+          return false;
+        }
+        return tagsCompatible(mechanic.compatibleTags, form.tags);
+      });
+      for (const mechanic of candidates) {
+        const button = document.createElement("button");
+        button.className = "moduleChoice";
+        button.innerHTML =
+          "<strong>" + mechanic.name + "</strong>" +
+          "<span>" + mechanic.description + "<br>호환: " + mechanic.compatibleTags.join(", ") + "</span>";
+        button.addEventListener("click", () => {
+          state.moduleUpgrades[slot].mechanic = mechanic.id;
+          state.recentPerkText = "<strong>공격 기믹:</strong> " + mechanic.name;
+          closeModuleSelection();
+        });
+        perkChoices.appendChild(button);
+      }
+
+      perkOverlay.style.display = "flex";
+    }
+
+    function openBuildScalingSelection() {
+      const form = selectedFormForSlot("primary");
+      const tags = form?.tags || ["any"];
+      const active = activePlaystyleKey();
+
+      state.selectingModule = true;
+      state.selectingPerk = true;
+      state.paused = true;
+      perkChoices.replaceChildren();
+
+      setModulePanelText(
+        "Lv.17 빌드 최적화 선택",
+        "현재 런의 자원, 팝업 상태, 플레이스타일을 1차 공격 성장 조건으로 연결합니다."
+      );
+
+      const compatible = BUILD_SCALINGS.filter(scaling => tagsCompatible(scaling.compatibleTags, tags));
+      const ordered = [
+        ...compatible.filter(scaling => scaling.playstyle === active),
+        ...compatible.filter(scaling => scaling.playstyle === "generic"),
+        ...compatible.filter(scaling => scaling.playstyle !== active && scaling.playstyle !== "generic")
+      ];
+      const unique = [];
+      for (const scaling of ordered) {
+        if (!unique.some(item => item.id === scaling.id)) {
+          unique.push(scaling);
+        }
+      }
+
+      for (const scaling of unique.slice(0, 5)) {
+        const button = document.createElement("button");
+        button.className = "moduleChoice";
+        button.innerHTML =
+          "<strong>" + scaling.name + "</strong>" +
+          "<span>" + scaling.description + "<br>계열: " + scaling.playstyle + "</span>";
+        button.addEventListener("click", () => {
+          state.moduleUpgrades.primary.scaling = scaling.id;
+          state.recentPerkText = "<strong>빌드 최적화:</strong> " + scaling.name;
+          closeModuleSelection();
+        });
+        perkChoices.appendChild(button);
+      }
+
+      perkOverlay.style.display = "flex";
+    }
+
     function openDeepeningSelection(slot) {
       state.selectingModule = true;
       state.selectingPerk = true;
@@ -3284,20 +3616,20 @@
     }
 
     function handleLevelChoice() {
-      if (state.level === 5 && !state.secondaryModule) {
+      if (state.level >= 5 && !state.secondaryModule) {
         openAttackModuleSelection("secondary");
         return true;
       }
-      if (state.level === 9 && !state.primaryDeepening) {
-        openDeepeningSelection("primary");
+      if (state.level >= 9 && !state.moduleUpgrades.primary.form) {
+        openAttackFormSelection("primary");
         return true;
       }
-      if (state.level === 13 && state.secondaryModule && !state.secondaryDeepening) {
-        openDeepeningSelection("secondary");
+      if (state.level >= 13 && !state.moduleUpgrades.primary.mechanic) {
+        openAttackMechanicSelection("primary");
         return true;
       }
-      if (state.level === 17 && state.secondaryModule && !state.moduleSynergy) {
-        openSynergySelection();
+      if (state.level >= 17 && !state.moduleUpgrades.primary.scaling) {
+        openBuildScalingSelection();
         return true;
       }
       return false;
@@ -3577,6 +3909,11 @@
         maxTtl: options.ttl,
         pierce: options.pierce || 0,
         sourceSlot: options.sourceSlot,
+        mechanicId: options.mechanicId || null,
+        bounceCount: options.bounceCount || 0,
+        bounceDamage: options.bounceDamage || 0,
+        bounceRange: options.bounceRange || 140,
+        chainDamage: options.chainDamage || 0,
         hitTargets: []
       });
     }
@@ -3595,9 +3932,260 @@
         radius: CONFIG.rangedProjectileRadius,
         damage: stats.damage,
         ttl: Math.max(0.25, stats.range / speed),
-        pierce: Math.max(0, Math.round(state.stats.extraTargets)),
+        pierce: Math.max(0, stats.extraTargets || 0),
+        sourceSlot: slot,
+        mechanicId: stats.mechanic?.id || null,
+        bounceCount: stats.bounceCount || 0,
+        bounceDamage: stats.damage * 0.8,
+        bounceRange: Math.max(130, stats.range * 0.75),
+        chainDamage: stats.damage * 0.3
+      });
+    }
+
+    function damageEnemyTracked(enemy, amount, sourceSlot, killed) {
+      const wasAlive = enemy && !enemy.dead;
+      const hit = damageEnemy(enemy, amount, sourceSlot);
+      if (hit && wasAlive && enemy.dead && killed) {
+        killed.push({ x: enemy.x, y: enemy.y });
+      }
+      return hit;
+    }
+
+    function applyKillChain(kills, damage, sourceSlot) {
+      for (const kill of kills) {
+        addCircleAttack(kill.x, kill.y, 48, "rgba(255, 236, 169, ", 0.18);
+        for (const enemy of state.enemies) {
+          if (!enemy.dead && distance(enemy, kill) <= 48 + enemy.radius) {
+            damageEnemy(enemy, damage, sourceSlot);
+          }
+        }
+      }
+    }
+
+    function applyActionDamageModifiers(slot, stats) {
+      const boosted = { ...stats };
+      let multiplier = 0;
+      boosted.consumeOvercharge = false;
+      boosted.consumeCompressed = false;
+      boosted.consumePrimed = false;
+
+      if (stats.mechanic?.id === "overcharge" && state.moduleCharge[slot] >= 5) {
+        multiplier += 0.5;
+        boosted.consumeOvercharge = true;
+        boosted.chargedDamageMultiplier = 0.5;
+      }
+      if (stats.mechanic?.id === "compressed_attack" && state.moduleIdleTime[slot] >= 3) {
+        multiplier += 0.3;
+        boosted.consumeCompressed = true;
+      }
+      if (slot === "primary" && stats.mechanic?.id === "popup_close_trigger" && state.popupCloseAttackPrimed) {
+        multiplier += 0.25;
+        boosted.consumePrimed = true;
+        boosted.primedDamageMultiplier = 0.25;
+      }
+
+      boosted.damage = stats.damage * Math.max(0.1, 1 + multiplier);
+      return boosted;
+    }
+
+    function finishModuleAction(slot, stats, actionPerformed, hitAny, killed, forced) {
+      if (!actionPerformed) {
+        return false;
+      }
+      if (stats.mechanic?.id === "kill_chain" && killed.length > 0) {
+        applyKillChain(killed, stats.damage * 0.3, slot);
+      }
+      if (hitAny && slot === "secondary" && state.moduleSynergy === "secondary_haste") {
+        state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
+      }
+      if (stats.consumeOvercharge) {
+        state.moduleCharge[slot] = 0;
+      }
+      if (stats.consumeCompressed || stats.mechanic?.id === "compressed_attack") {
+        state.moduleIdleTime[slot] = 0;
+      } else {
+        state.moduleIdleTime[slot] = 0;
+      }
+      if (stats.consumePrimed) {
+        state.popupCloseAttackPrimed = false;
+      }
+      if (!forced) {
+        state.moduleTimers[slot] = stats.cooldown;
+      }
+      return true;
+    }
+
+    function executeRangedProjectile(slot, stats, shotCount = 1, damageScale = 1, spreadStep = 0) {
+      const target = getNearestEnemyInRange(state.player, stats.range);
+      if (!target) {
+        return { actionPerformed: false, hitAny: false, killed: [] };
+      }
+      const direction = normalized(target.x - state.player.x, target.y - state.player.y);
+      const projectileStats = { ...stats, damage: stats.damage * damageScale };
+      for (let shot = 0; shot < shotCount; shot += 1) {
+        const spread = (shot - (shotCount - 1) / 2) * spreadStep;
+        spawnRangedProjectile(projectileStats, slot, direction, spread);
+      }
+      state.attacks.push({
+        type: "line",
+        x1: state.player.x,
+        y1: state.player.y,
+        x2: state.player.x + direction.x * 24,
+        y2: state.player.y + direction.y * 24,
+        ttl: 0.08,
+        maxTtl: 0.08,
+        width: 3,
+        color: "rgba(255, 246, 163, "
+      });
+      return { actionPerformed: true, hitAny: false, killed: [] };
+    }
+
+    function executeRangedLaser(slot, stats) {
+      const target = getNearestEnemyInRange(state.player, stats.range);
+      const killed = [];
+      let hitAny = false;
+      if (!target) {
+        return { actionPerformed: false, hitAny: false, killed };
+      }
+      const direction = normalized(target.x - state.player.x, target.y - state.player.y);
+      const start = { x: state.player.x, y: state.player.y };
+      const end = { x: start.x + direction.x * stats.range, y: start.y + direction.y * stats.range };
+      for (const enemy of state.enemies) {
+        if (!enemy.dead && distancePointToSegment(enemy, start, end) <= stats.beamWidth + enemy.radius) {
+          hitAny = damageEnemyTracked(enemy, stats.damage, slot, killed) || hitAny;
+        }
+      }
+      state.attacks.push({
+        type: "line",
+        x1: start.x,
+        y1: start.y,
+        x2: end.x,
+        y2: end.y,
+        ttl: 0.16,
+        maxTtl: 0.16,
+        width: stats.beamWidth,
+        color: "rgba(124, 222, 255, "
+      });
+      return { actionPerformed: true, hitAny, killed };
+    }
+
+    function executeMeleeForwardSlash(slot, stats, rangeMultiplier = 1, widthMultiplier = 1) {
+      const direction = getMeleeDirection(stats.range);
+      const start = { x: state.player.x, y: state.player.y };
+      const end = {
+        x: state.player.x + direction.x * stats.range * rangeMultiplier,
+        y: state.player.y + direction.y * stats.range * rangeMultiplier
+      };
+      const width = CONFIG.meleeSlashWidth * widthMultiplier;
+      const killed = [];
+      let hitAny = false;
+      for (const enemy of state.enemies) {
+        if (!enemy.dead && distancePointToSegment(enemy, start, end) <= width + enemy.radius) {
+          hitAny = damageEnemyTracked(enemy, stats.damage, slot, killed) || hitAny;
+        }
+      }
+      addSlashAttack(start, end, width, 0.16);
+      return { actionPerformed: true, hitAny, killed };
+    }
+
+    function executeMeleeCircleSlash(slot, stats) {
+      const killed = [];
+      let hitAny = false;
+      for (const enemy of nearestTargets(stats.range, 999)) {
+        hitAny = damageEnemyTracked(enemy, stats.damage, slot, killed) || hitAny;
+      }
+      addCircleAttack(state.player.x, state.player.y, stats.range, "rgba(255, 190, 106, ", 0.18);
+      return { actionPerformed: true, hitAny, killed };
+    }
+
+    function executeMeleeSwordWave(slot, stats) {
+      const direction = getMeleeDirection(stats.range);
+      const speed = 340;
+      spawnProjectile({
+        x: state.player.x,
+        y: state.player.y,
+        vx: direction.x * speed,
+        vy: direction.y * speed,
+        radius: 15,
+        damage: stats.damage * 0.9,
+        ttl: Math.max(0.22, (stats.range * 1.55) / speed),
+        maxTtl: Math.max(0.22, (stats.range * 1.55) / speed),
+        pierce: Math.max(1, stats.extraTargets || 0),
+        sourceSlot: slot,
+        mechanicId: stats.mechanic?.id || null,
+        chainDamage: stats.damage * 0.3,
+        hitTargets: []
+      });
+      addSlashAttack({ x: state.player.x, y: state.player.y }, { x: state.player.x + direction.x * 34, y: state.player.y + direction.y * 34 }, 28, 0.12);
+      return { actionPerformed: true, hitAny: false, killed: [] };
+    }
+
+    function executeAuraPulse(slot, stats, options = {}) {
+      const range = stats.range * (options.rangeMultiplier || 1);
+      const damage = stats.damage * (options.damageMultiplier || 1);
+      const killed = [];
+      let hitAny = false;
+      for (const enemy of nearestTargets(range, 999)) {
+        hitAny = damageEnemyTracked(enemy, damage, slot, killed) || hitAny;
+        if (options.absorb && enemy.dead) {
+          addGold(1, "auraAbsorb");
+        }
+      }
+      addCircleAttack(state.player.x, state.player.y, range, options.color || "rgba(97, 211, 255, ", options.ttl || 0.2);
+      return { actionPerformed: true, hitAny, killed };
+    }
+
+    function executeDeployMine(slot, stats, options = {}) {
+      const direction = normalized(state.lastMoveDir.x, state.lastMoveDir.y, { x: 1, y: 0 });
+      const offset = 28;
+      state.mines.push({
+        x: state.player.x + direction.x * offset,
+        y: state.player.y + direction.y * offset,
+        radius: options.radius || 7,
+        triggerRadius: CONFIG.deployTriggerRadius,
+        explosionRadius: stats.range,
+        damage: stats.damage,
+        ttl: options.ttl || 8,
+        maxTtl: options.ttl || 8,
+        elapsed: 0,
+        maturity: Boolean(options.maturity),
+        sourceSlot: slot,
+        done: false
+      });
+      addCircleAttack(state.player.x, state.player.y, 22, "rgba(176, 255, 128, ", 0.14);
+      return { actionPerformed: true, hitAny: true, killed: [] };
+    }
+
+    function executeDeployTurret(slot, stats) {
+      const direction = normalized(state.lastMoveDir.x, state.lastMoveDir.y, { x: 1, y: 0 });
+      state.turrets.push({
+        x: state.player.x + direction.x * 34,
+        y: state.player.y + direction.y * 34,
+        radius: 9,
+        ttl: 7,
+        fireTimer: 0,
+        range: Math.max(150, stats.range * 2.1),
+        damage: stats.damage * 0.45,
+        cooldown: 0.7,
         sourceSlot: slot
       });
+      addCircleAttack(state.player.x + direction.x * 34, state.player.y + direction.y * 34, 24, "rgba(97, 211, 255, ", 0.14);
+      return { actionPerformed: true, hitAny: true, killed: [] };
+    }
+
+    function executeDeployField(slot, stats) {
+      const direction = normalized(state.lastMoveDir.x, state.lastMoveDir.y, { x: 1, y: 0 });
+      state.fields.push({
+        x: state.player.x + direction.x * 36,
+        y: state.player.y + direction.y * 36,
+        radius: stats.range,
+        damage: stats.damage * 0.35,
+        ttl: 5,
+        tickTimer: 0,
+        sourceSlot: slot
+      });
+      addCircleAttack(state.player.x + direction.x * 36, state.player.y + direction.y * 36, stats.range, "rgba(97, 255, 160, ", 0.14);
+      return { actionPerformed: true, hitAny: true, killed: [] };
     }
 
     function triggerModuleAttack(slot, forced) {
@@ -3606,84 +4194,51 @@
         return false;
       }
 
-      const module = stats.module;
       const hitCount = state.stats.sponsoredDoubleHit > 0 && countOpenAdPopups() > 0 ? 2 : 1;
-      let hitAny = false;
-      let actionPerformed = false;
+      const actionStats = applyActionDamageModifiers(slot, stats);
+      const formId = actionStats.form?.id || defaultFormForModule(actionStats.module.id);
+      let result = { actionPerformed: false, hitAny: false, killed: [] };
 
-      if (module.id === "ranged") {
-        const target = getNearestEnemyInRange(state.player, stats.range);
-        if (!target) {
-          return false;
-        }
-        const direction = normalized(target.x - state.player.x, target.y - state.player.y);
-        for (let shot = 0; shot < hitCount; shot += 1) {
-          const spread = (shot - (hitCount - 1) / 2) * 0.055;
-          spawnRangedProjectile(stats, slot, direction, spread);
-        }
-        state.attacks.push({
-          type: "line",
-          x1: state.player.x,
-          y1: state.player.y,
-          x2: state.player.x + direction.x * 24,
-          y2: state.player.y + direction.y * 24,
-          ttl: 0.08,
-          maxTtl: 0.08,
-          width: 3,
-          color: "rgba(255, 246, 163, "
-        });
-        actionPerformed = true;
-      } else if (module.id === "melee") {
-        const direction = getMeleeDirection(stats.range);
-        const start = { x: state.player.x, y: state.player.y };
-        const end = {
-          x: state.player.x + direction.x * stats.range,
-          y: state.player.y + direction.y * stats.range
-        };
-        const width = CONFIG.meleeSlashWidth;
-        for (const enemy of state.enemies) {
-          if (!enemy.dead && distancePointToSegment(enemy, start, end) <= width + enemy.radius) {
-            for (let hit = 0; hit < hitCount; hit += 1) {
-              hitAny = damageEnemy(enemy, stats.damage, slot) || hitAny;
-            }
-          }
-        }
-        addSlashAttack(start, end, width, 0.16);
-        actionPerformed = true;
-      } else if (module.id === "aura") {
-        const targets = nearestTargets(stats.range, 999);
-        for (const target of targets) {
-          hitAny = damageEnemy(target, stats.damage, slot) || hitAny;
-        }
-        addCircleAttack(state.player.x, state.player.y, stats.range, "rgba(97, 211, 255, ", 0.2);
-        actionPerformed = true;
-      } else if (module.id === "deploy") {
-        const direction = normalized(state.lastMoveDir.x, state.lastMoveDir.y, { x: 1, y: 0 });
-        const offset = 28;
-        state.mines.push({
-          x: state.player.x + direction.x * offset,
-          y: state.player.y + direction.y * offset,
-          radius: 7,
-          triggerRadius: CONFIG.deployTriggerRadius,
-          explosionRadius: stats.range,
-          damage: stats.damage,
-          ttl: 8,
-          sourceSlot: slot,
-          done: false
-        });
-        addCircleAttack(state.player.x, state.player.y, 22, "rgba(176, 255, 128, ", 0.14);
-        actionPerformed = true;
-        hitAny = true;
+      if (formId === "ranged_projectile") {
+        result = executeRangedProjectile(slot, actionStats, hitCount, 1, 0.055);
+      } else if (formId === "ranged_scatter") {
+        result = executeRangedProjectile(slot, actionStats, 3 * hitCount, 0.7, 0.17);
+      } else if (formId === "ranged_bounce") {
+        result = executeRangedProjectile(slot, actionStats, hitCount, 1, 0.04);
+      } else if (formId === "ranged_laser") {
+        const laserStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
+        result = executeRangedLaser(slot, laserStats);
+      } else if (formId === "melee_forward_slash") {
+        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
+        result = executeMeleeForwardSlash(slot, meleeStats);
+      } else if (formId === "melee_circle_slash") {
+        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
+        result = executeMeleeCircleSlash(slot, meleeStats);
+      } else if (formId === "melee_sword_wave") {
+        result = executeMeleeSwordWave(slot, actionStats);
+      } else if (formId === "melee_dash_slash") {
+        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
+        result = executeMeleeForwardSlash(slot, meleeStats, 1.8, 0.9);
+      } else if (formId === "aura_steady") {
+        result = executeAuraPulse(slot, actionStats);
+      } else if (formId === "aura_pulse") {
+        result = executeAuraPulse(slot, actionStats, { damageMultiplier: 1.5, rangeMultiplier: 1.08, ttl: 0.28, color: "rgba(97, 211, 255, " });
+      } else if (formId === "aura_infection") {
+        const bonus = state.heat >= 3 || state.openPopups.length >= 5 ? 1.25 : 1;
+        result = executeAuraPulse(slot, actionStats, { damageMultiplier: bonus, color: "rgba(75, 220, 118, " });
+      } else if (formId === "aura_absorb") {
+        result = executeAuraPulse(slot, actionStats, { absorb: true, color: "rgba(116, 255, 206, " });
+      } else if (formId === "deploy_mine") {
+        result = executeDeployMine(slot, actionStats);
+      } else if (formId === "deploy_turret") {
+        result = executeDeployTurret(slot, actionStats);
+      } else if (formId === "deploy_maturity_bomb") {
+        result = executeDeployMine(slot, actionStats, { maturity: true, ttl: 9, radius: 9 });
+      } else if (formId === "deploy_field") {
+        result = executeDeployField(slot, actionStats);
       }
 
-      if (hitAny && slot === "secondary" && state.moduleSynergy === "secondary_haste") {
-        state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
-      }
-
-      if (actionPerformed && !forced) {
-        state.moduleTimers[slot] = stats.cooldown;
-      }
-      return actionPerformed;
+      return finishModuleAction(slot, actionStats, result.actionPerformed, result.hitAny, result.killed || [], forced);
     }
 
     function updateAutoAttack(dt) {
@@ -3695,6 +4250,19 @@
       }
       if (state.secondaryModule && state.moduleTimers.secondary <= 0) {
         triggerModuleAttack("secondary", false);
+      }
+    }
+
+    function updateModuleUpgradeTimers(dt) {
+      state.popupExecutionWindow = Math.max(0, state.popupExecutionWindow - dt);
+      for (const slot of ["primary", "secondary"]) {
+        if (!state[slot + "Module"]) {
+          continue;
+        }
+        state.moduleIdleTime[slot] += dt;
+        if (selectedMechanicForSlot(slot)?.id === "overcharge") {
+          state.moduleCharge[slot] = Math.min(8, state.moduleCharge[slot] + dt);
+        }
       }
     }
 
@@ -3711,8 +4279,41 @@
 
           if (distance(projectile, enemy) <= projectile.radius + enemy.radius) {
             projectile.hitTargets.push(enemy);
-            if (damageEnemy(enemy, projectile.damage, projectile.sourceSlot) && projectile.sourceSlot === "secondary" && state.moduleSynergy === "secondary_haste") {
+            const killed = [];
+            const hit = damageEnemyTracked(enemy, projectile.damage, projectile.sourceSlot, killed);
+            if (hit && projectile.sourceSlot === "secondary" && state.moduleSynergy === "secondary_haste") {
               state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
+            }
+            if (hit && projectile.mechanicId === "kill_chain" && killed.length > 0) {
+              applyKillChain(killed, projectile.chainDamage || projectile.damage * 0.3, projectile.sourceSlot);
+            }
+            let bounceOrigin = enemy;
+            while (hit && projectile.bounceCount > 0) {
+              const bounceTarget = state.enemies
+                .filter(candidate => !candidate.dead && !projectile.hitTargets.includes(candidate) && distance(candidate, bounceOrigin) <= projectile.bounceRange)
+                .sort((a, b) => distance(a, bounceOrigin) - distance(b, bounceOrigin))[0];
+              if (!bounceTarget) {
+                break;
+              }
+              projectile.hitTargets.push(bounceTarget);
+              state.attacks.push({
+                type: "line",
+                x1: bounceOrigin.x,
+                y1: bounceOrigin.y,
+                x2: bounceTarget.x,
+                y2: bounceTarget.y,
+                ttl: 0.12,
+                maxTtl: 0.12,
+                width: 4,
+                color: "rgba(255, 246, 163, "
+              });
+              const bounceKills = [];
+              damageEnemyTracked(bounceTarget, projectile.bounceDamage || projectile.damage * 0.8, projectile.sourceSlot, bounceKills);
+              if (projectile.mechanicId === "kill_chain" && bounceKills.length > 0) {
+                applyKillChain(bounceKills, projectile.chainDamage || projectile.damage * 0.3, projectile.sourceSlot);
+              }
+              bounceOrigin = bounceTarget;
+              projectile.bounceCount -= 1;
             }
             if (projectile.pierce > 0) {
               projectile.pierce -= 1;
@@ -3727,10 +4328,13 @@
     }
 
     function explodeMine(mine) {
-      addCircleAttack(mine.x, mine.y, mine.explosionRadius, "rgba(178, 255, 122, ", 0.22);
+      const maturityRatio = mine.maturity ? clamp((mine.elapsed || 0) / Math.max(0.1, mine.maxTtl || mine.ttl || 8), 0, 1) : 0;
+      const explosionRadius = mine.explosionRadius * (1 + maturityRatio * 0.5);
+      const damage = mine.damage * (1 + maturityRatio);
+      addCircleAttack(mine.x, mine.y, explosionRadius, mine.maturity ? "rgba(255, 206, 92, " : "rgba(178, 255, 122, ", 0.22);
       for (const enemy of state.enemies) {
-        if (!enemy.dead && distance(enemy, mine) <= mine.explosionRadius + enemy.radius) {
-          damageEnemy(enemy, mine.damage, mine.sourceSlot);
+        if (!enemy.dead && distance(enemy, mine) <= explosionRadius + enemy.radius) {
+          damageEnemy(enemy, damage, mine.sourceSlot);
         }
       }
       mine.done = true;
@@ -3743,6 +4347,7 @@
           continue;
         }
         mine.ttl -= dt;
+        mine.elapsed = (mine.elapsed || 0) + dt;
         const triggerRadius = mine.triggerRadius ?? mine.radius ?? CONFIG.deployTriggerRadius;
         const triggered = state.enemies.some(enemy => !enemy.dead && distance(enemy, mine) <= triggerRadius + enemy.radius);
         if (mine.ttl <= 0 || triggered) {
@@ -3755,6 +4360,57 @@
       }
 
       state.mines = state.mines.filter(mine => !mine.done);
+    }
+
+    function updateTurrets(dt) {
+      for (const turret of state.turrets) {
+        turret.ttl -= dt;
+        turret.fireTimer -= dt;
+        if (turret.ttl <= 0) {
+          turret.done = true;
+          continue;
+        }
+        if (turret.fireTimer <= 0) {
+          const target = getNearestEnemyInRange(turret, turret.range);
+          if (target) {
+            damageEnemy(target, turret.damage, turret.sourceSlot);
+            state.attacks.push({
+              type: "line",
+              x1: turret.x,
+              y1: turret.y,
+              x2: target.x,
+              y2: target.y,
+              ttl: 0.12,
+              maxTtl: 0.12,
+              width: 3,
+              color: "rgba(97, 211, 255, "
+            });
+            turret.fireTimer = turret.cooldown;
+          }
+        }
+      }
+      state.turrets = state.turrets.filter(turret => !turret.done);
+    }
+
+    function updateFields(dt) {
+      for (const field of state.fields) {
+        field.ttl -= dt;
+        field.tickTimer -= dt;
+        if (field.ttl <= 0) {
+          field.done = true;
+          continue;
+        }
+        if (field.tickTimer <= 0) {
+          field.tickTimer = 0.45;
+          for (const enemy of state.enemies) {
+            if (!enemy.dead && distance(enemy, field) <= field.radius + enemy.radius) {
+              damageEnemy(enemy, field.damage, field.sourceSlot);
+            }
+          }
+          addCircleAttack(field.x, field.y, field.radius, "rgba(97, 255, 160, ", 0.08);
+        }
+      }
+      state.fields = state.fields.filter(field => !field.done);
     }
 
     function updatePickups(dt) {
@@ -4121,9 +4777,12 @@
       updatePlayer(dt);
       updateEnemies(dt);
       updateBossSpawns();
+      updateModuleUpgradeTimers(dt);
       updateAutoAttack(dt);
       updateProjectiles(dt);
       updateMines(dt);
+      updateTurrets(dt);
+      updateFields(dt);
       updatePickups(dt);
       updateAttacks(dt);
       updatePopupTimers(dt);
@@ -5616,6 +6275,8 @@
       popup.element.remove();
       state.openPopups.splice(index, 1);
       if (!state.gameOver && popup.def.category !== "system") {
+        state.popupExecutionWindow = 4;
+        state.popupCloseAttackPrimed = true;
         addGold(state.stats.goldPerPopupClose, "popupClose");
         applyPopupCloseDamage();
         checkLevelUp();
@@ -5756,7 +6417,7 @@
         const screen = worldToScreen(mine);
         const triggerRadius = mine.triggerRadius ?? mine.radius ?? CONFIG.deployTriggerRadius;
         ctx.beginPath();
-        ctx.fillStyle = "#b8ff7b";
+        ctx.fillStyle = mine.maturity ? "#ffd66b" : "#b8ff7b";
         ctx.arc(screen.x, screen.y, mine.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
@@ -5768,6 +6429,34 @@
         ctx.strokeStyle = "rgba(184, 255, 123, 0.08)";
         ctx.lineWidth = 1;
         ctx.arc(screen.x, screen.y, mine.explosionRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function drawTurrets() {
+      for (const turret of state.turrets) {
+        const screen = worldToScreen(turret);
+        ctx.beginPath();
+        ctx.fillStyle = "#76d6ff";
+        ctx.arc(screen.x, screen.y, turret.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(118, 214, 255, 0.12)";
+        ctx.arc(screen.x, screen.y, turret.range, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function drawFields() {
+      for (const field of state.fields) {
+        const screen = worldToScreen(field);
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(97, 255, 160, 0.08)";
+        ctx.arc(screen.x, screen.y, field.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(97, 255, 160, 0.2)";
+        ctx.arc(screen.x, screen.y, field.radius, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
@@ -5886,6 +6575,8 @@
       drawBackground();
       drawPickups();
       drawMines();
+      drawFields();
+      drawTurrets();
       drawEnemies();
       drawProjectiles();
       drawAttacks();
@@ -5977,12 +6668,23 @@
       }).join("");
     }
 
+    function primaryUpgradeLabels() {
+      const form = selectedFormForSlot("primary");
+      const mechanic = selectedMechanicForSlot("primary");
+      const scaling = selectedScalingForSlot("primary");
+      return {
+        form: form ? form.name + (state.moduleUpgrades.primary.form ? "" : " (기본)") : "미선택",
+        mechanic: mechanic ? mechanic.name : "미선택",
+        scaling: scaling ? scaling.name : "미선택"
+      };
+    }
+
     function nextGrowthChoiceLabel() {
       if (!state.primaryModule) return "시작 1차 모듈";
       if (state.level < 5 || !state.secondaryModule) return "Lv.5 보조 모듈";
-      if (state.level < 9 || !state.primaryDeepening) return "Lv.9 1차 심화";
-      if (state.level < 13 || !state.secondaryDeepening) return "Lv.13 보조 심화";
-      if (state.level < 17 || !state.moduleSynergy) return "Lv.17 공격 연계";
+      if (state.level < 9 || !state.moduleUpgrades.primary.form) return "Lv.9 공격 방식";
+      if (state.level < 13 || !state.moduleUpgrades.primary.mechanic) return "Lv.13 공격 기믹";
+      if (state.level < 17 || !state.moduleUpgrades.primary.scaling) return "Lv.17 빌드 최적화";
       return "선택 성장 완료";
     }
 
@@ -6017,6 +6719,8 @@
       const stockLine = stock
         ? "주가: " + Math.ceil(stock.price) + "G " + formatSignedPercent(stock.lastChange || 0) + " / 손익: " + (stockInfo.profit >= 0 ? "+" : "") + Math.round(stockInfo.profit) + "G"
         : "주가: 없음";
+      const upgradeLabels = primaryUpgradeLabels();
+      const executionWindowText = state.popupExecutionWindow > 0 ? " / 처형 창: " + state.popupExecutionWindow.toFixed(1) + "초" : "";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
@@ -6027,6 +6731,9 @@
         "<br>주식 원금: " + stockPrincipal + "G" +
         "<br>1차: " + (state.primaryModule ? moduleName(state.primaryModule) + " 숙련 " + state.primaryMastery : "미선택") +
         " / 보조: " + (state.secondaryModule ? moduleName(state.secondaryModule) + " 숙련 " + state.secondaryMastery : "없음") +
+        "<br>1차 방식: " + upgradeLabels.form +
+        " / 기믹: " + upgradeLabels.mechanic +
+        "<br>빌드 최적화: " + upgradeLabels.scaling + executionWindowText +
         "<br>피해: " + effectiveDamage().toFixed(1) +
         " / 사거리: " + Math.round(effectiveAttackRange()) +
         " / 공격 간격: " + effectiveAttackInterval().toFixed(2) + "초" +
@@ -6047,6 +6754,8 @@
         "<br>Heat: " + state.heat.toFixed(1) +
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>빌드 계약: " + state.activePlaystyleName +
+        "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
+        "<br>처형 창/닫기 연계: " + state.popupExecutionWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
@@ -6167,6 +6876,26 @@
       } else if (button.dataset.debug === "forceLevel") {
         state.xp = state.xpNeed;
         checkLevelUp();
+      } else if (button.dataset.debug === "formSelect") {
+        if (state.primaryModule) {
+          openAttackFormSelection("primary");
+        } else {
+          openAttackModuleSelection("primary_start");
+        }
+      } else if (button.dataset.debug === "mechanicSelect") {
+        if (state.primaryModule) {
+          openAttackMechanicSelection("primary");
+        } else {
+          openAttackModuleSelection("primary_start");
+        }
+      } else if (button.dataset.debug === "scalingSelect") {
+        if (state.primaryModule) {
+          openBuildScalingSelection();
+        } else {
+          openAttackModuleSelection("primary_start");
+        }
+      } else if (button.dataset.debug === "executionWindow") {
+        state.popupExecutionWindow = 4;
       } else if (button.dataset.debug === "boss") {
         spawnBoss(Math.max(1, state.metrics.bossKills + 1));
       } else if (button.dataset.debug === "bossPackage") {
