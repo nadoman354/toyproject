@@ -407,10 +407,10 @@
 
     #mobileJoystick {
       position: absolute;
-      left: max(16px, env(safe-area-inset-left));
-      bottom: max(18px, env(safe-area-inset-bottom));
-      width: 104px;
-      height: 104px;
+      left: max(12px, env(safe-area-inset-left));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      width: 86px;
+      height: 86px;
       border: 2px solid rgba(255, 255, 255, 0.28);
       border-radius: 50%;
       background: rgba(12, 18, 27, 0.58);
@@ -423,8 +423,8 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       background: rgba(72, 213, 151, 0.88);
@@ -434,16 +434,16 @@
 
     #mobileEmergencyButton {
       position: absolute;
-      right: max(16px, env(safe-area-inset-right));
-      bottom: max(28px, env(safe-area-inset-bottom));
-      width: 86px;
-      min-height: 46px;
-      padding: 6px;
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(18px, env(safe-area-inset-bottom));
+      width: 72px;
+      min-height: 38px;
+      padding: 5px;
       border-radius: 10px;
       background: rgba(124, 31, 49, 0.86);
       border-color: rgba(255, 160, 176, 0.62);
       color: #fff2f4;
-      font-size: 12px;
+      font-size: 10px;
       pointer-events: auto;
       touch-action: manipulation;
     }
@@ -453,14 +453,14 @@
       top: max(8px, env(safe-area-inset-top));
       left: 50%;
       transform: translateX(-50%);
-      width: 92px;
-      min-height: 34px;
-      padding: 5px 8px;
+      width: 78px;
+      min-height: 28px;
+      padding: 4px 6px;
       border-radius: 8px;
       background: rgba(21, 32, 45, 0.84);
       border-color: rgba(143, 201, 255, 0.5);
       color: #e7f5ff;
-      font-size: 11px;
+      font-size: 10px;
       pointer-events: auto;
       touch-action: manipulation;
     }
@@ -836,54 +836,54 @@
       }
 
       button {
-        padding: 5px 7px;
+        padding: 4px 6px;
         border-radius: 5px;
-        font-size: 11px;
+        font-size: 10px;
       }
 
       .panel {
-        padding: 7px;
+        padding: 5px;
         border-radius: 6px;
       }
 
       .panelTitle {
-        margin-bottom: 5px;
-        font-size: 10px;
+        margin-bottom: 3px;
+        font-size: 9px;
         letter-spacing: 0.05em;
       }
 
       .statRow {
-        gap: 5px;
-        margin: 2px 0;
-        font-size: 10.5px;
+        gap: 4px;
+        margin: 1px 0;
+        font-size: 9px;
       }
 
       .bar {
-        height: 8px;
-        margin-top: 4px;
+        height: 6px;
+        margin-top: 3px;
       }
 
       #hud {
         top: max(6px, env(safe-area-inset-top));
         left: max(6px, env(safe-area-inset-left));
-        width: min(27vw, 164px);
-        max-height: 46vh;
+        width: min(22vw, 132px);
+        max-height: 38vh;
         overflow-y: auto;
       }
 
       #itemMachine {
         top: max(6px, env(safe-area-inset-top));
         right: max(6px, env(safe-area-inset-right));
-        width: min(30vw, 174px);
-        max-height: 46vh;
+        width: min(24vw, 146px);
+        max-height: 38vh;
         overflow-y: auto;
       }
 
       #statusPanel {
-        left: max(116px, calc(env(safe-area-inset-left) + 110px));
+        left: max(96px, calc(env(safe-area-inset-left) + 90px));
         bottom: max(8px, env(safe-area-inset-bottom));
-        width: min(38vw, 260px);
-        max-height: 108px;
+        width: min(30vw, 194px);
+        max-height: 76px;
         overflow-y: auto;
       }
 
@@ -894,100 +894,100 @@
       #lastItem,
       #recentPerk,
       #itemInventory {
-        min-height: 24px;
-        max-height: 58px;
-        padding: 5px;
-        font-size: 10px;
-        line-height: 1.25;
+        min-height: 18px;
+        max-height: 40px;
+        padding: 4px;
+        font-size: 9px;
+        line-height: 1.2;
       }
 
       #rollItemButton {
-        margin: 5px 0;
+        margin: 4px 0;
       }
 
       .compactSelect {
-        width: 70px;
-        padding: 3px 5px;
-        font-size: 10px;
+        width: 60px;
+        padding: 2px 4px;
+        font-size: 9px;
       }
 
       .popupWindow {
-        min-width: 184px;
-        max-width: min(360px, calc(100vw - 14px));
+        min-width: 160px;
+        max-width: min(300px, calc(100vw - 12px));
         border-width: 1px;
       }
 
       .titleBar {
-        min-height: 24px;
-        padding: 4px 6px;
-        font-size: 11px;
+        min-height: 21px;
+        padding: 3px 5px;
+        font-size: 10px;
       }
 
       .popupClose {
-        width: 21px;
-        height: 20px;
+        width: 19px;
+        height: 18px;
       }
 
       .popupBody {
-        padding: 7px;
-        font-size: 11px;
+        padding: 6px;
+        font-size: 10px;
       }
 
       .popupControls {
-        gap: 5px;
-        margin-top: 7px;
+        gap: 4px;
+        margin-top: 5px;
       }
 
       #itemPanel,
       #perkPanel,
       #gameOverPanel {
-        width: min(620px, calc(100vw - 16px));
-        max-height: calc(100vh - 16px);
-        padding: 10px;
+        width: min(560px, calc(100vw - 14px));
+        max-height: calc(100vh - 14px);
+        padding: 8px;
       }
 
       #itemPanel h2,
       #perkPanel h2,
       #gameOverPanel h2 {
-        font-size: 18px;
+        font-size: 15px;
       }
 
       #itemChoices,
       #perkChoices {
-        gap: 8px;
-        margin-top: 10px;
+        gap: 6px;
+        margin-top: 7px;
       }
 
       .itemChoice,
       .perkChoice {
-        min-height: 92px;
-        padding: 8px;
+        min-height: 74px;
+        padding: 6px;
       }
 
       .itemChoice strong,
       .perkChoice strong {
-        margin-bottom: 5px;
-        font-size: 13px;
+        margin-bottom: 3px;
+        font-size: 11px;
       }
 
       .itemChoice span,
       .perkChoice span,
       .moduleChoice span,
       .bossItemChoice span {
-        font-size: 11px;
+        font-size: 9.5px;
       }
 
       .moduleChoice,
       .bossItemChoice {
-        min-height: 78px;
-        padding: 8px;
+        min-height: 60px;
+        padding: 6px;
       }
 
       #trashZone {
-        bottom: 78px;
-        width: 126px;
-        height: 42px;
-        font-size: 11px;
+        bottom: 66px;
+        width: 104px;
+        height: 34px;
+        font-size: 9px;
       }
     }
 
@@ -5420,7 +5420,7 @@
     }
 
     function joystickRadius() {
-      return Math.max(34, (mobileJoystick.clientWidth || 118) * 0.36);
+      return Math.max(28, (mobileJoystick.clientWidth || 86) * 0.36);
     }
 
     function setJoystickKnob(x, y) {
