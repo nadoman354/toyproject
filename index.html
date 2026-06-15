@@ -344,6 +344,35 @@
       line-height: 1.45;
     }
 
+    .itemTags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 4px 0 8px;
+    }
+
+    .itemTag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 18px;
+      padding: 2px 6px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #dce8f8;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 900;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .itemTagBuild {
+      border-color: rgba(255, 226, 154, 0.55);
+      background: rgba(255, 226, 154, 0.14);
+      color: #ffe29a;
+    }
+
     .rarityBadge {
       display: inline-block;
       margin: 0 0 8px;
@@ -372,10 +401,6 @@
 
     .rarityCursed {
       color: #ff8ea1;
-    }
-
-    .raritySponsored {
-      color: #ffe176;
     }
 
     #popupLayer {
@@ -816,6 +841,19 @@
       line-height: 1.35;
     }
 
+    .itemChoice .itemTag,
+    .bossItemChoice .itemTag {
+      display: inline-flex;
+      color: #dce8f8;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .itemChoice .itemTagBuild,
+    .bossItemChoice .itemTagBuild {
+      color: #ffe29a;
+    }
+
     .moduleChoice:disabled {
       opacity: 0.38;
       cursor: not-allowed;
@@ -1079,6 +1117,20 @@
         font-size: 9.5px;
       }
 
+      .itemChoice .itemTag,
+      .bossItemChoice .itemTag {
+        display: inline-flex;
+        min-height: 15px;
+        padding: 1px 5px;
+        font-size: 8px;
+        line-height: 1;
+      }
+
+      .itemTags {
+        gap: 3px;
+        margin: 3px 0 5px;
+      }
+
       .moduleChoice,
       .bossItemChoice {
         min-height: 60px;
@@ -1329,6 +1381,7 @@
         name: "공격력 증가",
         description: "피해량 +20%",
         rarity: "Common",
+        tags: ["generic", "combat", "damage"],
         effect: { stat: "damageMultiplier", value: 0.2 }
       },
       {
@@ -1336,6 +1389,7 @@
         name: "공격 속도 증가",
         description: "공격 간격 -10%",
         rarity: "Common",
+        tags: ["generic", "combat", "cooldown"],
         effect: { stat: "attackIntervalMultiplier", value: -0.1 }
       },
       {
@@ -1343,6 +1397,7 @@
         name: "사거리 증가",
         description: "공격 사거리 +15%",
         rarity: "Common",
+        tags: ["generic", "combat", "range"],
         effect: { stat: "attackRangeMultiplier", value: 0.15 }
       },
       {
@@ -1350,6 +1405,7 @@
         name: "이동 속도 증가",
         description: "이동 속도 +10%",
         rarity: "Common",
+        tags: ["generic", "utility"],
         effect: { stat: "moveSpeedMultiplier", value: 0.1 }
       },
       {
@@ -1357,6 +1413,7 @@
         name: "최대 HP 증가",
         description: "최대 HP +1",
         rarity: "Common",
+        tags: ["generic", "safe", "utility"],
         effect: { stat: "maxHP", value: 1 }
       },
       {
@@ -1364,6 +1421,7 @@
         name: "관통 광고탄",
         description: "자동 공격이 적 1명을 추가로 타격",
         rarity: "Rare",
+        tags: ["sponsored", "projectile", "combat", "damage"],
         effect: { stat: "extraTargets", value: 1 }
       },
       {
@@ -1371,6 +1429,7 @@
         name: "정리된 책상",
         description: "열린 팝업이 2개 이하일 때 피해량 +25%",
         rarity: "Rare",
+        tags: ["clean", "low_popup", "damage", "combat"],
         effect: { stat: "cleanDeskDamageMultiplier", value: 0.25 }
       },
       {
@@ -1378,6 +1437,7 @@
         name: "난장판 적응",
         description: "열린 팝업 1개당 공격 간격 -4%, 최대 -20%",
         rarity: "Rare",
+        tags: ["clutter", "popup_count", "cooldown", "combat"],
         effect: { stat: "clutterAttackIntervalPerPopup", value: -0.04 }
       },
       {
@@ -1385,6 +1445,7 @@
         name: "골드 탄환",
         description: "골드가 50 이상이면 피해량 +20%",
         rarity: "Rare",
+        tags: ["investor", "gold", "damage", "combat"],
         effect: { stat: "goldBulletDamageMultiplier", value: 0.2 }
       },
       {
@@ -1392,6 +1453,7 @@
         name: "긴급 대처 훈련",
         description: "Space 긴급 닫기 후 5초간 이동속도 +30%",
         rarity: "Rare",
+        tags: ["executioner", "emergency_close", "utility"],
         effect: { stat: "emergencyMoveSpeedMultiplier", value: 0.3 }
       },
       {
@@ -1399,6 +1461,7 @@
         name: "자동 클릭 매크로",
         description: "8초마다 가장 오래된 기본 팝업 자동 제거",
         rarity: "Epic",
+        tags: ["executioner", "popup_close", "utility"],
         effect: { stat: "autoCloseBasicInterval", value: 8 }
       },
       {
@@ -1406,6 +1469,7 @@
         name: "스폰서드 블레이드",
         description: "광고 버프 팝업이 열려 있으면 자동 공격 2연타",
         rarity: "Epic",
+        tags: ["sponsored", "ad_open", "combat", "damage"],
         effect: { stat: "sponsoredDoubleHit", value: 1 }
       },
       {
@@ -1413,6 +1477,7 @@
         name: "과열된 랜덤박스",
         description: "아이템 선택 후 10초간 피해량 +15%",
         rarity: "Epic",
+        tags: ["generic", "purchase", "damage", "combat"],
         effect: { stat: "purchaseDamageBurst", value: 0.15 }
       },
       {
@@ -1420,6 +1485,7 @@
         name: "프리미엄 커서",
         description: "팝업 드래그 중 공격 간격 -20%",
         rarity: "Epic",
+        tags: ["generic", "drag", "cooldown", "combat"],
         effect: { stat: "dragAttackIntervalMultiplier", value: -0.2 }
       },
       {
@@ -1427,6 +1493,7 @@
         name: "창문 파쇄기",
         description: "팝업을 닫으면 플레이어 주변 적에게 15 피해",
         rarity: "Epic",
+        tags: ["executioner", "popup_close", "aoe", "combat"],
         effect: { stat: "popupCloseDamage", value: 15 }
       },
       {
@@ -1434,6 +1501,7 @@
         name: "악성 최적화",
         description: "피해량 +50%, 팝업 생성률 +25%",
         rarity: "Cursed",
+        tags: ["curse", "risky", "damage", "popup_pressure"],
         effects: [
           { stat: "damageMultiplier", value: 0.5 },
           { stat: "popupSpawnRateMultiplier", value: 0.25 }
@@ -1444,6 +1512,7 @@
         name: "무료 체험판",
         description: "공격 간격 -35%, 60초 후 최대 HP -1",
         rarity: "Cursed",
+        tags: ["curse", "risky", "cooldown", "delayed_penalty"],
         effects: [
           { stat: "attackIntervalMultiplier", value: -0.35 },
           { stat: "delayedMaxHPLoss", value: 1, delay: 60 }
@@ -1454,6 +1523,7 @@
         name: "수상한 부스터",
         description: "이동속도 +40%, 팝업 드래그 속도 -25%",
         rarity: "Cursed",
+        tags: ["curse", "risky", "drag", "utility"],
         effects: [
           { stat: "moveSpeedMultiplier", value: 0.4 },
           { stat: "popupDragSpeedMultiplier", value: -0.25 }
@@ -1464,6 +1534,7 @@
         name: "개인정보 판매",
         description: "즉시 100G, 약관 팝업 등장률 증가",
         rarity: "Cursed",
+        tags: ["curse", "terms", "economy", "risky"],
         effects: [
           { stat: "gold", value: 100 },
           { stat: "termsPopupWeightMultiplier", value: 0.6 }
@@ -1473,13 +1544,143 @@
         id: "close_button_addiction",
         name: "닫기 버튼 중독",
         description: "팝업을 닫을 때마다 +3G, 최대 팝업 +1",
-        rarity: "Sponsored",
+        rarity: "Rare",
+        tags: ["sponsored", "executioner", "popup_close", "economy"],
         effects: [
           { stat: "goldPerPopupClose", value: 3 },
           { stat: "maxOpenPopups", value: 1 }
         ]
+      },
+      {
+        id: "compound_barrel",
+        name: "복리 약실",
+        description: "투자 중 골드 100G당 피해량 +6%, 최대 +36%",
+        rarity: "Rare",
+        tags: ["investor", "invested_gold", "damage", "combat"]
+      },
+      {
+        id: "credit_scope",
+        name: "신용 조준경",
+        description: "신용도 60 이상이면 사거리 +10%, 80 이상이면 +18%",
+        rarity: "Rare",
+        tags: ["investor", "credit", "range", "combat"]
+      },
+      {
+        id: "sponsor_rounds",
+        name: "후원탄",
+        description: "광고 완료 횟수 1회당 피해량 +3%, 최대 +30%",
+        rarity: "Rare",
+        tags: ["sponsored", "ad_completion", "projectile", "damage"]
+      },
+      {
+        id: "banner_amp",
+        name: "배너 증폭기",
+        description: "스폰서 광고가 열려 있으면 공격 간격 -8%",
+        rarity: "Rare",
+        tags: ["sponsored", "ad_open", "cooldown", "combat"]
+      },
+      {
+        id: "popup_resonator",
+        name: "팝업 공명기",
+        description: "열린 팝업 1개당 공격 사거리 +3%, 최대 +18%",
+        rarity: "Rare",
+        tags: ["clutter", "popup_count", "range", "aoe"]
+      },
+      {
+        id: "overload_cache",
+        name: "과밀 캐시",
+        description: "열린 팝업이 5개 이상이면 피해량 +25%",
+        rarity: "Epic",
+        tags: ["clutter", "popup_count", "damage", "combat"]
+      },
+      {
+        id: "focus_lens",
+        name: "집중 렌즈",
+        description: "열린 팝업이 1개 이하이면 사거리 +18%",
+        rarity: "Rare",
+        tags: ["clean", "low_popup", "range", "combat"]
+      },
+      {
+        id: "quiet_trigger",
+        name: "정숙한 방아쇠",
+        description: "열린 팝업이 0개이면 공격 간격 -18%",
+        rarity: "Epic",
+        tags: ["clean", "low_popup", "cooldown", "combat"]
+      },
+      {
+        id: "empty_slot_charger",
+        name: "공백 충전기",
+        description: "팝업을 닫은 후 4초 동안 빈 슬롯 1개당 피해량 +4%",
+        rarity: "Rare",
+        tags: ["executioner", "empty_slot", "damage", "combat"]
+      },
+      {
+        id: "close_combo",
+        name: "닫기 콤보",
+        description: "팝업을 닫으면 다음 3초간 공격 간격 -15%",
+        rarity: "Epic",
+        tags: ["executioner", "popup_close", "cooldown", "combat"]
+      },
+      {
+        id: "heat_blade",
+        name: "열기 칼날",
+        description: "Heat 1당 피해량 +5%, 대신 Heat가 3 이상이면 팝업 생성률 +10%",
+        rarity: "Cursed",
+        tags: ["curse", "heat", "damage", "risky"]
+      },
+      {
+        id: "cursed_cache",
+        name: "저주 캐시",
+        description: "즉시 60G를 얻지만 Heat +1",
+        rarity: "Cursed",
+        tags: ["curse", "risky", "economy", "heat"],
+        effects: [
+          { stat: "gold", value: 60 }
+        ]
       }
     ];
+
+    const ITEM_TAG_LABELS = {
+      generic: "범용",
+      investor: "투자자",
+      sponsored: "스폰서",
+      clutter: "난장판",
+      clean: "클린",
+      executioner: "처형자",
+      curse: "저주",
+      gold: "골드",
+      invested_gold: "투자금",
+      credit: "신용",
+      debt: "부채",
+      ad_open: "광고 유지",
+      ad_completion: "광고 완료",
+      popup_count: "팝업 수",
+      low_popup: "저팝업",
+      popup_close: "닫기",
+      empty_slot: "빈 슬롯",
+      heat: "Heat",
+      terms: "약관",
+      purchase: "구매",
+      drag: "드래그",
+      emergency_close: "긴급닫기",
+      combat: "전투",
+      damage: "피해",
+      cooldown: "쿨타임",
+      range: "사거리",
+      aoe: "광역",
+      projectile: "투사체",
+      melee: "근접",
+      aura: "오라",
+      deploy: "설치",
+      explosion: "폭발",
+      utility: "유틸",
+      economy: "경제",
+      safe: "안전",
+      risky: "위험",
+      cursed: "저주템",
+      popup_pressure: "팝업압",
+      delayed_penalty: "지연벌칙"
+    };
 
     const PERKS = [
       {
@@ -2443,8 +2644,7 @@
         Common: 50,
         Rare: 27,
         Epic: 12,
-        Cursed: 8,
-        Sponsored: 10
+        Cursed: 8
       };
       let weight = item.weight ?? rarityWeights[item.rarity] ?? 10;
       if (item.rarity === "Cursed" && state.heat >= 5) {
@@ -2458,6 +2658,9 @@
         weight *= Math.max(0.1, 1 + state.stats.interestPopupWeightMultiplier);
       } else if (item.type === "popup_store") {
         weight *= Math.max(0.1, 1 + state.stats.popupStoreWeightMultiplier);
+      }
+      if (ITEMS.includes(item)) {
+        weight *= itemTagWeightMultiplier(item);
       }
       return weight;
     }
@@ -2510,7 +2713,7 @@
     }
 
     function globalDamageMultiplier() {
-      let multiplier = state.stats.damageMultiplier + getOpenAdBuffMultiplier() + activeTimedMultiplier("damageMultiplier") + sponsoredBuff("damageMultiplier") + clutterThresholdBonuses().damageBonus + activeStarterCombatBonuses().damageMultiplier;
+      let multiplier = state.stats.damageMultiplier + getOpenAdBuffMultiplier() + activeTimedMultiplier("damageMultiplier") + sponsoredBuff("damageMultiplier") + clutterThresholdBonuses().damageBonus + activeStarterCombatBonuses().damageMultiplier + dynamicItemDamageMultiplier();
       if (state.stats.cleanDeskDamageMultiplier > 0 && state.openPopups.length <= 2) {
         multiplier += state.stats.cleanDeskDamageMultiplier;
       }
@@ -2587,6 +2790,159 @@
 
     function totalOwnedItemCount() {
       return Object.values(state.itemCounts || {}).reduce((sum, count) => sum + count, 0);
+    }
+
+    function ownedItemCount(itemId) {
+      return state.itemCounts[itemId] || 0;
+    }
+
+    function hasItem(itemId) {
+      return ownedItemCount(itemId) > 0;
+    }
+
+    function itemTags(item) {
+      return Array.isArray(item?.tags) && item.tags.length > 0 ? item.tags : ["generic"];
+    }
+
+    function itemHasTag(item, tag) {
+      return itemTags(item).includes(tag);
+    }
+
+    function itemHasAnyTag(item, tags) {
+      return tags.some(tag => itemHasTag(item, tag));
+    }
+
+    function tagLabel(tag) {
+      return ITEM_TAG_LABELS[tag] || tag;
+    }
+
+    function activeBuildItemTag() {
+      const map = {
+        investor_starter: "investor",
+        sponsored_starter: "sponsored",
+        clutter_chaos_starter: "clutter",
+        clean_desk_starter: "clean",
+        popup_executioner_starter: "executioner",
+        risky_terms_starter: "curse"
+      };
+      return map[state.activePlaystyle] || null;
+    }
+
+    function adjacentTagsForBuildTag(buildTag) {
+      const map = {
+        investor: ["gold", "invested_gold", "credit", "economy"],
+        sponsored: ["ad_open", "ad_completion", "economy"],
+        clutter: ["popup_count", "aoe", "range"],
+        clean: ["low_popup", "safe", "range"],
+        executioner: ["popup_close", "empty_slot", "emergency_close"],
+        curse: ["heat", "terms", "risky", "cursed"]
+      };
+      return map[buildTag] || [];
+    }
+
+    function itemTagWeightMultiplier(item) {
+      const buildTag = activeBuildItemTag();
+      if (!buildTag) {
+        return 1;
+      }
+
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "executioner", "curse"];
+      let multiplier = 1;
+      if (itemHasTag(item, buildTag)) {
+        multiplier *= 1.7;
+      } else if (itemHasAnyTag(item, buildTags)) {
+        multiplier *= 0.85;
+      }
+      if (itemHasAnyTag(item, adjacentTagsForBuildTag(buildTag))) {
+        multiplier *= 1.2;
+      }
+      if (item.rarity === "Cursed") {
+        multiplier *= buildTag === "curse" ? 1.35 : 0.75;
+      }
+      return Math.max(0.25, multiplier);
+    }
+
+    function prioritizedItemTags(item) {
+      const priority = [
+        "investor", "sponsored", "clutter", "clean", "executioner", "curse",
+        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "empty_slot", "heat",
+        "damage", "cooldown", "range", "economy", "utility"
+      ];
+      const tags = itemTags(item);
+      return priority.filter(tag => tags.includes(tag)).concat(tags.filter(tag => !priority.includes(tag))).slice(0, 4);
+    }
+
+    function renderItemTagChips(item) {
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "executioner", "curse"];
+      return "<div class=\"itemTags\">" + prioritizedItemTags(item).map(tag => {
+        const className = buildTags.includes(tag) ? "itemTag itemTagBuild" : "itemTag";
+        return "<span class=\"" + className + "\">" + tagLabel(tag) + "</span>";
+      }).join("") + "</div>";
+    }
+
+    function dynamicItemDamageMultiplier() {
+      let multiplier = 0;
+      const compound = ownedItemCount("compound_barrel");
+      if (compound > 0) {
+        multiplier += Math.min(0.36 * compound, Math.floor(state.investedGold / 100) * 0.06 * compound);
+      }
+      const sponsorRounds = ownedItemCount("sponsor_rounds");
+      if (sponsorRounds > 0) {
+        multiplier += Math.min(0.3 * sponsorRounds, state.sponsoredCompletions * 0.03 * sponsorRounds);
+      }
+      const overload = ownedItemCount("overload_cache");
+      if (overload > 0 && state.openPopups.length >= 5) {
+        multiplier += 0.25 * overload;
+      }
+      const emptySlot = ownedItemCount("empty_slot_charger");
+      if (emptySlot > 0 && state.popupExecutionWindow > 0) {
+        const emptySlots = Math.max(0, maxOpenPopups() - state.openPopups.length);
+        multiplier += emptySlots * 0.04 * emptySlot;
+      }
+      const heatBlade = ownedItemCount("heat_blade");
+      if (heatBlade > 0) {
+        multiplier += state.heat * 0.05 * heatBlade;
+      }
+      return multiplier;
+    }
+
+    function dynamicItemRangeMultiplier() {
+      let multiplier = 0;
+      const creditScope = ownedItemCount("credit_scope");
+      if (creditScope > 0) {
+        multiplier += (state.creditScore >= 80 ? 0.18 : state.creditScore >= 60 ? 0.1 : 0) * creditScope;
+      }
+      const resonator = ownedItemCount("popup_resonator");
+      if (resonator > 0) {
+        multiplier += Math.min(0.18 * resonator, state.openPopups.length * 0.03 * resonator);
+      }
+      const focusLens = ownedItemCount("focus_lens");
+      if (focusLens > 0 && state.openPopups.length <= 1) {
+        multiplier += 0.18 * focusLens;
+      }
+      return multiplier;
+    }
+
+    function dynamicItemCooldownMultiplier() {
+      let multiplier = 0;
+      const bannerAmp = ownedItemCount("banner_amp");
+      if (bannerAmp > 0 && countOpenAdPopups() > 0) {
+        multiplier += -0.08 * bannerAmp;
+      }
+      const quietTrigger = ownedItemCount("quiet_trigger");
+      if (quietTrigger > 0 && state.openPopups.length === 0) {
+        multiplier += -0.18 * quietTrigger;
+      }
+      const closeCombo = ownedItemCount("close_combo");
+      if (closeCombo > 0 && state.popupExecutionWindow > 0) {
+        multiplier += -0.15 * closeCombo;
+      }
+      return Math.max(-0.75, multiplier);
+    }
+
+    function dynamicItemPopupSpawnMultiplier() {
+      const heatBlade = ownedItemCount("heat_blade");
+      return heatBlade > 0 && state.heat >= 3 ? 0.1 * heatBlade : 0;
     }
 
     function buildScalingContext() {
@@ -2690,8 +3046,8 @@
       const secondaryScale = slot === "secondary" ? 0.72 : 1;
       const starterBonuses = activeStarterCombatBonuses();
       const damageMultiplier = globalDamageMultiplier() + mastery * 0.08 + (deepening.damage || 0);
-      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0) + starterBonuses.rangeMultiplier;
-      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0) + starterBonuses.cooldownMultiplier;
+      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0) + starterBonuses.rangeMultiplier + dynamicItemRangeMultiplier();
+      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0) + starterBonuses.cooldownMultiplier + dynamicItemCooldownMultiplier();
       cooldownMultiplier += sponsoredBuff("attackIntervalMultiplier") + clutterThresholdBonuses().attackIntervalBonus;
       if (state.stats.clutterAttackIntervalPerPopup < 0) {
         cooldownMultiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
@@ -2722,7 +3078,7 @@
       if (stats) {
         return stats.cooldown;
       }
-      let multiplier = state.stats.attackIntervalMultiplier;
+      let multiplier = state.stats.attackIntervalMultiplier + dynamicItemCooldownMultiplier();
       if (state.stats.clutterAttackIntervalPerPopup < 0) {
         multiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
       }
@@ -2737,7 +3093,7 @@
       if (stats) {
         return stats.range;
       }
-      return CONFIG.playerAttackRange * Math.max(0.2, 1 + state.stats.attackRangeMultiplier);
+      return CONFIG.playerAttackRange * Math.max(0.2, 1 + state.stats.attackRangeMultiplier + dynamicItemRangeMultiplier());
     }
 
     function effectiveMoveSpeed() {
@@ -2751,7 +3107,7 @@
     function effectivePopupInterval() {
       const timePressure = clamp(state.elapsed / CONFIG.popupPressureRampSeconds, 0, 1);
       const baseInterval = CONFIG.popupBaseSpawnInterval - (CONFIG.popupBaseSpawnInterval - CONFIG.popupMinSpawnInterval) * timePressure;
-      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + state.heat * 0.015);
+      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + state.heat * 0.015);
       return Math.max(CONFIG.popupMinSpawnInterval, baseInterval / spawnRate);
     }
 
@@ -2784,7 +3140,7 @@
 
     function randomItemByRarity(rarity) {
       const pool = itemsByRarity(rarity);
-      return pool[Math.floor(Math.random() * pool.length)];
+      return pickWeighted(pool);
     }
 
     function buildPopupStoreProducts() {
@@ -2958,6 +3314,11 @@
 
     function starterCombatBonusSummary() {
       return activeStarterCombatBonuses().notes.join(" / ");
+    }
+
+    function itemPoolBiasSummary() {
+      const buildTag = activeBuildItemTag();
+      return buildTag ? tagLabel(buildTag) + " 태그 가중치 적용" : "기본 가중치";
     }
 
     function grantSponsoredReward(reward) {
@@ -3286,7 +3647,7 @@
         state.heat += 1;
       }
       state.itemCounts[item.id] = (state.itemCounts[item.id] || 0) + 1;
-      state.lastItemText = rarityBadge(item.rarity) + " <strong>" + item.name + "</strong><br>" + item.description + "<br><span class=\"gold\">" + sourceText + " · 현재: " + describeItemCurrent(item, 0) + "</span>";
+      state.lastItemText = rarityBadge(item.rarity) + renderItemTagChips(item) + " <strong>" + item.name + "</strong><br>" + item.description + "<br><span class=\"gold\">" + sourceText + " · 현재: " + describeItemCurrent(item, 0) + "</span>";
     }
 
     function openItemLikeOverlay(title, description) {
@@ -3373,6 +3734,7 @@
         button.dataset.itemId = item.id;
         button.innerHTML =
           rarityBadge(item.rarity) +
+          renderItemTagChips(item) +
           "<strong>" + item.name + "</strong>" +
           "<span>" + item.description + "<br>현재: " + describeItemCurrent(item, 0) + "</span>";
         button.addEventListener("click", () => toggleBossPackageSelection(item.id, counter));
@@ -3457,6 +3819,7 @@
         button.className = "itemChoice";
         button.innerHTML =
           rarityBadge(item.rarity) +
+          renderItemTagChips(item) +
           "<strong>" + item.name + "</strong>" +
           "<span>" + item.description + "</span>" +
           "<em class=\"choiceMeta\">현재: " + describeItemCurrent(item, 0) + "<br>선택 후: " + describeItemCurrent(item, 1) + "</em>";
@@ -6753,12 +7116,51 @@
     }
 
     function describeItemCurrent(item, extraStacks) {
+      const stacks = (state.itemCounts[item.id] || 0) + extraStacks;
+      if (item.id === "compound_barrel") {
+        return stacks <= 0 ? "투자 피해 변화 없음" : "투자 피해 " + formatSignedPercent(Math.min(0.36 * stacks, Math.floor(state.investedGold / 100) * 0.06 * stacks));
+      }
+      if (item.id === "credit_scope") {
+        const bonus = state.creditScore >= 80 ? 0.18 : state.creditScore >= 60 ? 0.1 : 0;
+        return stacks <= 0 ? "신용 사거리 변화 없음" : "신용 사거리 " + formatSignedPercent(bonus * stacks);
+      }
+      if (item.id === "sponsor_rounds") {
+        return stacks <= 0 ? "광고 완료 피해 변화 없음" : "광고 완료 피해 " + formatSignedPercent(Math.min(0.3 * stacks, state.sponsoredCompletions * 0.03 * stacks));
+      }
+      if (item.id === "banner_amp") {
+        return stacks <= 0 ? "광고 유지 쿨타임 변화 없음" : "광고 유지 쿨타임 " + formatSignedPercent(countOpenAdPopups() > 0 ? -0.08 * stacks : 0);
+      }
+      if (item.id === "popup_resonator") {
+        return stacks <= 0 ? "팝업 사거리 변화 없음" : "팝업 사거리 " + formatSignedPercent(Math.min(0.18 * stacks, state.openPopups.length * 0.03 * stacks));
+      }
+      if (item.id === "overload_cache") {
+        return stacks <= 0 ? "과밀 피해 변화 없음" : "과밀 피해 " + formatSignedPercent(state.openPopups.length >= 5 ? 0.25 * stacks : 0);
+      }
+      if (item.id === "focus_lens") {
+        return stacks <= 0 ? "저팝업 사거리 변화 없음" : "저팝업 사거리 " + formatSignedPercent(state.openPopups.length <= 1 ? 0.18 * stacks : 0);
+      }
+      if (item.id === "quiet_trigger") {
+        return stacks <= 0 ? "무팝업 쿨타임 변화 없음" : "무팝업 쿨타임 " + formatSignedPercent(state.openPopups.length === 0 ? -0.18 * stacks : 0);
+      }
+      if (item.id === "empty_slot_charger") {
+        const emptySlots = Math.max(0, maxOpenPopups() - state.openPopups.length);
+        return stacks <= 0 ? "처형 피해 변화 없음" : "처형 피해 " + formatSignedPercent(state.popupExecutionWindow > 0 ? emptySlots * 0.04 * stacks : 0);
+      }
+      if (item.id === "close_combo") {
+        return stacks <= 0 ? "닫기 콤보 쿨타임 변화 없음" : "닫기 콤보 쿨타임 " + formatSignedPercent(state.popupExecutionWindow > 0 ? -0.15 * stacks : 0);
+      }
+      if (item.id === "heat_blade") {
+        return stacks <= 0 ? "Heat 피해 변화 없음" : "Heat 피해 " + formatSignedPercent(state.heat * 0.05 * stacks);
+      }
+      if (item.id === "cursed_cache") {
+        return "획득 시 +60G / Heat +1";
+      }
+
       const displayEffect = primaryDisplayEffect(item);
       if (!displayEffect) {
         return item.description;
       }
 
-      const stacks = (state.itemCounts[item.id] || 0) + extraStacks;
       const label = itemStatLabel(displayEffect.stat);
       if (stacks <= 0) {
         return label + " 변화 없음";
@@ -6836,11 +7238,13 @@
         : "주가: 없음";
       const upgradeLabels = primaryUpgradeLabels();
       const starterSummary = starterCombatBonusSummary();
+      const itemPoolSummary = itemPoolBiasSummary();
       const executionWindowText = state.popupExecutionWindow > 0 ? " / 처형 창: " + state.popupExecutionWindow.toFixed(1) + "초" : "";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>계약 특전: " + starterSummary +
+        "<br>아이템 풀: " + itemPoolSummary +
         "<br>Heat: " + state.heat.toFixed(1) +
         " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 부채: " + state.debtGold + "G" +
@@ -6872,6 +7276,7 @@
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>계약 특전: " + starterSummary +
+        "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
         "<br>처형 창/닫기 연계: " + state.popupExecutionWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
@@ -6882,7 +7287,7 @@
         "<br>난장판 티어: " + clutterTierLabel() +
         "<br>첫 계약: " + (state.firstPurchasePackageChosen || "미선택") +
         "<br>보스 처치/패키지: " + state.metrics.bossKills + " / " + state.metrics.bossPackagesPurchased +
-        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + state.heat * 0.015).toFixed(2) +
+        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + state.heat * 0.015).toFixed(2) +
         "<br>약관 패널티: " + state.termsPenaltyCount +
         "<br>이자 수락/완료/손실: " + state.metrics.interestAccepted + " / " + state.metrics.interestCompleted + " / " + state.metrics.interestLost +
         "<br>팝업 상점 구매: " + state.metrics.popupStorePurchases +
