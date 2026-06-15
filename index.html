@@ -881,30 +881,6 @@
       font-weight: 800;
     }
 
-    .contractPreview {
-      display: grid;
-      gap: 7px;
-      margin-top: 8px;
-      max-height: 220px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-
-    .contractPreviewItem {
-      padding: 7px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.64);
-      color: #2d1c1f;
-      font-weight: 800;
-    }
-
-    .contractPreviewItem span {
-      display: block;
-      margin-top: 2px;
-      color: #60484d;
-      font-size: 11px;
-    }
-
     .contractBenefits {
       margin: 5px 0 0;
       padding-left: 16px;
@@ -3401,12 +3377,6 @@
 
     function renderContractBenefits(packageDef) {
       return "<ul class=\"contractBenefits\">" + (packageDef.benefits || []).map(text => "<li>" + text + "</li>").join("") + "</ul>";
-    }
-
-    function renderFirstPurchasePreview() {
-      return "<div class=\"contractPreview\">" + FIRST_PURCHASE_PACKAGES.map(packageDef => (
-        "<div class=\"contractPreviewItem\"><strong>" + packageDef.name + "</strong><span>" + packageDef.theme + "</span>" + renderContractBenefits(packageDef) + "</div>"
-      )).join("") + "</div>";
     }
 
     function grantSponsoredReward(reward) {
@@ -6774,9 +6744,6 @@
         intro.style.fontWeight = "800";
         intro.textContent = "런 초반 빌드 방향을 정하는 계약입니다. 실제 결제가 아니라 인게임 골드만 사용합니다.";
         body.appendChild(intro);
-        const preview = document.createElement("div");
-        preview.innerHTML = renderFirstPurchasePreview();
-        body.appendChild(preview);
 
         const controls = document.createElement("div");
         controls.className = "popupControls";
