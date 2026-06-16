@@ -1482,7 +1482,7 @@
       canvasWidth: 960,
       canvasHeight: 540,
 
-      playerMaxHP: 5,
+      playerMaxHP: 100,
       playerMoveSpeed: 180,
       playerDamage: 10,
       playerAttackInterval: 0.6,
@@ -1494,7 +1494,7 @@
 
       enemyHP: 20,
       enemySpeed: 70,
-      enemyDamage: 1,
+      enemyDamage: 18,
       enemySpawnInterval: 2.2,
       enemySpawnIntervalMin: 0.75,
 
@@ -1561,10 +1561,10 @@
       {
         id: "max_hp_up",
         name: "최대 HP 증가",
-        description: "최대 HP +1",
+        description: "최대 HP +20",
         rarity: "Common",
-        tags: ["generic", "safe", "utility"],
-        effect: { stat: "maxHP", value: 1 }
+        tags: ["generic", "vitality", "safe", "health"],
+        effect: { stat: "maxHP", value: 20 }
       },
       {
         id: "piercing_ad_shot",
@@ -1660,12 +1660,12 @@
       {
         id: "trial_version",
         name: "무료 체험판",
-        description: "공격 간격 -35%, 60초 후 최대 HP -1",
+        description: "공격 간격 -35%, 60초 후 최대 HP -20",
         rarity: "Cursed",
         tags: ["curse", "risky", "cooldown", "delayed_penalty"],
         effects: [
           { stat: "attackIntervalMultiplier", value: -0.35 },
-          { stat: "delayedMaxHPLoss", value: 1, delay: 60 }
+          { stat: "delayedMaxHPLoss", value: 20, delay: 60 }
         ]
       },
       {
@@ -1787,6 +1787,60 @@
         effects: [
           { stat: "gold", value: 60 }
         ]
+      },
+      {
+        id: "regeneration_patch",
+        name: "재생 패치",
+        description: "초당 체력 재생 +1.2",
+        rarity: "Rare",
+        tags: ["vitality", "regen", "health", "healing"],
+        effect: { stat: "healthRegenPerSecond", value: 1.2 }
+      },
+      {
+        id: "vampire_chip",
+        name: "흡혈 칩",
+        description: "무기 피해의 2%를 체력으로 회복",
+        rarity: "Rare",
+        tags: ["vitality", "lifesteal", "combat", "healing"],
+        effect: { stat: "lifeStealPercent", value: 0.02 }
+      },
+      {
+        id: "emergency_blood_pack",
+        name: "응급 혈액팩",
+        description: "최대 HP +15, 즉시 15 회복",
+        rarity: "Common",
+        tags: ["vitality", "health", "safe", "healing"],
+        effects: [
+          { stat: "maxHP", value: 15 },
+          { stat: "instantHeal", value: 15 }
+        ]
+      },
+      {
+        id: "wound_engine",
+        name: "상처 엔진",
+        description: "체력이 50% 이하이면 재생 +2/s, 30% 이하이면 공격 간격 -10%",
+        rarity: "Epic",
+        tags: ["vitality", "low_hp", "regen", "combat"]
+      },
+      {
+        id: "crimson_core",
+        name: "진홍 코어",
+        description: "흡혈량 +3%, 최대 HP 100당 피해량 +5%",
+        rarity: "Epic",
+        tags: ["vitality", "lifesteal", "damage", "healing"],
+        effect: { stat: "lifeStealPercent", value: 0.03 }
+      },
+      {
+        id: "cursed_transfusion",
+        name: "저주 수혈",
+        description: "최대 HP +50, 흡혈 +4%, 난이도 +1",
+        rarity: "Cursed",
+        tags: ["vitality", "curse", "risky", "health", "lifesteal"],
+        effects: [
+          { stat: "maxHP", value: 50 },
+          { stat: "lifeStealPercent", value: 0.04 },
+          { stat: "heat", value: 1 }
+        ]
       }
     ];
 
@@ -1796,6 +1850,7 @@
       sponsored: "스폰서",
       clutter: "난장판",
       clean: "클린업",
+      vitality: "생명력",
       curse: "위험",
       gold: "골드",
       invested_gold: "투자금",
@@ -1805,6 +1860,11 @@
       ad_completion: "광고 완료",
       popup_count: "팝업 수",
       low_popup: "저팝업",
+      health: "체력",
+      regen: "재생",
+      lifesteal: "흡혈",
+      low_hp: "저체력",
+      healing: "회복",
       popup_close: "닫기",
       empty_slot: "빈 슬롯",
       heat: "난이도",
@@ -2350,6 +2410,24 @@
         ]
       },
       {
+        id: "vitality_starter",
+        name: "생명력 스타터 계약",
+        theme: "재생/흡혈 생존 빌드",
+        description: "최대 체력, 체력 재생, 흡혈을 통해 피해를 버티며 전투를 이어갑니다.",
+        benefits: [
+          "계약 효과: 최대 HP +30, 초당 체력 재생 +0.8",
+          "전투 특전: 무기 피해의 2%를 흡혈, 체력이 낮을수록 재생이 증가",
+          "아이템 풀: 생명력/재생/흡혈/저체력 태그 아이템이 더 자주 등장"
+        ],
+        cost: 10,
+        effects: [
+          { stat: "maxHP", value: 30 },
+          { stat: "healthRegenPerSecond", value: 0.8 },
+          { stat: "lifeStealPercent", value: 0.02 },
+          { stat: "missingHpRegenMultiplier", value: 2.0 }
+        ]
+      },
+      {
         id: "risky_terms_starter",
         name: "위험 계약자 스타터 계약",
         theme: "난이도 상승 보상 빌드",
@@ -2447,6 +2525,7 @@
       { id: "sponsored_overcharge", name: "광고 과충전", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["projectile", "beam", "turret"] },
       { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["area", "aura", "explosion", "beam", "field"] },
       { id: "clean_precision", name: "정리 정밀화", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["projectile", "beam", "melee", "deploy", "line"] },
+      { id: "vitality_blood_engine", name: "생명 순환", playstyle: "vitality", description: "최대 HP와 잃은 체력 비율에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["any"] },
       { id: "cleanup_combo_precision", name: "정리 콤보", playstyle: "clean", description: "최근 직접 닫은 팝업 콤보 수에 따라 주 공격 쿨타임과 피해가 증가합니다.", compatibleTags: ["any"] },
       { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "난이도가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
       { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["projectile", "beam", "line", "aura", "deploy"] }
@@ -2695,7 +2774,15 @@
           interestPayoutMultiplier: 0,
           popupStoreWeightMultiplier: 0,
           popupStoreDiscountMultiplier: 0,
-          debtItemCostMultiplier: 0
+          debtItemCostMultiplier: 0,
+          healthRegenPerSecond: 0,
+          lifeStealPercent: 0,
+          lifeStealFlat: 0,
+          healingMultiplier: 0,
+          missingHpRegenMultiplier: 0,
+          lowHpDamageMultiplier: 0,
+          lowHpCooldownMultiplier: 0,
+          maxHpDamageMultiplier: 0
         },
         enemies: [],
         mines: [],
@@ -2906,6 +2993,9 @@
       if (state.activePlaystyle === "clutter_chaos_starter") {
         return defs.filter(def => popupInFamily(def, "clutter") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
       }
+      if (state.activePlaystyle === "vitality_starter") {
+        return defs.filter(def => popupInFamily(def, "generic") || popupInFamily(def, "system"));
+      }
       if (state.activePlaystyle === "risky_terms_starter") {
         return defs.filter(def => popupInFamily(def, "curse") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
       }
@@ -2936,7 +3026,52 @@
       if (state.stats.goldBulletDamageMultiplier > 0 && state.gold >= 50) {
         multiplier += state.stats.goldBulletDamageMultiplier;
       }
+      if (state.stats.lowHpDamageMultiplier !== 0 && hpRatio() <= 0.35) {
+        multiplier += state.stats.lowHpDamageMultiplier;
+      }
+      if (state.stats.maxHpDamageMultiplier !== 0) {
+        multiplier += Math.floor(state.player.maxHP / 100) * state.stats.maxHpDamageMultiplier;
+      }
       return multiplier;
+    }
+
+    function hpRatio() {
+      return state.player.maxHP > 0 ? state.player.hp / state.player.maxHP : 0;
+    }
+
+    function effectiveLifeStealPercent() {
+      return Math.max(0, state.stats.lifeStealPercent);
+    }
+
+    function dynamicHealthRegenPerSecond() {
+      let regen = 0;
+      const woundEngine = ownedItemCount("wound_engine");
+      if (woundEngine > 0 && hpRatio() <= 0.5) {
+        regen += 2 * woundEngine;
+      }
+      return regen;
+    }
+
+    function effectiveHealthRegenPerSecond() {
+      const missingRatio = clamp(1 - hpRatio(), 0, 1);
+      return Math.max(0, state.stats.healthRegenPerSecond + dynamicHealthRegenPerSecond() + state.stats.missingHpRegenMultiplier * missingRatio);
+    }
+
+    function healPlayer(amount, source) {
+      if (state.gameOver || amount <= 0 || state.player.hp <= 0) {
+        return 0;
+      }
+      const scaled = amount * Math.max(0, 1 + state.stats.healingMultiplier);
+      const actual = Math.min(scaled, state.player.maxHP - state.player.hp);
+      if (actual <= 0) {
+        return 0;
+      }
+      state.player.hp += actual;
+      return actual;
+    }
+
+    function updateHealthRegen(dt) {
+      healPlayer(effectiveHealthRegenPerSecond() * dt, "regen");
     }
 
     function deepeningFor(slot) {
@@ -2998,6 +3133,7 @@
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
         clean_desk_starter: "clean",
+        vitality_starter: "vitality",
         risky_terms_starter: "curse"
       };
       return map[state.activePlaystyle] || "generic";
@@ -3037,6 +3173,7 @@
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
         clean_desk_starter: "clean",
+        vitality_starter: "vitality",
         risky_terms_starter: "curse"
       };
       return map[state.activePlaystyle] || null;
@@ -3048,6 +3185,7 @@
         sponsored: ["ad_open", "ad_completion", "economy"],
         clutter: ["popup_count", "aoe", "range"],
         clean: ["low_popup", "safe", "range", "popup_close", "emergency_close", "cleanup_combo"],
+        vitality: ["health", "regen", "lifesteal", "healing", "low_hp", "safe"],
         curse: ["heat", "terms", "risky", "cursed"]
       };
       return map[buildTag] || [];
@@ -3059,7 +3197,7 @@
         return 1;
       }
 
-      const buildTags = ["investor", "sponsored", "clutter", "clean", "curse"];
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "vitality", "curse"];
       let multiplier = 1;
       if (itemHasTag(item, buildTag)) {
         multiplier *= 1.7;
@@ -3077,8 +3215,8 @@
 
     function prioritizedItemTags(item) {
       const priority = [
-        "investor", "sponsored", "clutter", "clean", "curse",
-        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "cleanup_combo", "empty_slot", "heat",
+        "investor", "sponsored", "clutter", "clean", "vitality", "curse",
+        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "cleanup_combo", "empty_slot", "health", "regen", "lifesteal", "low_hp", "healing", "heat",
         "damage", "cooldown", "range", "economy", "utility"
       ];
       const tags = itemTags(item);
@@ -3086,7 +3224,7 @@
     }
 
     function renderItemTagChips(item) {
-      const buildTags = ["investor", "sponsored", "clutter", "clean", "curse"];
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "vitality", "curse"];
       return "<div class=\"itemTags\">" + prioritizedItemTags(item).map(tag => {
         const className = buildTags.includes(tag) ? "itemTag itemTagBuild" : "itemTag";
         return "<span class=\"" + className + "\">" + tagLabel(tag) + "</span>";
@@ -3114,6 +3252,14 @@
       const heatBlade = ownedItemCount("heat_blade");
       if (heatBlade > 0) {
         multiplier += state.heat * 0.05 * heatBlade;
+      }
+      const woundEngine = ownedItemCount("wound_engine");
+      if (woundEngine > 0 && hpRatio() <= 0.5) {
+        multiplier += 0.1 * woundEngine;
+      }
+      const crimsonCore = ownedItemCount("crimson_core");
+      if (crimsonCore > 0) {
+        multiplier += Math.floor(state.player.maxHP / 100) * 0.05 * crimsonCore;
       }
       return multiplier;
     }
@@ -3149,6 +3295,10 @@
       if (closeCombo > 0 && state.cleanupComboWindow > 0) {
         multiplier += -0.15 * closeCombo;
       }
+      const woundEngine = ownedItemCount("wound_engine");
+      if (woundEngine > 0 && hpRatio() <= 0.3) {
+        multiplier += -0.1 * woundEngine;
+      }
       return Math.max(-0.75, multiplier);
     }
 
@@ -3176,6 +3326,8 @@
         cleanupComboStacks: state.cleanupComboStacks,
         manualDifficulty: manualDifficulty(),
         difficultyScore: currentDifficultyScore(),
+        playerMaxHP: state.player.maxHP,
+        playerHpRatio: hpRatio(),
         activePlaystyle: state.activePlaystyle
       };
     }
@@ -3232,6 +3384,9 @@
             upgraded.damageMultiplierFromUpgrade += 0.15;
             upgraded.rangeMultiplierFromUpgrade += 0.1;
           }
+        } else if (scaling.id === "vitality_blood_engine") {
+          const missingRatio = clamp(1 - context.playerHpRatio, 0, 1);
+          upgraded.damageMultiplierFromUpgrade += Math.min(0.5, Math.floor(context.playerMaxHP / 50) * 0.03 + missingRatio * 0.2);
         } else if (scaling.id === "cleanup_combo_precision" && context.cleanupComboWindow > 0) {
           const stacks = Math.min(5, context.cleanupComboStacks || 0);
           upgraded.damageMultiplierFromUpgrade += stacks * 0.06;
@@ -3275,6 +3430,9 @@
       const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0) + starterBonuses.rangeMultiplier + dynamicItemRangeMultiplier();
       let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0) + starterBonuses.cooldownMultiplier + dynamicItemCooldownMultiplier();
       cooldownMultiplier += sponsoredBuff("attackIntervalMultiplier") + clutterThresholdBonuses().attackIntervalBonus;
+      if (state.stats.lowHpCooldownMultiplier !== 0 && hpRatio() <= 0.35) {
+        cooldownMultiplier += state.stats.lowHpCooldownMultiplier;
+      }
       if (state.stats.clutterAttackIntervalPerPopup < 0) {
         cooldownMultiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
       }
@@ -3305,6 +3463,9 @@
         return stats.cooldown;
       }
       let multiplier = state.stats.attackIntervalMultiplier + dynamicItemCooldownMultiplier();
+      if (state.stats.lowHpCooldownMultiplier !== 0 && hpRatio() <= 0.35) {
+        multiplier += state.stats.lowHpCooldownMultiplier;
+      }
       if (state.stats.clutterAttackIntervalPerPopup < 0) {
         multiplier += Math.max(-0.2, state.openPopups.length * state.stats.clutterAttackIntervalPerPopup);
       }
@@ -3528,6 +3689,18 @@
           bonuses.cooldownMultiplier += Math.max(-0.25, stacks * -0.05);
           bonuses.notes.push("정리 콤보 x" + stacks);
         }
+      } else if (state.activePlaystyle === "vitality_starter") {
+        const ratio = hpRatio();
+        bonuses.notes.push("재생 활성");
+        bonuses.notes.push("흡혈 " + Math.round(effectiveLifeStealPercent() * 100) + "%");
+        if (ratio <= 0.3) {
+          bonuses.damageMultiplier += 0.2;
+          bonuses.cooldownMultiplier += -0.08;
+          bonuses.notes.push("저체력 화력");
+        } else if (ratio <= 0.5) {
+          bonuses.damageMultiplier += 0.1;
+          bonuses.notes.push("상처 적응");
+        }
       } else if (state.activePlaystyle === "risky_terms_starter") {
         const heatDamage = state.heat * 0.04 + (state.heat >= 5 ? 0.1 : 0);
         if (heatDamage > 0) {
@@ -3651,6 +3824,11 @@
       if (effect.stat === "maxHP") {
         state.player.maxHP += effect.value;
         state.player.hp = clamp(state.player.hp + effect.value, 0, state.player.maxHP);
+        return;
+      }
+
+      if (effect.stat === "instantHeal") {
+        healPlayer(effect.value, "item");
         return;
       }
 
@@ -3878,7 +4056,9 @@
 
     function applyItemReward(item, sourceText) {
       applyEffects(item);
-      if (item.rarity === "Cursed") {
+      const effects = item.effects || (item.effect ? [item.effect] : []);
+      const hasExplicitDifficultyEffect = effects.some(effect => effect.stat === "heat");
+      if (item.rarity === "Cursed" && !hasExplicitDifficultyEffect) {
         state.heat += 1;
       }
       state.itemCounts[item.id] = (state.itemCounts[item.id] || 0) + 1;
@@ -4469,9 +4649,15 @@
         return false;
       }
 
+      const dealt = Math.max(0, Math.min(amount, enemy.hp));
       enemy.hp -= amount;
       if (sourceSlot) {
         enemy.lastHitSlot = sourceSlot;
+      }
+      if ((sourceSlot === "primary" || sourceSlot === "secondary") && dealt > 0) {
+        const rawHeal = dealt * effectiveLifeStealPercent() + state.stats.lifeStealFlat;
+        const healCap = state.player.maxHP * 0.04;
+        healPlayer(Math.min(rawHeal, healCap), "lifesteal");
       }
       if (enemy.hp <= 0 && !enemy.dead) {
         enemy.dead = true;
@@ -4530,7 +4716,7 @@
           enemy.contactTimer = 0.85;
           state.player.hp -= enemy.damage || CONFIG.enemyDamage;
           state.player.hitFlash = 0.16;
-          if (state.player.hp <= 1 && state.stats.lowHpPopupFreeze > 0 && !state.lowHpFreezeUsed) {
+          if (state.player.hp <= state.player.maxHP * 0.2 && state.stats.lowHpPopupFreeze > 0 && !state.lowHpFreezeUsed) {
             state.lowHpFreezeUsed = true;
             state.popupFreezeTimer = 8;
           }
@@ -5430,8 +5616,8 @@
         event.remaining -= dt;
         if (event.remaining <= 0 && !event.done && event.type === "maxHPLoss") {
           event.done = true;
-          state.player.maxHP = Math.max(1, state.player.maxHP - event.value);
-          state.player.hp = clamp(state.player.hp, 1, state.player.maxHP);
+          state.player.maxHP = Math.max(20, state.player.maxHP - event.value);
+          state.player.hp = clamp(state.player.hp, Math.min(1, state.player.maxHP), state.player.maxHP);
         }
       }
       state.delayedEvents = state.delayedEvents.filter(event => !event.done);
@@ -5660,6 +5846,7 @@
       state.elapsed += dt;
       updatePlayer(dt);
       updateEnemies(dt);
+      updateHealthRegen(dt);
       updateBossSpawns();
       updateModuleUpgradeTimers(dt);
       updateAutoAttack(dt);
@@ -7552,6 +7739,15 @@
       if (stat === "interestPayoutMultiplier") return "이자 지급";
       if (stat === "popupStoreWeightMultiplier") return "팝업 상점 출현";
       if (stat === "popupStoreDiscountMultiplier") return "상점 할인";
+      if (stat === "healthRegenPerSecond") return "초당 재생";
+      if (stat === "lifeStealPercent") return "흡혈";
+      if (stat === "lifeStealFlat") return "고정 흡혈";
+      if (stat === "healingMultiplier") return "회복 효과";
+      if (stat === "missingHpRegenMultiplier") return "상처 재생";
+      if (stat === "lowHpDamageMultiplier") return "저체력 피해";
+      if (stat === "lowHpCooldownMultiplier") return "저체력 쿨타임";
+      if (stat === "maxHpDamageMultiplier") return "최대 HP 피해";
+      if (stat === "instantHeal") return "즉시 회복";
       return stat;
     }
 
@@ -7578,7 +7774,16 @@
         effect.stat === "interestPopupWeightMultiplier" ||
         effect.stat === "interestPayoutMultiplier" ||
         effect.stat === "popupStoreWeightMultiplier" ||
-        effect.stat === "popupStoreDiscountMultiplier"
+        effect.stat === "popupStoreDiscountMultiplier" ||
+        effect.stat === "healthRegenPerSecond" ||
+        effect.stat === "lifeStealPercent" ||
+        effect.stat === "lifeStealFlat" ||
+        effect.stat === "healingMultiplier" ||
+        effect.stat === "missingHpRegenMultiplier" ||
+        effect.stat === "lowHpDamageMultiplier" ||
+        effect.stat === "lowHpCooldownMultiplier" ||
+        effect.stat === "maxHpDamageMultiplier" ||
+        effect.stat === "instantHeal"
       ));
     }
 
@@ -7631,6 +7836,17 @@
       if (item.id === "cursed_cache") {
         return "획득 시 +60G / 난이도 +1";
       }
+      if (item.id === "wound_engine") {
+        const low = hpRatio() <= 0.5 ? 2 * stacks : 0;
+        const tempo = hpRatio() <= 0.3 ? -0.1 * stacks : 0;
+        return stacks <= 0 ? "상처 엔진 대기" : "저체력 재생 +" + low.toFixed(1) + "/s / 쿨타임 " + formatSignedPercent(tempo);
+      }
+      if (item.id === "crimson_core") {
+        return stacks <= 0 ? "진홍 피해 변화 없음" : "최대 HP 피해 " + formatSignedPercent(Math.floor(state.player.maxHP / 100) * 0.05 * stacks);
+      }
+      if (item.id === "cursed_transfusion") {
+        return "최대 HP +" + (50 * stacks) + " / 흡혈 " + formatSignedPercent(0.04 * stacks) + " / 난이도 +" + stacks;
+      }
 
       const displayEffect = primaryDisplayEffect(item);
       if (!displayEffect) {
@@ -7643,8 +7859,14 @@
       }
 
       const total = displayEffect.value * stacks;
+      if (displayEffect.stat === "lifeStealPercent") {
+        return label + " " + formatSignedPercent(total);
+      }
       if (displayEffect.stat.indexOf("Multiplier") >= 0) {
         return label + " " + formatSignedPercent(total);
+      }
+      if (displayEffect.stat === "healthRegenPerSecond" || displayEffect.stat === "missingHpRegenMultiplier") {
+        return label + " +" + total.toFixed(1) + "/s";
       }
       return label + " " + formatSignedNumber(total);
     }
@@ -7761,6 +7983,8 @@
       const starterSummary = starterCombatBonusSummary();
       const itemPoolSummary = itemPoolBiasSummary();
       const difficultyInfo = difficultyStageInfo();
+      const regenText = effectiveHealthRegenPerSecond().toFixed(1);
+      const lifestealText = Math.round(effectiveLifeStealPercent() * 100);
       const executionWindowText = state.cleanupComboWindow > 0 ? " / 정리 콤보: x" + state.cleanupComboStacks + " " + state.cleanupComboWindow.toFixed(1) + "초" : "";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
@@ -7777,6 +8001,7 @@
         "<br>1차 방식: " + upgradeLabels.form +
         " / 기믹: " + upgradeLabels.mechanic +
         "<br>빌드 최적화: " + upgradeLabels.scaling + executionWindowText +
+        "<br>재생: +" + regenText + "/s / 흡혈: " + lifestealText + "%" +
         "<br>피해: " + effectiveDamage().toFixed(1) +
         " / 사거리: " + Math.round(effectiveAttackRange()) +
         " / 공격 간격: " + effectiveAttackInterval().toFixed(2) + "초" +
@@ -7800,6 +8025,7 @@
         "<br>계약 특전: " + starterSummary +
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
+        "<br>재생/흡혈/회복효율: +" + regenText + "/s / " + lifestealText + "% / " + formatSignedPercent(state.stats.healingMultiplier) +
         "<br>정리 콤보/닫기 연계: x" + state.cleanupComboStacks + " " + state.cleanupComboWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
