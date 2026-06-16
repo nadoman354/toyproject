@@ -128,6 +128,99 @@
     #difficultyHud.difficulty-collapse .difficultyBarFill { background: #d26bff; }
     #difficultyHud.difficulty-nightmare .difficultyBarFill { background: #ff4fd8; }
 
+    #difficultyHud.pulse {
+      animation: difficultyPulse 0.22s ease-out;
+    }
+
+    @keyframes difficultyPulse {
+      0% { transform: translateX(-50%) scale(1); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34); }
+      55% { transform: translateX(-50%) scale(1.045); box-shadow: 0 0 0 2px rgba(255, 214, 107, 0.55), 0 14px 32px rgba(0, 0, 0, 0.42); }
+      100% { transform: translateX(-50%) scale(1); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34); }
+    }
+
+    #cleanupComboHud {
+      position: absolute;
+      top: 64px;
+      left: 50%;
+      width: min(260px, calc(100vw - 560px));
+      min-width: 190px;
+      transform: translateX(-50%);
+      z-index: 18;
+      display: none;
+      padding: 7px 9px;
+      border: 1px solid rgba(91, 213, 255, 0.28);
+      border-radius: 8px;
+      background: rgba(9, 24, 29, 0.82);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+      pointer-events: none;
+    }
+
+    #cleanupComboHud.active {
+      display: block;
+    }
+
+    #cleanupComboHud.decaying {
+      border-color: rgba(255, 189, 79, 0.36);
+      background: rgba(31, 22, 13, 0.84);
+    }
+
+    .cleanupComboCount {
+      color: #dffcff;
+      font-size: 16px;
+      font-weight: 1000;
+      line-height: 1.1;
+    }
+
+    #cleanupComboHud.pulse .cleanupComboCount {
+      animation: comboPulse 0.22s ease-out;
+    }
+
+    @keyframes comboPulse {
+      0% { transform: scale(1); }
+      55% { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+
+    .cleanupComboBar {
+      height: 6px;
+      margin-top: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .cleanupComboBarFill {
+      width: 0%;
+      height: 100%;
+      background: #5bd5ff;
+      transition: width 0.08s linear;
+    }
+
+    .cleanupComboMeta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .packageEfficiencyBadge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      margin: 6px 0 4px;
+      padding: 4px 7px;
+      border: 1px solid rgba(255, 199, 72, 0.74);
+      border-radius: 999px;
+      color: #241506;
+      background: linear-gradient(180deg, #ffe58a, #ffb83e);
+      box-shadow: 0 2px 0 rgba(85, 45, 0, 0.16);
+      font-size: 11px;
+      font-weight: 1000;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
     .panel {
       position: absolute;
       background: var(--panel);
@@ -1102,6 +1195,21 @@
         margin-top: 4px;
       }
 
+      #cleanupComboHud {
+        top: max(42px, calc(env(safe-area-inset-top) + 40px));
+        width: min(32vw, 170px);
+        min-width: 132px;
+        padding: 5px 7px;
+      }
+
+      .cleanupComboCount {
+        font-size: 11px;
+      }
+
+      .cleanupComboMeta {
+        font-size: 8px;
+      }
+
       .panelTitle {
         margin-bottom: 3px;
         font-size: 9px;
@@ -1342,6 +1450,12 @@
         <div id="difficultyEffectLabel" class="difficultyHudMeta">선택 난이도 +0 / 팝업 압박 +0%</div>
       </div>
 
+      <div id="cleanupComboHud">
+        <div id="cleanupComboCount" class="cleanupComboCount">정리 콤보 x0</div>
+        <div class="cleanupComboBar"><div id="cleanupComboBarFill" class="cleanupComboBarFill"></div></div>
+        <div id="cleanupComboMeta" class="cleanupComboMeta">대기 중</div>
+      </div>
+
       <section id="hud" class="panel">
         <h1 class="panelTitle">상태</h1>
         <div class="statRow"><span>HP</span><strong id="hpText">5 / 5</strong></div>
@@ -1397,7 +1511,8 @@
             <button type="button" data-debug="formSelect">Lv.9 방식 선택</button>
             <button type="button" data-debug="mechanicSelect">Lv.13 기믹 선택</button>
             <button type="button" data-debug="scalingSelect">Lv.17 최적화</button>
-            <button type="button" data-debug="executionWindow">정리 콤보 +3초</button>
+            <button type="button" data-debug="executionWindow">정리 콤보 +1</button>
+            <button type="button" data-debug="cleanupCombo5">정리 콤보 x5</button>
             <button type="button" data-debug="invested100">투자금 +100</button>
             <button type="button" data-debug="sponsoredStacks">후원탄 +5</button>
             <button type="button" data-debug="boss">보스 소환</button>
@@ -1492,11 +1607,11 @@
       meleeSlashWidth: 42,
       deployTriggerRadius: 18,
 
-      enemyHP: 20,
-      enemySpeed: 70,
+      enemyHP: 24,
+      enemySpeed: 82,
       enemyDamage: 18,
-      enemySpawnInterval: 2.2,
-      enemySpawnIntervalMin: 0.75,
+      enemySpawnInterval: 1.65,
+      enemySpawnIntervalMin: 0.45,
 
       goldPerKill: 5,
       xpPerKill: 10,
@@ -1508,9 +1623,9 @@
       xpBaseRequirement: 40,
       xpRequirementGrowth: 1.25,
 
-      popupBaseSpawnInterval: 14,
-      popupMinSpawnInterval: 5.4,
-      popupPressureRampSeconds: 190,
+      popupBaseSpawnInterval: 11.5,
+      popupMinSpawnInterval: 4.2,
+      popupPressureRampSeconds: 145,
       maxOpenPopups: 5,
       popupOverlapMaxWidthRatio: 0.5,
       popupOverlapMaxHeightRatio: 0.5,
@@ -1519,8 +1634,8 @@
       centralSafeZoneHeightRatio: 0.38,
       emergencyCloseCooldown: 9,
 
-      bossSpawnTimes: [90, 180],
-      bossBaseHP: 420,
+      bossSpawnTimes: [75, 150],
+      bossBaseHP: 504,
       bossGoldReward: 80,
       bossXPReward: 80
     };
@@ -1760,7 +1875,7 @@
       {
         id: "empty_slot_charger",
         name: "정리 콤보",
-        description: "팝업을 직접 닫으면 3초 동안 피해량 +12%. 연속 정리 중에는 추가로 강해집니다.",
+        description: "정리 콤보가 유지되는 동안 콤보 1당 피해량 +2%, 최대 +20%",
         rarity: "Rare",
         tags: ["clean", "popup_close", "cleanup_combo", "damage", "combat"]
       },
@@ -2059,33 +2174,39 @@
     const POPUP_DEFINITIONS = [
       {
         id: "first_purchase_package",
-        title: "첫 결제 팝업",
-        body: "인게임 골드로 여는 초회 결제 버튼입니다. 실제 결제는 발생하지 않습니다.",
+        title: "런 스타터 패키지",
+        body: "이번 런의 빌드 방향을 즉시 확정하세요. 초반 성장 효율을 끌어올리는 한정 스타터 계약입니다. 인게임 골드만 사용합니다.",
         type: "first_purchase_package",
+        copyTone: "game_package",
+        efficiencyLabel: "빌드 확정 효율 +240%",
         families: ["system"],
         weight: 0
       },
       {
         id: "boss_package_ad",
-        title: "보스 처치 기념 한정 성장 패키지",
-        body: "다음 구간 생존을 위한 필수 패키지입니다. 아이템 6개 중 2개를 선택하세요.",
+        title: "보스 보상 패키지 AD",
+        body: "보스 처치 후에만 열리는 한정 보상 패키지입니다. 아이템 6개 중 2개를 직접 선택해 런 가치를 극대화하세요.",
         type: "boss_package_ad",
+        copyTone: "game_package",
+        efficiencyLabel: "보상 선택 효율 +260%",
         families: ["system"],
         weight: 0
       },
       {
         id: "basic_ad",
-        title: "광고 메시지",
-        body: "닫거나 구석으로 치워 두세요.",
+        title: "오늘만 무료 혜택",
+        body: "한정 혜택이 도착했습니다. 관심이 없더라도 이 창은 이미 열렸습니다.",
         type: "basic",
+        copyTone: "product_ad",
         families: ["generic"],
         weight: 40
       },
       {
         id: "ad_buff",
-        title: "스폰서 광고: 공격력 캠페인",
-        body: "광고가 열려 있는 동안 공격력이 증가합니다.",
+        title: "스폰서 보상 광고",
+        body: "이 창을 유지하는 동안 후원 효과가 적용됩니다. 끝까지 유지하면 시청 보상 상태가 기록됩니다.",
         type: "sponsored_ad",
+        copyTone: "sponsored_reward",
         families: ["sponsored"],
         adRole: "ongoing_buff",
         weight: 14,
@@ -2097,9 +2218,10 @@
       },
       {
         id: "ad_coupon",
-        title: "스폰서 광고: 할인 쿠폰",
-        body: "광고를 끝까지 시청하면 다음 아이템 머신 비용이 할인됩니다.",
+        title: "스폰서 할인 리워드",
+        body: "광고 시간을 유지하면 다음 아이템 머신 비용 할인권이 지급됩니다.",
         type: "sponsored_ad",
+        copyTone: "sponsored_reward",
         families: ["sponsored"],
         adRole: "completion_reward",
         weight: 14,
@@ -2111,9 +2233,10 @@
       },
       {
         id: "ad_free_sample",
-        title: "스폰서 광고: 무료 샘플",
-        body: "광고를 끝까지 시청하면 보급형 아이템 샘플을 받습니다.",
+        title: "스폰서 무료 샘플",
+        body: "보상 광고를 끝까지 유지하면 보급형 아이템 샘플이 즉시 지급됩니다.",
         type: "sponsored_ad",
+        copyTone: "sponsored_reward",
         families: ["sponsored"],
         adRole: "completion_reward",
         weight: 12,
@@ -2125,9 +2248,10 @@
       },
       {
         id: "ad_premium_sample",
-        title: "스폰서 광고: 프리미엄 샘플",
-        body: "광고 중에는 공격 속도가 증가하고, 끝까지 보면 선택지가 늘어납니다.",
+        title: "프리미엄 리워드 광고",
+        body: "시청 유지 중 공격 템포가 개선됩니다. 완료 시 다음 선택 보상이 확장됩니다.",
         type: "sponsored_ad",
+        copyTone: "sponsored_reward",
         families: ["sponsored"],
         adRole: "hybrid",
         weight: 8,
@@ -2142,9 +2266,10 @@
       },
       {
         id: "timed_reward",
-        title: "한정 보상",
-        body: "15초 동안 열어 두면 30G를 얻습니다.",
+        title: "전투 중 놓치면 손해",
+        body: "이 창을 유지하면 제한 시간 후 소액 골드 혜택이 지급됩니다. 중간에 닫으면 혜택은 소멸됩니다.",
         type: "timed_reward",
+        copyTone: "product_ad",
         families: ["generic"],
         weight: 20,
         duration: 15,
@@ -2152,9 +2277,10 @@
       },
       {
         id: "terms",
-        title: "약관 동의",
-        body: "수락하기 전에 위험 조항 체크를 해제하세요.",
+        title: "위험 조항 동의서",
+        body: "본 조항에 동의하는 경우 현재 난이도, 팝업 압박 또는 기타 불리한 조건이 상승할 수 있습니다. 플레이어는 이에 따른 결과를 충분히 인지한 것으로 간주됩니다.",
         type: "terms",
+        copyTone: "legal_contract",
         families: ["curse"],
         termsKind: "personal_data",
         weight: 15,
@@ -2166,9 +2292,10 @@
       },
       {
         id: "terms_ad_tracking",
-        title: "광고 추적 동의",
-        body: "광고 보상을 키울 수 있지만 추적 조항은 위험합니다.",
+        title: "광고 추적 및 보상 약관",
+        body: "광고 보상 산정 목적의 추적 조항입니다. 동의 시 보상 조건이 개선될 수 있으나 스폰서 노출 압박이 증가할 수 있습니다.",
         type: "terms",
+        copyTone: "legal_contract",
         families: ["curse", "sponsored"],
         termsKind: "ad_tracking",
         weight: 8,
@@ -2181,8 +2308,9 @@
       {
         id: "terms_emergency_waiver",
         title: "긴급 닫기 포기 각서",
-        body: "보상은 커지지만 긴급 닫기 능력이 크게 약해집니다.",
+        body: "본 각서에 동의하면 긴급 닫기 관련 책임과 비용이 플레이어에게 이전됩니다. 보상은 증가하나 대응 권한은 제한됩니다.",
         type: "terms",
+        copyTone: "legal_contract",
         families: ["curse"],
         termsKind: "emergency_waiver",
         weight: 7,
@@ -2195,8 +2323,9 @@
       {
         id: "terms_malicious_optimization",
         title: "악성 최적화 동의서",
-        body: "전투 성능은 좋아지지만 팝업 압박과 난이도가 오릅니다.",
+        body: "비표준 최적화 모듈 적용 동의서입니다. 전투 효율은 상승할 수 있으나 난이도 및 팝업 압박 증가에 대한 책임은 사용자에게 있습니다.",
         type: "terms",
+        copyTone: "legal_contract",
         families: ["curse", "clutter"],
         termsKind: "malicious_optimization",
         weight: 8,
@@ -2208,17 +2337,19 @@
       },
       {
         id: "interest_offer",
-        title: "고수익 예치 상품",
-        body: "현재 골드의 일부를 예치하고 만기까지 버티면 이자를 받습니다.",
+        title: "단기 예치 상품 안내",
+        body: "보유 골드 일부를 단기 예치합니다. 만기 조건을 충족하면 원금과 약정 수익이 지급되며, 중도 해지 시 원금 일부만 반환됩니다.",
         type: "interest_offer",
+        copyTone: "finance",
         families: ["investor"],
         weight: 10
       },
       {
         id: "recurring_investment",
-        title: "자동 적립 투자",
-        body: "일정 시간 동안 새로 얻는 골드 일부를 자동 투자합니다.",
+        title: "자동 적립 투자 설정",
+        body: "새로 획득하는 골드 일부를 자동으로 예치합니다. 만기까지 유지하면 적립액과 보너스 수익이 정산됩니다.",
         type: "recurring_investment",
+        copyTone: "finance",
         families: ["investor"],
         weight: 8,
         duration: 30,
@@ -2227,17 +2358,19 @@
       },
       {
         id: "loan_offer",
-        title: "즉시 대출 제안",
-        body: "골드를 지금 받고 나중에 더 많이 갚습니다.",
+        title: "즉시 유동성 한도",
+        body: "현재 신용도 기준으로 대출 한도가 산정되었습니다. 기한 내 상환하지 않을 경우 보유 골드 압류 및 가격 페널티가 적용됩니다.",
         type: "loan_offer",
+        copyTone: "finance",
         families: ["investor"],
         weight: 8
       },
       {
         id: "stock_broker_app",
         title: "팝업 증권 LIVE",
-        body: "주가를 지켜보며 매수/매도 타이밍을 관리하세요.",
+        body: "POP 팝업 테마주 실시간 시세입니다. 본 시세는 비정상적 팝업 시장 변동성을 반영합니다.",
         type: "stock_broker_app",
+        copyTone: "broker_app",
         families: ["investor"],
         weight: 9
       },
@@ -2246,6 +2379,7 @@
         title: "안정 배당주",
         body: "낮은 변동성과 약한 상승 흐름을 가진 주식입니다.",
         type: "stock_market",
+        copyTone: "finance",
         families: ["investor"],
         stockKind: "stable",
         weight: 0,
@@ -2258,6 +2392,7 @@
         title: "모멘텀 성장주",
         body: "변동성이 크고 수익/손실 폭이 큽니다.",
         type: "stock_market",
+        copyTone: "finance",
         families: ["investor"],
         stockKind: "momentum",
         weight: 0,
@@ -2270,6 +2405,7 @@
         title: "저주 조작주",
         body: "고위험 주식입니다. 손실 매도 시 난이도가 오릅니다.",
         type: "stock_market",
+        copyTone: "finance",
         families: ["investor", "curse"],
         stockKind: "cursed",
         weight: 0,
@@ -2281,17 +2417,20 @@
       {
         id: "popup_store",
         title: "팝업 스토어",
-        body: "등급과 가격만 보고 미확인 아이템을 하나 구매합니다.",
+        body: "미확인 아이템을 패키지 가격으로 즉시 구매하세요. 등급은 공개되지만 내용물은 결제 후 확정됩니다.",
         type: "popup_store",
+        copyTone: "game_package",
+        efficiencyLabel: "랜덤 구매 효율 +160%",
         families: ["generic"],
         weight: 10,
         duration: 18
       },
       {
         id: "clean_challenge_basic",
-        title: "청소 의뢰",
-        body: "10초 동안 열린 팝업을 1개 이하로 유지하세요.",
+        title: "PC 정리 최적화 요청",
+        body: "열린 창 수를 낮게 유지하면 시스템 정리 보상이 적용됩니다. 기준 초과 시 최적화 진행률이 감소합니다.",
         type: "clean_challenge",
+        copyTone: "cleanup_utility",
         families: ["clean"],
         weight: 8,
         duration: 10,
@@ -2300,9 +2439,10 @@
       },
       {
         id: "volatile_bomb_popup",
-        title: "불안정한 창",
-        body: "시간 안에 닫으면 주변 적에게 피해를 줍니다.",
+        title: "긴급 최적화 스캔",
+        body: "불안정한 창이 감지되었습니다. 지금 닫으면 주변 프로세스가 함께 정리됩니다. 지연 시 추가 광고 창이 열릴 수 있습니다.",
         type: "volatile_popup",
+        copyTone: "cleanup_utility",
         families: ["clean"],
         weight: 8,
         duration: 8,
@@ -2312,26 +2452,29 @@
       },
       {
         id: "moving_close",
-        title: "움직이는 닫기 버튼",
-        body: "닫기 버튼이 천천히 움직입니다. 침착하게 눌러 보세요.",
+        title: "신규 상품 알림",
+        body: "추천 상품이 준비되었습니다. 닫기 버튼은 고객 관심도에 따라 유동적으로 배치됩니다.",
         type: "moving_close",
+        copyTone: "product_ad",
         families: ["generic"],
         weight: 12
       },
       {
         id: "infection",
-        title: "감염된 팝업",
-        body: "8초 동안 방치하면 기본 팝업을 하나 퍼뜨립니다.",
+        title: "무료 보안 확장 프로그램",
+        body: "검증되지 않은 확장 기능이 대기 중입니다. 방치 시 추천 창을 추가로 설치할 수 있습니다.",
         type: "infection",
+        copyTone: "product_ad",
         families: ["generic", "clutter"],
         weight: 12,
         duration: 8
       },
       {
         id: "trash_drag",
-        title: "버려야 하는 창",
-        body: "닫기 버튼이 없습니다. 화면 아래 쓰레기통으로 끌어 버리세요.",
+        title: "원클릭 클리너 설치 완료",
+        body: "닫기 버튼 없는 초경량 유틸리티입니다. 화면 아래 정리 영역으로 끌어 제거하세요.",
         type: "trash_drag",
+        copyTone: "cleanup_utility",
         families: ["generic"],
         weight: 12
       }
@@ -2343,6 +2486,7 @@
         name: "스폰서 스타터 계약",
         theme: "광고 수익 빌드",
         description: "광고를 열어둘수록 돈과 힘을 얻지만, 화면이 더러워집니다.",
+        efficiencyLabel: "광고 보상 효율 +220%",
         benefits: [
           "계약 효과: 광고 유지 골드 +1/s, 광고 버프 +20%, 팝업 생성률 +15%",
           "전투 특전: 스폰서 광고가 열려 있으면 피해 +10%, 광고 완료 시 후원탄 +5스택",
@@ -2360,6 +2504,7 @@
         name: "클린업 스타터 계약",
         theme: "정리/닫기 통제 빌드",
         description: "팝업을 적게 유지하고, 생긴 팝업을 빠르게 정리해 전투 리듬을 얻습니다.",
+        efficiencyLabel: "화면 통제 효율 +180%",
         benefits: [
           "계약 효과: 저팝업 피해 +20%, 안전 구역 확대, 긴급 닫기 쿨타임 -15%, 팝업 닫기 +2G",
           "전투 특전: 팝업 1개 이하 피해/사거리 증가, 직접 닫기 시 3초간 정리 콤보 활성",
@@ -2379,6 +2524,7 @@
         name: "난장판 스타터 계약",
         theme: "화면 과밀 적응 빌드",
         description: "팝업을 어느 정도 열어둘수록 공격 속도와 보상이 좋아지지만 관리 부담이 커집니다.",
+        efficiencyLabel: "과밀 성장 효율 +210%",
         benefits: [
           "계약 효과: 최대 팝업 +2, 팝업당 공격 간격 감소, 과밀 골드 +15%, 팝업 생성률 +18%",
           "전투 특전: 팝업 3개 이상 사거리 +10%, 5개 이상 피해 +15%, 7개 이상 공격 간격 -10%",
@@ -2397,6 +2543,7 @@
         name: "투자자 스타터 계약",
         theme: "이자/투자/대출 경제 빌드",
         description: "돈을 묶어 두고 정산하는 팝업이 더 자주 나오며, 이자 지급과 상점 효율이 좋아집니다.",
+        efficiencyLabel: "자본 운용 효율 +200%",
         benefits: [
           "계약 효과: 투자자 팝업 풀 활성화, 이자 상품 출현 +55%, 이자 지급 +18%, 상점 할인 +10%",
           "전투 특전: 투자 중 골드 50G당 피해 +4%, 신용 60/80 이상 공격 템포 강화, 보유 골드 사거리 보너스",
@@ -2414,6 +2561,7 @@
         name: "생명력 스타터 계약",
         theme: "재생/흡혈 생존 빌드",
         description: "최대 체력, 체력 재생, 흡혈을 통해 피해를 버티며 전투를 이어갑니다.",
+        efficiencyLabel: "생존 지속 효율 +170%",
         benefits: [
           "계약 효과: 최대 HP +30, 초당 체력 재생 +0.8",
           "전투 특전: 무기 피해의 2%를 흡혈, 체력이 낮을수록 재생이 증가",
@@ -2432,6 +2580,7 @@
         name: "위험 계약자 스타터 계약",
         theme: "난이도 상승 보상 빌드",
         description: "위험 약관과 고난도 선택으로 현재 난이도를 올리고, 오른 난이도를 전투력과 보상으로 바꿉니다.",
+        efficiencyLabel: "고난도 보상 효율 +320%",
         benefits: [
           "계약 효과: 약관 패널티 보상 +60G, 약관 출현 +50%, 패널티 보호 1회, 시작 난이도 +2",
           "전투 특전: 난이도 1당 피해 +4%, 난이도 5 이상이면 추가 피해 +10%",
@@ -2573,6 +2722,10 @@
     const difficultyScoreLabel = document.getElementById("difficultyScoreLabel");
     const difficultyProgressFill = document.getElementById("difficultyProgressFill");
     const difficultyEffectLabel = document.getElementById("difficultyEffectLabel");
+    const cleanupComboHud = document.getElementById("cleanupComboHud");
+    const cleanupComboCount = document.getElementById("cleanupComboCount");
+    const cleanupComboBarFill = document.getElementById("cleanupComboBarFill");
+    const cleanupComboMeta = document.getElementById("cleanupComboMeta");
     const trashZone = document.getElementById("trashZone");
     const mobileJoystick = document.getElementById("mobileJoystick");
     const mobileJoystickKnob = document.getElementById("mobileJoystickKnob");
@@ -2672,9 +2825,18 @@
           primary: 0,
           secondary: 0
         },
+        lastDifficultyStageId: "normal",
+        difficultyPulseTimer: 0,
+        difficultyNoticeText: "",
+        difficultyNoticeTimer: 0,
         popupExecutionWindow: 0,
         cleanupComboWindow: 0,
         cleanupComboStacks: 0,
+        cleanupComboValue: 0,
+        cleanupComboTimer: 0,
+        cleanupComboGrace: 3,
+        cleanupComboMax: 20,
+        cleanupComboPulse: 0,
         popupCloseAttackPrimed: false,
         moduleTimers: {
           primary: 0,
@@ -2872,8 +3034,39 @@
       return manualDifficulty() * 0.015;
     }
 
+    function difficultyCombatPressure() {
+      const stage = difficultyStageInfo().current.id;
+      const map = {
+        normal: { enemyHpMultiplier: 0, enemySpeedMultiplier: 0, popupSpawnMultiplier: 0 },
+        warning: { enemyHpMultiplier: 0.05, enemySpeedMultiplier: 0.03, popupSpawnMultiplier: 0 },
+        danger: { enemyHpMultiplier: 0.1, enemySpeedMultiplier: 0.06, popupSpawnMultiplier: 0.05 },
+        overload: { enemyHpMultiplier: 0.18, enemySpeedMultiplier: 0.1, popupSpawnMultiplier: 0.1 },
+        collapse: { enemyHpMultiplier: 0.28, enemySpeedMultiplier: 0.15, popupSpawnMultiplier: 0.16 },
+        nightmare: { enemyHpMultiplier: 0.4, enemySpeedMultiplier: 0.22, popupSpawnMultiplier: 0.25 }
+      };
+      return map[stage] || map.normal;
+    }
+
     function difficultyEffectSummary() {
-      return "선택 난이도 +" + manualDifficulty().toFixed(1) + " / 팝업 압박 +" + Math.round(difficultyPressureBonus() * 100) + "%";
+      const pressure = difficultyCombatPressure();
+      const notice = state.difficultyNoticeTimer > 0 ? " / " + state.difficultyNoticeText : "";
+      return "선택 난이도 +" + manualDifficulty().toFixed(1) + " / 팝업 압박 +" + Math.round((difficultyPressureBonus() + pressure.popupSpawnMultiplier) * 100) + "%" + notice;
+    }
+
+    function updateDifficultyStagePulse(dt) {
+      const info = difficultyStageInfo();
+      if (state.lastDifficultyStageId !== info.current.id) {
+        const previousIndex = DIFFICULTY_STAGES.findIndex(stage => stage.id === state.lastDifficultyStageId);
+        const currentIndex = DIFFICULTY_STAGES.findIndex(stage => stage.id === info.current.id);
+        if (currentIndex > previousIndex) {
+          state.difficultyPulseTimer = 0.35;
+          state.difficultyNoticeText = "시스템 난이도 상승: " + info.current.label;
+          state.difficultyNoticeTimer = 3;
+        }
+        state.lastDifficultyStageId = info.current.id;
+      }
+      state.difficultyPulseTimer = Math.max(0, state.difficultyPulseTimer - dt);
+      state.difficultyNoticeTimer = Math.max(0, state.difficultyNoticeTimer - dt);
     }
 
     function distancePointToSegment(point, start, end) {
@@ -3246,8 +3439,8 @@
         multiplier += 0.25 * overload;
       }
       const emptySlot = ownedItemCount("empty_slot_charger");
-      if (emptySlot > 0 && state.cleanupComboWindow > 0) {
-        multiplier += (0.12 + Math.min(5, state.cleanupComboStacks || 0) * 0.04) * emptySlot;
+      if (emptySlot > 0 && state.cleanupComboValue > 0) {
+        multiplier += Math.min(0.2, Math.floor(state.cleanupComboValue) * 0.02) * emptySlot;
       }
       const heatBlade = ownedItemCount("heat_blade");
       if (heatBlade > 0) {
@@ -3292,7 +3485,7 @@
         multiplier += -0.18 * quietTrigger;
       }
       const closeCombo = ownedItemCount("close_combo");
-      if (closeCombo > 0 && state.cleanupComboWindow > 0) {
+      if (closeCombo > 0 && state.cleanupComboValue > 0) {
         multiplier += -0.15 * closeCombo;
       }
       const woundEngine = ownedItemCount("wound_engine");
@@ -3324,6 +3517,8 @@
         popupExecutionWindow: state.popupExecutionWindow,
         cleanupComboWindow: state.cleanupComboWindow,
         cleanupComboStacks: state.cleanupComboStacks,
+        cleanupComboValue: state.cleanupComboValue,
+        cleanupComboTimer: state.cleanupComboTimer,
         manualDifficulty: manualDifficulty(),
         difficultyScore: currentDifficultyScore(),
         playerMaxHP: state.player.maxHP,
@@ -3387,10 +3582,10 @@
         } else if (scaling.id === "vitality_blood_engine") {
           const missingRatio = clamp(1 - context.playerHpRatio, 0, 1);
           upgraded.damageMultiplierFromUpgrade += Math.min(0.5, Math.floor(context.playerMaxHP / 50) * 0.03 + missingRatio * 0.2);
-        } else if (scaling.id === "cleanup_combo_precision" && context.cleanupComboWindow > 0) {
-          const stacks = Math.min(5, context.cleanupComboStacks || 0);
-          upgraded.damageMultiplierFromUpgrade += stacks * 0.06;
-          upgraded.cooldownMultiplierFromUpgrade += stacks * -0.04;
+        } else if (scaling.id === "cleanup_combo_precision" && context.cleanupComboValue > 0) {
+          const combo = Math.min(5, Math.floor(context.cleanupComboValue || 0));
+          upgraded.damageMultiplierFromUpgrade += combo * 0.06;
+          upgraded.cooldownMultiplierFromUpgrade += combo * -0.04;
         } else if (scaling.id === "curse_heat_overload") {
           upgraded.damageMultiplierFromUpgrade += context.heat * 0.04 + (context.heat >= 5 ? 0.1 : 0);
         } else if (scaling.id === "gold_reserve_range") {
@@ -3494,7 +3689,7 @@
     function effectivePopupInterval() {
       const timePressure = clamp(state.elapsed / CONFIG.popupPressureRampSeconds, 0, 1);
       const baseInterval = CONFIG.popupBaseSpawnInterval - (CONFIG.popupBaseSpawnInterval - CONFIG.popupMinSpawnInterval) * timePressure;
-      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus());
+      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus() + difficultyCombatPressure().popupSpawnMultiplier);
       return Math.max(CONFIG.popupMinSpawnInterval, baseInterval / spawnRate);
     }
 
@@ -3676,18 +3871,19 @@
       } else if (state.activePlaystyle === "clean_desk_starter") {
         const count = state.openPopups.length;
         if (count === 0) {
-          bonuses.damageMultiplier += 0.2;
-          bonuses.rangeMultiplier += 0.12;
+          bonuses.damageMultiplier += 0.18;
+          bonuses.rangeMultiplier += 0.1;
           bonuses.notes.push("완전 정리");
         } else if (count <= 1) {
-          bonuses.damageMultiplier += 0.12;
-          bonuses.rangeMultiplier += 0.08;
+          bonuses.damageMultiplier += 0.1;
+          bonuses.rangeMultiplier += 0.07;
           bonuses.notes.push("정밀화 활성");
         }
-        if (state.cleanupComboWindow > 0) {
-          const stacks = Math.min(5, state.cleanupComboStacks || 0);
-          bonuses.cooldownMultiplier += Math.max(-0.25, stacks * -0.05);
-          bonuses.notes.push("정리 콤보 x" + stacks);
+        if (state.cleanupComboValue >= 1) {
+          const combo = Math.floor(state.cleanupComboValue);
+          bonuses.cooldownMultiplier += -Math.min(0.22, combo * 0.02);
+          bonuses.rangeMultiplier += Math.min(0.15, combo * 0.012);
+          bonuses.notes.push("정리 콤보 x" + combo);
         }
       } else if (state.activePlaystyle === "vitality_starter") {
         const ratio = hpRatio();
@@ -3717,6 +3913,10 @@
 
     function starterCombatBonusSummary() {
       return activeStarterCombatBonuses().notes.join(" / ");
+    }
+
+    function renderEfficiencyBadge(label) {
+      return label ? "<div class=\"packageEfficiencyBadge\">" + label + "</div>" : "";
     }
 
     function itemPoolBiasSummary() {
@@ -3903,12 +4103,13 @@
       state.selectingItem = true;
       state.selectingPaidReward = true;
       state.paused = true;
-      openItemLikeOverlay("첫 빌드 계약 선택", "결제 완료. 이번 런의 초반 빌드 계약 1개를 선택하세요.");
+      openItemLikeOverlay("스타터 계약 패키지 선택", "결제 완료. 한정 스타터 계약 1개를 선택해 이번 런의 성장 효율을 확정하세요.");
       for (const packageDef of FIRST_PURCHASE_PACKAGES) {
         const button = document.createElement("button");
         button.className = "itemChoice";
         button.innerHTML =
           "<strong>" + packageDef.name + "</strong>" +
+          renderEfficiencyBadge(packageDef.efficiencyLabel) +
           "<span>" + packageDef.theme + "<br>" + packageDef.description + "</span>" +
           renderContractBenefits(packageDef);
         button.addEventListener("click", () => applyFirstPurchasePackage(packageDef));
@@ -4558,14 +4759,16 @@
       }
 
       const ageBoost = Math.min(1.8, state.elapsed / 110);
+      const pressure = difficultyCombatPressure();
+      const hp = CONFIG.enemyHP * (1 + ageBoost * 0.3) * (1 + pressure.enemyHpMultiplier);
       state.enemies.push({
         x,
         y,
         type: "normal",
         radius: 12,
-        hp: CONFIG.enemyHP * (1 + ageBoost * 0.3),
-        maxHP: CONFIG.enemyHP * (1 + ageBoost * 0.3),
-        speed: CONFIG.enemySpeed * (1 + ageBoost * 0.18),
+        hp,
+        maxHP: hp,
+        speed: CONFIG.enemySpeed * (1 + ageBoost * 0.18) * (1 + pressure.enemySpeedMultiplier),
         damage: CONFIG.enemyDamage,
         contactTimer: 0,
         dead: false
@@ -4581,7 +4784,8 @@
       const bottom = top + CONFIG.canvasHeight;
       const x = edge === 1 ? right + margin : edge === 3 ? left - margin : randomRange(left + 80, right - 80);
       const y = edge === 0 ? top - margin : edge === 2 ? bottom + margin : randomRange(top + 70, bottom - 70);
-      const hp = CONFIG.bossBaseHP * (1 + (tier - 1) * 0.62 + state.level * 0.035);
+      const pressure = difficultyCombatPressure();
+      const hp = CONFIG.bossBaseHP * (1 + (tier - 1) * 0.62 + state.level * 0.035) * (1 + pressure.enemyHpMultiplier * 0.75);
       state.enemies.push({
         x,
         y,
@@ -4590,7 +4794,7 @@
         radius: 28 + tier * 3,
         hp,
         maxHP: hp,
-        speed: Math.max(38, CONFIG.enemySpeed * (0.62 + tier * 0.05)),
+        speed: Math.max(38, CONFIG.enemySpeed * (0.62 + tier * 0.05) * (1 + pressure.enemySpeedMultiplier * 0.6)),
         damage: CONFIG.enemyDamage + tier,
         contactTimer: 0,
         dead: false
@@ -5321,16 +5525,52 @@
 
     function updateModuleUpgradeTimers(dt) {
       state.popupExecutionWindow = Math.max(0, state.popupExecutionWindow - dt);
-      state.cleanupComboWindow = Math.max(0, state.cleanupComboWindow - dt);
-      if (state.cleanupComboWindow <= 0) {
-        state.cleanupComboStacks = 0;
-      }
       for (const slot of ["primary", "secondary"]) {
         if (!state[slot + "Module"]) {
           continue;
         }
         state.moduleIdleTime[slot] += dt;
       }
+    }
+
+    function syncLegacyCleanupComboFields() {
+      state.cleanupComboWindow = Math.max(0, state.cleanupComboTimer);
+      state.cleanupComboStacks = Math.floor(state.cleanupComboValue);
+      state.popupExecutionWindow = Math.max(state.popupExecutionWindow || 0, state.cleanupComboTimer);
+    }
+
+    function addCleanupComboDebug(amount) {
+      state.cleanupComboValue = Math.min(state.cleanupComboMax, Math.max(0, state.cleanupComboValue) + amount);
+      state.cleanupComboTimer = state.cleanupComboGrace;
+      state.cleanupComboPulse = 0.22;
+      syncLegacyCleanupComboFields();
+    }
+
+    function isManualCleanupReason(reason) {
+      return reason === "manual" || reason === "emergency" || reason === "trash";
+    }
+
+    function registerCleanupCombo(reason, popup) {
+      if (!isManualCleanupReason(reason) || !popup || popup.def.category === "system" || popup.def.type === "first_purchase_package" || popup.def.type === "stock_broker_app") {
+        return;
+      }
+      state.cleanupComboValue = Math.min(state.cleanupComboMax, state.cleanupComboValue + 1);
+      state.cleanupComboTimer = state.cleanupComboGrace;
+      state.cleanupComboPulse = 0.22;
+      syncLegacyCleanupComboFields();
+    }
+
+    function updateCleanupCombo(dt) {
+      state.cleanupComboPulse = Math.max(0, state.cleanupComboPulse - dt);
+      if (state.cleanupComboTimer > 0) {
+        state.cleanupComboTimer = Math.max(0, state.cleanupComboTimer - dt);
+      } else if (state.cleanupComboValue > 0) {
+        state.cleanupComboValue -= Math.max(1.2, state.cleanupComboValue * 2.8) * dt;
+        if (state.cleanupComboValue < 0.05) {
+          state.cleanupComboValue = 0;
+        }
+      }
+      syncLegacyCleanupComboFields();
     }
 
     function updateProjectiles(dt) {
@@ -5844,6 +6084,8 @@
       }
 
       state.elapsed += dt;
+      updateDifficultyStagePulse(dt);
+      updateCleanupCombo(dt);
       updatePlayer(dt);
       updateEnemies(dt);
       updateHealthRegen(dt);
@@ -6171,6 +6413,7 @@
       initializePopupRuntimeState(popup);
 
       popup.element.className = "popupWindow " + def.type;
+      popup.element.dataset.copyTone = def.copyTone || "default";
       popup.element.style.width = size.width + "px";
       popup.element.style.left = pos.x + "px";
       popup.element.style.top = pos.y + "px";
@@ -6240,11 +6483,12 @@
     function createSystemGrowthPopup(title, detail) {
       createPopup({
         id: "system_notice_" + Date.now(),
-        title: "성장 알림",
+        title: "시스템 알림",
         body: title + "\n" + detail,
         type: "system_notice",
         category: "system",
         families: ["system"],
+        copyTone: "system_warning",
         autoClose: 3.4,
         weight: 0
       });
@@ -6367,6 +6611,12 @@
       const timer = document.createElement("div");
       timer.className = "popupProgress";
       timer.innerHTML = "<div class=\"popupProgressFill storeProgressFill\"></div>";
+      if (popup.def.efficiencyLabel) {
+        const badge = document.createElement("div");
+        badge.className = "packageEfficiencyBadge";
+        badge.textContent = popup.def.efficiencyLabel;
+        body.appendChild(badge);
+      }
 
       const note = document.createElement("div");
       note.className = "popupWarning";
@@ -6391,18 +6641,25 @@
     }
 
     function renderBossPackageControls(body, popup) {
+      if (popup.def.efficiencyLabel) {
+        const badge = document.createElement("div");
+        badge.className = "packageEfficiencyBadge";
+        badge.textContent = popup.def.efficiencyLabel;
+        body.appendChild(badge);
+      }
+
       const summary = document.createElement("div");
       summary.className = "popupWarning";
       summary.innerHTML =
         "패키지 가격: <strong>" + popup.bossPackageCost + "G</strong><br>" +
-        "선결제 후 별도 선택 화면에서 아이템 6개 중 2개를 고릅니다.";
+        "선결제 후 별도 선택 화면에서 아이템 6개 중 2개를 고릅니다. 인게임 골드만 사용됩니다.";
 
       const controls = document.createElement("div");
       controls.className = "popupControls";
       const pay = document.createElement("button");
       pay.type = "button";
       pay.className = "bossPackagePayButton";
-      pay.textContent = "결제하고 보상 선택 - " + popup.bossPackageCost + "G";
+      pay.textContent = "패키지 구매 - " + popup.bossPackageCost + "G";
       pay.dataset.cost = String(popup.bossPackageCost);
       pay.disabled = state.gold < popup.bossPackageCost;
       pay.addEventListener("click", () => purchaseBossPackage(popup.id));
@@ -6442,7 +6699,7 @@
 
       const close = document.createElement("button");
       close.type = "button";
-      close.textContent = "닫기";
+      close.textContent = "중단하기";
       close.addEventListener("click", () => requestClosePopup(popup.id));
 
       controls.append(label, close);
@@ -7200,7 +7457,7 @@
 
         const accept = document.createElement("button");
         accept.type = "button";
-        accept.textContent = "수락";
+        accept.textContent = "선택 조건으로 수락";
         accept.addEventListener("click", () => {
           const popup = state.openPopups.find(item => item.id === id);
           const checked = popup ? popup.element.querySelector(".termsDangerCheck").checked : true;
@@ -7282,7 +7539,7 @@
         const intro = document.createElement("div");
         intro.style.marginTop = "8px";
         intro.style.fontWeight = "800";
-        intro.textContent = "10G를 지불하면 다음 선택 화면으로 넘어갑니다. 실제 결제가 아니라 인게임 골드만 사용합니다.";
+        intro.innerHTML = renderEfficiencyBadge(def.efficiencyLabel) + "10G를 지불하면 계약 선택 화면으로 넘어갑니다. 실제 결제가 아니라 인게임 골드만 사용합니다.";
         body.appendChild(intro);
 
         const controls = document.createElement("div");
@@ -7293,7 +7550,7 @@
         pay.type = "button";
         pay.className = "firstPurchaseButton";
         pay.dataset.cost = String(cost);
-        pay.textContent = "인게임 첫 결제 - " + cost + "G";
+        pay.textContent = "인게임 결제 - " + cost + "G";
         pay.disabled = state.gold < cost || state.firstPurchasePaid;
         pay.addEventListener("click", () => completeFirstPurchasePayment(id));
 
@@ -7333,16 +7590,6 @@
       });
     }
 
-    function isCleanupCloseReason(reason) {
-      return reason === "manual" || reason === "emergency" || reason === "trash";
-    }
-
-    function startCleanupCombo() {
-      state.cleanupComboWindow = 3;
-      state.cleanupComboStacks = Math.min(5, (state.cleanupComboStacks || 0) + 1);
-      state.popupExecutionWindow = Math.max(state.popupExecutionWindow || 0, 3);
-    }
-
     function closePopup(id, options = {}) {
       const index = state.openPopups.findIndex(popup => popup.id === id);
       if (index < 0) {
@@ -7366,9 +7613,9 @@
       popup.element.remove();
       state.openPopups.splice(index, 1);
       const isRealPopup = popup.def.category !== "system" && popup.def.type !== "first_purchase_package";
-      const isManualCleanupClose = isCleanupCloseReason(options.reason) && isRealPopup;
+      const isManualCleanupClose = isManualCleanupReason(options.reason) && isRealPopup;
       if (!state.gameOver && isManualCleanupClose) {
-        startCleanupCombo();
+        registerCleanupCombo(options.reason, popup);
         state.popupCloseAttackPrimed = true;
         addGold(state.stats.goldPerPopupClose, "popupClose");
         applyPopupCloseDamage();
@@ -7824,11 +8071,11 @@
         return stacks <= 0 ? "무팝업 쿨타임 변화 없음" : "무팝업 쿨타임 " + formatSignedPercent(state.openPopups.length === 0 ? -0.18 * stacks : 0);
       }
       if (item.id === "empty_slot_charger") {
-        const combo = Math.min(5, state.cleanupComboStacks || 0);
-        return stacks <= 0 ? "정리 콤보 피해 변화 없음" : "정리 콤보 피해 " + formatSignedPercent(state.cleanupComboWindow > 0 ? (0.12 + combo * 0.04) * stacks : 0);
+        const combo = Math.floor(state.cleanupComboValue || 0);
+        return stacks <= 0 ? "정리 콤보 피해 변화 없음" : "정리 콤보 피해 " + formatSignedPercent(combo > 0 ? Math.min(0.2, combo * 0.02) * stacks : 0);
       }
       if (item.id === "close_combo") {
-        return stacks <= 0 ? "닫기 콤보 쿨타임 변화 없음" : "닫기 콤보 쿨타임 " + formatSignedPercent(state.cleanupComboWindow > 0 ? -0.15 * stacks : 0);
+        return stacks <= 0 ? "닫기 콤보 쿨타임 변화 없음" : "닫기 콤보 쿨타임 " + formatSignedPercent(state.cleanupComboValue > 0 ? -0.15 * stacks : 0);
       }
       if (item.id === "heat_blade") {
         return stacks <= 0 ? "난이도 피해 변화 없음" : "난이도 피해 " + formatSignedPercent(state.heat * 0.05 * stacks);
@@ -7939,15 +8186,34 @@
 
     function updateDifficultyHud() {
       const info = difficultyStageInfo();
-      difficultyHud.className = "difficulty-" + info.current.id;
+      difficultyHud.className = "difficulty-" + info.current.id + (state.difficultyPulseTimer > 0 ? " pulse" : "");
       difficultyStageLabel.textContent = info.current.label;
       difficultyScoreLabel.textContent = info.score.toFixed(1);
       difficultyProgressFill.style.width = (info.progress * 100).toFixed(1) + "%";
       difficultyEffectLabel.textContent = difficultyEffectSummary();
     }
 
+    function updateCleanupComboHud() {
+      const visible = state.activePlaystyle === "clean_desk_starter" || state.cleanupComboValue > 0;
+      const combo = Math.floor(state.cleanupComboValue || 0);
+      const ratio = state.cleanupComboGrace > 0 ? clamp(state.cleanupComboTimer / state.cleanupComboGrace, 0, 1) : 0;
+      cleanupComboHud.classList.toggle("active", visible);
+      cleanupComboHud.classList.toggle("decaying", state.cleanupComboValue > 0 && state.cleanupComboTimer <= 0);
+      cleanupComboHud.classList.toggle("pulse", state.cleanupComboPulse > 0);
+      cleanupComboCount.textContent = "정리 콤보 x" + combo;
+      cleanupComboBarFill.style.width = (ratio * 100).toFixed(1) + "%";
+      if (state.cleanupComboTimer > 0) {
+        cleanupComboMeta.textContent = state.cleanupComboTimer.toFixed(1) + "초 유지";
+      } else if (state.cleanupComboValue > 0) {
+        cleanupComboMeta.textContent = "감쇠 중";
+      } else {
+        cleanupComboMeta.textContent = state.activePlaystyle === "clean_desk_starter" ? "수동 정리 대기" : "대기 중";
+      }
+    }
+
     function updateUI() {
       updateDifficultyHud();
+      updateCleanupComboHud();
       const itemCost = currentItemRollCost();
       hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
       goldText.textContent = state.gold.toString();
@@ -7985,7 +8251,8 @@
       const difficultyInfo = difficultyStageInfo();
       const regenText = effectiveHealthRegenPerSecond().toFixed(1);
       const lifestealText = Math.round(effectiveLifeStealPercent() * 100);
-      const executionWindowText = state.cleanupComboWindow > 0 ? " / 정리 콤보: x" + state.cleanupComboStacks + " " + state.cleanupComboWindow.toFixed(1) + "초" : "";
+      const cleanupComboCountValue = Math.floor(state.cleanupComboValue || 0);
+      const executionWindowText = state.cleanupComboValue > 0 ? " / 정리 콤보: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초" : "";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
@@ -8026,7 +8293,7 @@
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
         "<br>재생/흡혈/회복효율: +" + regenText + "/s / " + lifestealText + "% / " + formatSignedPercent(state.stats.healingMultiplier) +
-        "<br>정리 콤보/닫기 연계: x" + state.cleanupComboStacks + " " + state.cleanupComboWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
+        "<br>정리 콤보/닫기 연계: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
@@ -8035,7 +8302,7 @@
         "<br>난장판 티어: " + clutterTierLabel() +
         "<br>첫 계약: " + (state.firstPurchasePackageChosen || "미선택") +
         "<br>보스 처치/패키지: " + state.metrics.bossKills + " / " + state.metrics.bossPackagesPurchased +
-        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus()).toFixed(2) +
+        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus() + difficultyCombatPressure().popupSpawnMultiplier).toFixed(2) +
         "<br>약관 패널티: " + state.termsPenaltyCount +
         "<br>이자 수락/완료/손실: " + state.metrics.interestAccepted + " / " + state.metrics.interestCompleted + " / " + state.metrics.interestLost +
         "<br>팝업 상점 구매: " + state.metrics.popupStorePurchases +
@@ -8174,9 +8441,12 @@
           openAttackModuleSelection("primary_start");
         }
       } else if (button.dataset.debug === "executionWindow") {
-        state.cleanupComboWindow = 3;
-        state.cleanupComboStacks = Math.min(5, Math.max(1, state.cleanupComboStacks + 1));
-        state.popupExecutionWindow = 3;
+        addCleanupComboDebug(1);
+      } else if (button.dataset.debug === "cleanupCombo5") {
+        state.cleanupComboValue = Math.max(state.cleanupComboValue, 5);
+        state.cleanupComboTimer = state.cleanupComboGrace;
+        state.cleanupComboPulse = 0.22;
+        syncLegacyCleanupComboFields();
       } else if (button.dataset.debug === "invested100") {
         state.investedGold += 100;
       } else if (button.dataset.debug === "sponsoredStacks") {
