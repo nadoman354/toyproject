@@ -73,6 +73,61 @@
       touch-action: none;
     }
 
+    #difficultyHud {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      width: min(340px, calc(100vw - 520px));
+      min-width: 240px;
+      transform: translateX(-50%);
+      z-index: 18;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(12, 17, 24, 0.82);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(7px);
+      pointer-events: none;
+    }
+
+    .difficultyHudTitle {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .difficultyBar {
+      height: 7px;
+      margin-top: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.13);
+    }
+
+    .difficultyBarFill {
+      width: 0%;
+      height: 100%;
+      background: #48d597;
+      transition: width 0.16s linear, background 0.16s linear;
+    }
+
+    .difficultyHudMeta {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    #difficultyHud.difficulty-warning .difficultyBarFill { background: #f3c84b; }
+    #difficultyHud.difficulty-danger .difficultyBarFill { background: #ff9f43; }
+    #difficultyHud.difficulty-overload .difficultyBarFill { background: #ff5964; }
+    #difficultyHud.difficulty-collapse .difficultyBarFill { background: #d26bff; }
+    #difficultyHud.difficulty-nightmare .difficultyBarFill { background: #ff4fd8; }
+
     .panel {
       position: absolute;
       background: var(--panel);
@@ -1027,6 +1082,26 @@
         border-radius: 6px;
       }
 
+      #difficultyHud {
+        top: max(5px, env(safe-area-inset-top));
+        width: min(38vw, 210px);
+        min-width: 150px;
+        padding: 5px 7px;
+      }
+
+      .difficultyHudTitle {
+        font-size: 9px;
+      }
+
+      .difficultyHudMeta {
+        font-size: 8px;
+      }
+
+      .difficultyBar {
+        height: 5px;
+        margin-top: 4px;
+      }
+
       .panelTitle {
         margin-bottom: 3px;
         font-size: 9px;
@@ -1258,6 +1333,15 @@
     <div id="gameShell">
       <canvas id="fieldCanvas" width="960" height="540"></canvas>
 
+      <div id="difficultyHud" class="difficulty-normal">
+        <div class="difficultyHudTitle">
+          <span>현재 난이도: <strong id="difficultyStageLabel">정상 작동</strong></span>
+          <strong id="difficultyScoreLabel">0.0</strong>
+        </div>
+        <div class="difficultyBar"><div id="difficultyProgressFill" class="difficultyBarFill"></div></div>
+        <div id="difficultyEffectLabel" class="difficultyHudMeta">선택 난이도 +0 / 팝업 압박 +0%</div>
+      </div>
+
       <section id="hud" class="panel">
         <h1 class="panelTitle">상태</h1>
         <div class="statRow"><span>HP</span><strong id="hpText">5 / 5</strong></div>
@@ -1313,13 +1397,13 @@
             <button type="button" data-debug="formSelect">Lv.9 방식 선택</button>
             <button type="button" data-debug="mechanicSelect">Lv.13 기믹 선택</button>
             <button type="button" data-debug="scalingSelect">Lv.17 최적화</button>
-            <button type="button" data-debug="executionWindow">처형 창 +4초</button>
+            <button type="button" data-debug="executionWindow">정리 콤보 +3초</button>
             <button type="button" data-debug="invested100">투자금 +100</button>
             <button type="button" data-debug="sponsoredStacks">후원탄 +5</button>
             <button type="button" data-debug="boss">보스 소환</button>
             <button type="button" data-debug="bossPackage">보스 패키지</button>
             <button type="button" data-debug="rate">팝업 x2</button>
-            <button type="button" data-debug="heat">Heat +1</button>
+            <button type="button" data-debug="heat">난이도 +1</button>
             <button type="button" data-debug="creditPlus">신용도 +10</button>
             <button type="button" data-debug="creditMinus">신용도 -10</button>
             <button type="button" data-debug="clear">팝업 제거</button>
@@ -1519,7 +1603,7 @@
         name: "긴급 대처 훈련",
         description: "Space 긴급 닫기 후 5초간 이동속도 +30%",
         rarity: "Rare",
-        tags: ["executioner", "emergency_close", "utility"],
+        tags: ["clean", "emergency_close", "utility"],
         effect: { stat: "emergencyMoveSpeedMultiplier", value: 0.3 }
       },
       {
@@ -1527,7 +1611,7 @@
         name: "자동 클릭 매크로",
         description: "8초마다 가장 오래된 기본 팝업 자동 제거",
         rarity: "Epic",
-        tags: ["executioner", "popup_close", "utility"],
+        tags: ["clean", "popup_close", "utility"],
         effect: { stat: "autoCloseBasicInterval", value: 8 }
       },
       {
@@ -1559,7 +1643,7 @@
         name: "창문 파쇄기",
         description: "팝업을 닫으면 플레이어 주변 적에게 15 피해",
         rarity: "Epic",
-        tags: ["executioner", "popup_close", "aoe", "combat"],
+        tags: ["clean", "popup_close", "aoe", "combat"],
         effect: { stat: "popupCloseDamage", value: 15 }
       },
       {
@@ -1611,7 +1695,7 @@
         name: "닫기 버튼 중독",
         description: "팝업을 닫을 때마다 +3G, 최대 팝업 +1",
         rarity: "Rare",
-        tags: ["sponsored", "executioner", "popup_close", "economy"],
+        tags: ["sponsored", "clean", "popup_close", "economy"],
         effects: [
           { stat: "goldPerPopupClose", value: 3 },
           { stat: "maxOpenPopups", value: 1 }
@@ -1675,29 +1759,29 @@
       },
       {
         id: "empty_slot_charger",
-        name: "공백 충전기",
-        description: "팝업을 닫은 후 4초 동안 빈 슬롯 1개당 피해량 +4%",
+        name: "정리 콤보",
+        description: "팝업을 직접 닫으면 3초 동안 피해량 +12%. 연속 정리 중에는 추가로 강해집니다.",
         rarity: "Rare",
-        tags: ["executioner", "empty_slot", "damage", "combat"]
+        tags: ["clean", "popup_close", "cleanup_combo", "damage", "combat"]
       },
       {
         id: "close_combo",
         name: "닫기 콤보",
         description: "팝업을 닫으면 다음 3초간 공격 간격 -15%",
         rarity: "Epic",
-        tags: ["executioner", "popup_close", "cooldown", "combat"]
+        tags: ["clean", "popup_close", "cleanup_combo", "cooldown", "combat"]
       },
       {
         id: "heat_blade",
-        name: "열기 칼날",
-        description: "Heat 1당 피해량 +5%, 대신 Heat가 3 이상이면 팝업 생성률 +10%",
+        name: "난이도 칼날",
+        description: "난이도 1당 피해량 +5%, 대신 난이도가 3 이상이면 팝업 생성률 +10%",
         rarity: "Cursed",
         tags: ["curse", "heat", "damage", "risky"]
       },
       {
         id: "cursed_cache",
         name: "저주 캐시",
-        description: "즉시 60G를 얻지만 Heat +1",
+        description: "즉시 60G를 얻지만 난이도 +1",
         rarity: "Cursed",
         tags: ["curse", "risky", "economy", "heat"],
         effects: [
@@ -1711,9 +1795,8 @@
       investor: "투자자",
       sponsored: "스폰서",
       clutter: "난장판",
-      clean: "클린",
-      executioner: "처형자",
-      curse: "저주",
+      clean: "클린업",
+      curse: "위험",
       gold: "골드",
       invested_gold: "투자금",
       credit: "신용",
@@ -1724,11 +1807,12 @@
       low_popup: "저팝업",
       popup_close: "닫기",
       empty_slot: "빈 슬롯",
-      heat: "Heat",
+      heat: "난이도",
       terms: "약관",
       purchase: "구매",
       drag: "드래그",
       emergency_close: "긴급닫기",
+      cleanup_combo: "정리 콤보",
       combat: "전투",
       damage: "피해",
       cooldown: "쿨타임",
@@ -2051,7 +2135,7 @@
       {
         id: "terms_malicious_optimization",
         title: "악성 최적화 동의서",
-        body: "전투 성능은 좋아지지만 팝업 압박과 Heat가 오릅니다.",
+        body: "전투 성능은 좋아지지만 팝업 압박과 난이도가 오릅니다.",
         type: "terms",
         families: ["curse", "clutter"],
         termsKind: "malicious_optimization",
@@ -2124,7 +2208,7 @@
       {
         id: "stock_cursed",
         title: "저주 조작주",
-        body: "고위험 주식입니다. 손실 매도 시 Heat가 오릅니다.",
+        body: "고위험 주식입니다. 손실 매도 시 난이도가 오릅니다.",
         type: "stock_market",
         families: ["investor", "curse"],
         stockKind: "cursed",
@@ -2132,7 +2216,7 @@
         volatility: 0.14,
         drift: 0.008,
         principalOptions: [60, 120, 180],
-        cursedLossHeat: 1
+        cursedLossDifficulty: 1
       },
       {
         id: "popup_store",
@@ -2159,7 +2243,7 @@
         title: "불안정한 창",
         body: "시간 안에 닫으면 주변 적에게 피해를 줍니다.",
         type: "volatile_popup",
-        families: ["executioner"],
+        families: ["clean"],
         weight: 8,
         duration: 8,
         closeDamage: 25,
@@ -2213,19 +2297,21 @@
       },
       {
         id: "clean_desk_starter",
-        name: "클린 데스크 스타터 계약",
-        theme: "낮은 팝업 수 유지 빌드",
-        description: "열린 팝업을 적게 유지하면 전투력이 오르고 안전 구역이 넓어집니다.",
+        name: "클린업 스타터 계약",
+        theme: "정리/닫기 통제 빌드",
+        description: "팝업을 적게 유지하고, 생긴 팝업을 빠르게 정리해 전투 리듬을 얻습니다.",
         benefits: [
-          "계약 효과: 저팝업 피해 +20%, 안전 구역 확대, 긴급 닫기 쿨타임 -10%",
-          "전투 특전: 팝업 1개 이하 피해 +15%/사거리 +10%, 0개면 피해 +25%/사거리 +15%",
-          "아이템 풀: 클린/저팝업/안전/사거리 태그 아이템이 더 자주 등장"
+          "계약 효과: 저팝업 피해 +20%, 안전 구역 확대, 긴급 닫기 쿨타임 -15%, 팝업 닫기 +2G",
+          "전투 특전: 팝업 1개 이하 피해/사거리 증가, 직접 닫기 시 3초간 정리 콤보 활성",
+          "아이템 풀: 클린업/저팝업/닫기/긴급 닫기 태그 아이템이 더 자주 등장"
         ],
         cost: 10,
         effects: [
           { stat: "cleanDeskDamageMultiplier", value: 0.2 },
           { stat: "safeZoneMultiplier", value: 0.12 },
-          { stat: "emergencyCooldownMultiplier", value: -0.1 }
+          { stat: "emergencyCooldownMultiplier", value: -0.15 },
+          { stat: "goldPerPopupClose", value: 2 },
+          { stat: "popupCloseDamage", value: 6 }
         ]
       },
       {
@@ -2247,24 +2333,6 @@
         ]
       },
       {
-        id: "popup_executioner_starter",
-        name: "팝업 처형자 스타터 계약",
-        theme: "닫기/처리 보상 빌드",
-        description: "팝업을 닫을 때마다 골드와 전투 보조 효과를 얻지만, 팝업이 조금 더 자주 옵니다.",
-        benefits: [
-          "계약 효과: 팝업 닫기 +2G, 닫기 피해 8, 긴급 닫기 쿨타임 -15%, 팝업 생성률 +10%",
-          "전투 특전: 팝업을 닫은 뒤 4초 동안 빈 슬롯 1개당 피해 +5%/사거리 +3%",
-          "아이템 풀: 처형자/닫기/빈 슬롯/긴급 닫기 태그 아이템이 더 자주 등장"
-        ],
-        cost: 10,
-        effects: [
-          { stat: "goldPerPopupClose", value: 2 },
-          { stat: "popupCloseDamage", value: 8 },
-          { stat: "emergencyCooldownMultiplier", value: -0.15 },
-          { stat: "popupSpawnRateMultiplier", value: 0.1 }
-        ]
-      },
-      {
         id: "investor_starter",
         name: "투자자 스타터 계약",
         theme: "이자/투자/대출 경제 빌드",
@@ -2283,13 +2351,13 @@
       },
       {
         id: "risky_terms_starter",
-        name: "위험 약관 스타터 계약",
-        theme: "약관/저주 빌드",
-        description: "위험 약관과 저주를 이용해 빠르게 성장합니다.",
+        name: "위험 계약자 스타터 계약",
+        theme: "난이도 상승 보상 빌드",
+        description: "위험 약관과 고난도 선택으로 현재 난이도를 올리고, 오른 난이도를 전투력과 보상으로 바꿉니다.",
         benefits: [
-          "계약 효과: 약관 패널티 보상 +60G, 약관 출현 +50%, 패널티 보호 1회, 시작 Heat +2",
-          "전투 특전: Heat 1당 피해 +4%, Heat 5 이상이면 추가 피해 +10%",
-          "아이템 풀: 저주/Heat/약관/위험 태그 아이템이 더 자주 등장"
+          "계약 효과: 약관 패널티 보상 +60G, 약관 출현 +50%, 패널티 보호 1회, 시작 난이도 +2",
+          "전투 특전: 난이도 1당 피해 +4%, 난이도 5 이상이면 추가 피해 +10%",
+          "아이템 풀: 위험/난이도/약관 태그 아이템이 더 자주 등장"
         ],
         cost: 10,
         effects: [
@@ -2347,14 +2415,17 @@
       { id: "ranged_scatter", name: "산탄", description: "자동 조준 방향으로 탄환 3발을 퍼뜨려 발사합니다.", compatibleModules: ["ranged"], tags: ["projectile", "scatter"] },
       { id: "ranged_bounce", name: "반사탄", description: "첫 적중 후 주변 적에게 추가 연쇄 피해를 줍니다.", compatibleModules: ["ranged"], tags: ["projectile", "bounce"] },
       { id: "ranged_laser", name: "레이저", description: "자동 조준한 적 방향으로 즉시 관통 빔을 발사합니다.", compatibleModules: ["ranged"], tags: ["beam", "line", "targeted"] },
+      { id: "ranged_charge_cannon", name: "집속포", description: "긴 시간 조준/집속 후 큰 탄환을 방출해 넓은 폭발 피해를 줍니다.", compatibleModules: ["ranged"], tags: ["projectile", "charge", "area", "targeted"] },
       { id: "melee_forward_slash", name: "전방 참격", description: "현재 baseline처럼 전방 캡슐 범위를 베어냅니다.", compatibleModules: ["melee"], tags: ["melee", "line", "directional"] },
       { id: "melee_circle_slash", name: "원형 베기", description: "명시적인 선택 보상으로 주변 전체를 베어냅니다.", compatibleModules: ["melee"], tags: ["melee", "area"] },
       { id: "melee_sword_wave", name: "검기", description: "전방으로 짧은 사거리의 넓은 투사체를 날립니다.", compatibleModules: ["melee"], tags: ["melee", "projectile", "directional"] },
       { id: "melee_dash_slash", name: "돌진 참격", description: "전방 긴 선분을 따라 강하게 베어냅니다. 현재는 이동 없이 판정만 적용합니다.", compatibleModules: ["melee"], tags: ["melee", "dash", "line"] },
+      { id: "melee_charged_cleave", name: "모아베기", description: "짧게 힘을 모은 뒤 넓은 전방을 크게 베어냅니다.", compatibleModules: ["melee"], tags: ["melee", "charge", "area", "directional"] },
       { id: "aura_steady", name: "지속 오라", description: "현재 baseline처럼 상시 링과 주기 피해를 유지합니다.", compatibleModules: ["aura"], tags: ["aura", "area"] },
       { id: "aura_pulse", name: "맥동 오라", description: "느리지만 강한 오라 파동을 냅니다.", compatibleModules: ["aura"], tags: ["aura", "pulse", "area"] },
-      { id: "aura_infection", name: "감염 오라", description: "Heat나 팝업 과밀 상태에서 더 강한 녹색 파동을 냅니다.", compatibleModules: ["aura"], tags: ["aura", "infection", "area"] },
+      { id: "aura_infection", name: "감염 오라", description: "난이도나 팝업 과밀 상태에서 더 강한 녹색 파동을 냅니다.", compatibleModules: ["aura"], tags: ["aura", "infection", "area"] },
       { id: "aura_absorb", name: "흡수 오라", description: "오라로 적을 처치하면 소량의 골드를 흡수합니다.", compatibleModules: ["aura"], tags: ["aura", "area", "absorb"] },
+      { id: "aura_charged_nova", name: "집속 노바", description: "오라를 모았다가 넓은 원형 폭발로 방출합니다.", compatibleModules: ["aura"], tags: ["aura", "charge", "area", "pulse"] },
       { id: "deploy_mine", name: "반응 지뢰", description: "현재 baseline처럼 적 접근 즉시 폭발하는 지뢰를 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "mine", "explosion"] },
       { id: "deploy_turret", name: "임시 포탑", description: "짧은 시간 자동 사격하는 포탑을 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "turret", "projectile"] },
       { id: "deploy_maturity_bomb", name: "만기 폭탄", description: "오래 유지될수록 강해지는 반응 폭탄을 설치합니다.", compatibleModules: ["deploy"], tags: ["deploy", "bomb", "charge", "explosion"] },
@@ -2363,7 +2434,7 @@
 
     const ATTACK_MECHANICS = [
       { id: "bounce_plus", name: "추가 반사", description: "반사형 공격의 연쇄 횟수 +1", compatibleTags: ["projectile", "bounce"] },
-      { id: "overcharge", name: "과충전", description: "5초 이상 충전된 다음 공격 피해 +50%", compatibleTags: ["beam", "projectile", "turret", "charge"] },
+      { id: "overcharge", name: "과충전", description: "충전형 공격의 피해와 범위가 증가하지만 충전 시간이 조금 길어집니다.", compatibleTags: ["charge"] },
       { id: "kill_chain", name: "처치 연쇄", description: "이 공격으로 처치한 적 주변에 작은 2차 폭발을 냅니다.", compatibleTags: ["projectile", "beam", "melee", "area", "aura"] },
       { id: "popup_close_trigger", name: "닫기 연계", description: "팝업을 닫으면 다음 1차 공격 피해 +25%", compatibleTags: ["any"] },
       { id: "compressed_attack", name: "압축 공격", description: "3초 이상 공격하지 못한 모듈의 다음 공격 피해 +30%", compatibleTags: ["beam", "charge", "deploy", "melee", "projectile"] },
@@ -2376,8 +2447,8 @@
       { id: "sponsored_overcharge", name: "광고 과충전", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["projectile", "beam", "turret"] },
       { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["area", "aura", "explosion", "beam", "field"] },
       { id: "clean_precision", name: "정리 정밀화", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["projectile", "beam", "melee", "deploy", "line"] },
-      { id: "execution_empty_slot_reload", name: "공백 장전", playstyle: "executioner", description: "팝업을 닫은 뒤 빈 팝업 슬롯 수만큼 공격이 강화됩니다.", compatibleTags: ["any"] },
-      { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "Heat가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
+      { id: "cleanup_combo_precision", name: "정리 콤보", playstyle: "clean", description: "최근 직접 닫은 팝업 콤보 수에 따라 주 공격 쿨타임과 피해가 증가합니다.", compatibleTags: ["any"] },
+      { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "난이도가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
       { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["projectile", "beam", "line", "aura", "deploy"] }
     ];
 
@@ -2405,10 +2476,24 @@
       }
     ];
 
+    const DIFFICULTY_STAGES = [
+      { id: "normal", label: "정상 작동", min: 0 },
+      { id: "warning", label: "경고", min: 2 },
+      { id: "danger", label: "위험", min: 4 },
+      { id: "overload", label: "과부하", min: 7 },
+      { id: "collapse", label: "시스템 붕괴", min: 11 },
+      { id: "nightmare", label: "관리자 권한 상실", min: 16 }
+    ];
+
     const canvas = document.getElementById("fieldCanvas");
     const ctx = canvas.getContext("2d");
     const shell = document.getElementById("gameShell");
     const popupLayer = document.getElementById("popupLayer");
+    const difficultyHud = document.getElementById("difficultyHud");
+    const difficultyStageLabel = document.getElementById("difficultyStageLabel");
+    const difficultyScoreLabel = document.getElementById("difficultyScoreLabel");
+    const difficultyProgressFill = document.getElementById("difficultyProgressFill");
+    const difficultyEffectLabel = document.getElementById("difficultyEffectLabel");
     const trashZone = document.getElementById("trashZone");
     const mobileJoystick = document.getElementById("mobileJoystick");
     const mobileJoystickKnob = document.getElementById("mobileJoystickKnob");
@@ -2509,6 +2594,8 @@
           secondary: 0
         },
         popupExecutionWindow: 0,
+        cleanupComboWindow: 0,
+        cleanupComboStacks: 0,
         popupCloseAttackPrimed: false,
         moduleTimers: {
           primary: 0,
@@ -2615,6 +2702,7 @@
         turrets: [],
         fields: [],
         projectiles: [],
+        chargeCasts: [],
         pickups: [],
         attacks: [],
         openPopups: [],
@@ -2665,6 +2753,40 @@
         return { x: fallback.x, y: fallback.y };
       }
       return { x: dx / length, y: dy / length };
+    }
+
+    function manualDifficulty() {
+      // state.heat is now player-facing "난이도" / manual difficulty modifier.
+      return Math.max(0, state.heat || 0);
+    }
+
+    function timeDifficultyScore() {
+      return Math.max(0, state.elapsed / 60);
+    }
+
+    function currentDifficultyScore() {
+      return timeDifficultyScore() + manualDifficulty();
+    }
+
+    function difficultyStageInfo(score = currentDifficultyScore()) {
+      let current = DIFFICULTY_STAGES[0];
+      let next = null;
+      for (let index = 0; index < DIFFICULTY_STAGES.length; index += 1) {
+        if (score >= DIFFICULTY_STAGES[index].min) {
+          current = DIFFICULTY_STAGES[index];
+          next = DIFFICULTY_STAGES[index + 1] || null;
+        }
+      }
+      const progress = next ? clamp((score - current.min) / Math.max(0.1, next.min - current.min), 0, 1) : 1;
+      return { current, next, progress, score };
+    }
+
+    function difficultyPressureBonus() {
+      return manualDifficulty() * 0.015;
+    }
+
+    function difficultyEffectSummary() {
+      return "선택 난이도 +" + manualDifficulty().toFixed(1) + " / 팝업 압박 +" + Math.round(difficultyPressureBonus() * 100) + "%";
     }
 
     function distancePointToSegment(point, start, end) {
@@ -2784,9 +2906,6 @@
       if (state.activePlaystyle === "clutter_chaos_starter") {
         return defs.filter(def => popupInFamily(def, "clutter") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
       }
-      if (state.activePlaystyle === "popup_executioner_starter") {
-        return defs.filter(def => popupInFamily(def, "executioner") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
-      }
       if (state.activePlaystyle === "risky_terms_starter") {
         return defs.filter(def => popupInFamily(def, "curse") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
       }
@@ -2879,7 +2998,6 @@
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
         clean_desk_starter: "clean",
-        popup_executioner_starter: "executioner",
         risky_terms_starter: "curse"
       };
       return map[state.activePlaystyle] || "generic";
@@ -2919,7 +3037,6 @@
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
         clean_desk_starter: "clean",
-        popup_executioner_starter: "executioner",
         risky_terms_starter: "curse"
       };
       return map[state.activePlaystyle] || null;
@@ -2930,8 +3047,7 @@
         investor: ["gold", "invested_gold", "credit", "economy"],
         sponsored: ["ad_open", "ad_completion", "economy"],
         clutter: ["popup_count", "aoe", "range"],
-        clean: ["low_popup", "safe", "range"],
-        executioner: ["popup_close", "empty_slot", "emergency_close"],
+        clean: ["low_popup", "safe", "range", "popup_close", "emergency_close", "cleanup_combo"],
         curse: ["heat", "terms", "risky", "cursed"]
       };
       return map[buildTag] || [];
@@ -2943,7 +3059,7 @@
         return 1;
       }
 
-      const buildTags = ["investor", "sponsored", "clutter", "clean", "executioner", "curse"];
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "curse"];
       let multiplier = 1;
       if (itemHasTag(item, buildTag)) {
         multiplier *= 1.7;
@@ -2961,8 +3077,8 @@
 
     function prioritizedItemTags(item) {
       const priority = [
-        "investor", "sponsored", "clutter", "clean", "executioner", "curse",
-        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "empty_slot", "heat",
+        "investor", "sponsored", "clutter", "clean", "curse",
+        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "cleanup_combo", "empty_slot", "heat",
         "damage", "cooldown", "range", "economy", "utility"
       ];
       const tags = itemTags(item);
@@ -2970,7 +3086,7 @@
     }
 
     function renderItemTagChips(item) {
-      const buildTags = ["investor", "sponsored", "clutter", "clean", "executioner", "curse"];
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "curse"];
       return "<div class=\"itemTags\">" + prioritizedItemTags(item).map(tag => {
         const className = buildTags.includes(tag) ? "itemTag itemTagBuild" : "itemTag";
         return "<span class=\"" + className + "\">" + tagLabel(tag) + "</span>";
@@ -2992,9 +3108,8 @@
         multiplier += 0.25 * overload;
       }
       const emptySlot = ownedItemCount("empty_slot_charger");
-      if (emptySlot > 0 && state.popupExecutionWindow > 0) {
-        const emptySlots = Math.max(0, maxOpenPopups() - state.openPopups.length);
-        multiplier += emptySlots * 0.04 * emptySlot;
+      if (emptySlot > 0 && state.cleanupComboWindow > 0) {
+        multiplier += (0.12 + Math.min(5, state.cleanupComboStacks || 0) * 0.04) * emptySlot;
       }
       const heatBlade = ownedItemCount("heat_blade");
       if (heatBlade > 0) {
@@ -3031,7 +3146,7 @@
         multiplier += -0.18 * quietTrigger;
       }
       const closeCombo = ownedItemCount("close_combo");
-      if (closeCombo > 0 && state.popupExecutionWindow > 0) {
+      if (closeCombo > 0 && state.cleanupComboWindow > 0) {
         multiplier += -0.15 * closeCombo;
       }
       return Math.max(-0.75, multiplier);
@@ -3057,6 +3172,10 @@
         openSponsoredAds: countOpenAdPopups(),
         itemCount: totalOwnedItemCount(),
         popupExecutionWindow: state.popupExecutionWindow,
+        cleanupComboWindow: state.cleanupComboWindow,
+        cleanupComboStacks: state.cleanupComboStacks,
+        manualDifficulty: manualDifficulty(),
+        difficultyScore: currentDifficultyScore(),
         activePlaystyle: state.activePlaystyle
       };
     }
@@ -3113,9 +3232,10 @@
             upgraded.damageMultiplierFromUpgrade += 0.15;
             upgraded.rangeMultiplierFromUpgrade += 0.1;
           }
-        } else if (scaling.id === "execution_empty_slot_reload" && context.popupExecutionWindow > 0) {
-          upgraded.damageMultiplierFromUpgrade += context.emptyPopupSlots * 0.06;
-          upgraded.rangeMultiplierFromUpgrade += context.emptyPopupSlots * 0.04;
+        } else if (scaling.id === "cleanup_combo_precision" && context.cleanupComboWindow > 0) {
+          const stacks = Math.min(5, context.cleanupComboStacks || 0);
+          upgraded.damageMultiplierFromUpgrade += stacks * 0.06;
+          upgraded.cooldownMultiplierFromUpgrade += stacks * -0.04;
         } else if (scaling.id === "curse_heat_overload") {
           upgraded.damageMultiplierFromUpgrade += context.heat * 0.04 + (context.heat >= 5 ? 0.1 : 0);
         } else if (scaling.id === "gold_reserve_range") {
@@ -3128,6 +3248,15 @@
       upgraded.cooldown *= Math.max(0.2, 1 + upgraded.cooldownMultiplierFromUpgrade);
       if (form?.id === "aura_pulse") {
         upgraded.cooldown *= 1.25;
+      }
+      if (form?.id === "ranged_charge_cannon") {
+        upgraded.cooldown *= 1.6;
+      } else if (form?.id === "melee_charged_cleave") {
+        upgraded.cooldown *= 1.45;
+      } else if (form?.id === "aura_charged_nova") {
+        upgraded.cooldown *= 1.8;
+      } else if (form?.id === "deploy_maturity_bomb") {
+        upgraded.cooldown *= 1.1;
       }
       return upgraded;
     }
@@ -3204,7 +3333,7 @@
     function effectivePopupInterval() {
       const timePressure = clamp(state.elapsed / CONFIG.popupPressureRampSeconds, 0, 1);
       const baseInterval = CONFIG.popupBaseSpawnInterval - (CONFIG.popupBaseSpawnInterval - CONFIG.popupMinSpawnInterval) * timePressure;
-      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + state.heat * 0.015);
+      const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus());
       return Math.max(CONFIG.popupMinSpawnInterval, baseInterval / spawnRate);
     }
 
@@ -3386,27 +3515,24 @@
       } else if (state.activePlaystyle === "clean_desk_starter") {
         const count = state.openPopups.length;
         if (count === 0) {
-          bonuses.damageMultiplier += 0.25;
-          bonuses.rangeMultiplier += 0.15;
+          bonuses.damageMultiplier += 0.2;
+          bonuses.rangeMultiplier += 0.12;
           bonuses.notes.push("완전 정리");
         } else if (count <= 1) {
-          bonuses.damageMultiplier += 0.15;
-          bonuses.rangeMultiplier += 0.1;
+          bonuses.damageMultiplier += 0.12;
+          bonuses.rangeMultiplier += 0.08;
           bonuses.notes.push("정밀화 활성");
         }
-      } else if (state.activePlaystyle === "popup_executioner_starter") {
-        if (state.popupExecutionWindow > 0) {
-          const emptySlots = Math.max(0, maxOpenPopups() - state.openPopups.length);
-          bonuses.damageMultiplier += emptySlots * 0.05;
-          bonuses.rangeMultiplier += emptySlots * 0.03;
-          bonuses.notes.push("처형 창 " + state.popupExecutionWindow.toFixed(1) + "초");
-          bonuses.notes.push("빈 슬롯 " + emptySlots);
+        if (state.cleanupComboWindow > 0) {
+          const stacks = Math.min(5, state.cleanupComboStacks || 0);
+          bonuses.cooldownMultiplier += Math.max(-0.25, stacks * -0.05);
+          bonuses.notes.push("정리 콤보 x" + stacks);
         }
       } else if (state.activePlaystyle === "risky_terms_starter") {
         const heatDamage = state.heat * 0.04 + (state.heat >= 5 ? 0.1 : 0);
         if (heatDamage > 0) {
           bonuses.damageMultiplier += heatDamage;
-          bonuses.notes.push("Heat 화력 " + formatSignedPercent(heatDamage));
+          bonuses.notes.push("난이도 화력 " + formatSignedPercent(heatDamage));
         }
       }
 
@@ -3494,7 +3620,7 @@
       } else {
         applyTermsRewardEffects(def.safeRewardEffects || [{ type: "gold", value: def.safeRewardGold || 20 }], false);
       }
-      closePopup(popupId);
+      closePopup(popupId, { reason: "auto" });
     }
 
     function loanTermsByCredit(score) {
@@ -3590,7 +3716,7 @@
       state.firstPurchasePaid = true;
       state.firstPurchasePackageChosen = "결제 완료, 계약 선택 대기";
       popup.firstPurchasePaid = true;
-      closePopup(popupId, { force: true });
+      closePopup(popupId, { force: true, reason: "system" });
       openFirstPurchasePackageSelection();
       updateUI();
     }
@@ -3630,7 +3756,7 @@
 
     function rejectFirstPurchasePackage(popupId) {
       state.firstPurchasePackageChosen = "거절";
-      closePopup(popupId, { force: true });
+      closePopup(popupId, { force: true, reason: "system" });
       updateUI();
     }
 
@@ -3702,7 +3828,7 @@
       addGold(interestPayout(popup), "investmentPayout");
       addCreditScore(8, "예치 상품 만기 정산");
       state.metrics.interestCompleted += 1;
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
       updateUI();
     }
 
@@ -3746,7 +3872,7 @@
       state.gold -= cost;
       applyItemReward(item, "팝업 스토어 구매");
       state.metrics.popupStorePurchases += 1;
-      closePopup(popupId);
+      closePopup(popupId, { reason: "auto" });
       updateUI();
     }
 
@@ -3816,7 +3942,7 @@
         items: popup.bossPackageItems,
         selectedIds: []
       };
-      closePopup(popupId);
+      closePopup(popupId, { reason: "auto" });
       openBossPackageSelection();
       updateUI();
     }
@@ -4546,11 +4672,6 @@
       boosted.consumePrimed = false;
       boosted.consumeSponsoredStack = false;
 
-      if (stats.mechanic?.id === "overcharge" && state.moduleCharge[slot] >= 5) {
-        multiplier += 0.5;
-        boosted.consumeOvercharge = true;
-        boosted.chargedDamageMultiplier = 0.5;
-      }
       if (stats.mechanic?.id === "compressed_attack" && state.moduleIdleTime[slot] >= 3) {
         multiplier += 0.3;
         boosted.consumeCompressed = true;
@@ -4578,9 +4699,6 @@
       }
       if (hitAny && slot === "secondary" && state.moduleSynergy === "secondary_haste") {
         state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
-      }
-      if (stats.consumeOvercharge) {
-        state.moduleCharge[slot] = 0;
       }
       if (stats.consumeCompressed || stats.mechanic?.id === "compressed_attack") {
         state.moduleIdleTime[slot] = 0;
@@ -4772,6 +4890,176 @@
       return { actionPerformed: true, hitAny: true, killed: [] };
     }
 
+    function chargedAttackConfig(stats, base) {
+      const config = { ...base };
+      if (stats.mechanic?.id === "overcharge") {
+        config.duration *= 1.2;
+        config.damage *= 1.3;
+        config.range *= 1.15;
+        config.radius = (config.radius || 0) * 1.15;
+        config.width = (config.width || 0) * 1.15;
+      }
+      return config;
+    }
+
+    function queueChargeCast(cast) {
+      state.chargeCasts.push({
+        id: Date.now() + Math.random(),
+        elapsed: 0,
+        done: false,
+        ...cast
+      });
+    }
+
+    function executeRangedChargeCannon(slot, stats) {
+      const target = getNearestEnemyInRange(state.player, stats.range * 1.25);
+      if (!target) {
+        return { actionPerformed: false, hitAny: false, killed: [] };
+      }
+      const direction = normalized(target.x - state.player.x, target.y - state.player.y);
+      const config = chargedAttackConfig(stats, {
+        duration: 1.2,
+        damage: stats.damage * 2.4,
+        range: stats.range * 1.15,
+        radius: 78
+      });
+      const impactDistance = Math.min(config.range, distance(state.player, target));
+      queueChargeCast({
+        type: "ranged_charge_cannon",
+        slot,
+        formId: stats.form?.id,
+        x: state.player.x,
+        y: state.player.y,
+        dirX: direction.x,
+        dirY: direction.y,
+        impactX: state.player.x + direction.x * impactDistance,
+        impactY: state.player.y + direction.y * impactDistance,
+        duration: config.duration,
+        range: config.range,
+        radius: config.radius,
+        damage: config.damage,
+        sourceSlot: slot,
+        mechanicId: stats.mechanic?.id || null,
+        chainDamage: stats.damage * 0.3
+      });
+      return { actionPerformed: true, hitAny: false, killed: [] };
+    }
+
+    function executeMeleeChargedCleave(slot, stats) {
+      const direction = getMeleeDirection(stats.range);
+      const config = chargedAttackConfig(stats, {
+        duration: 0.9,
+        damage: stats.damage * 2,
+        range: stats.range * 1.6,
+        width: CONFIG.meleeSlashWidth * 1.6,
+        radius: 0
+      });
+      queueChargeCast({
+        type: "melee_charged_cleave",
+        slot,
+        formId: stats.form?.id,
+        x: state.player.x,
+        y: state.player.y,
+        dirX: direction.x,
+        dirY: direction.y,
+        duration: config.duration,
+        range: config.range,
+        width: config.width,
+        radius: config.radius,
+        damage: config.damage,
+        sourceSlot: slot,
+        mechanicId: stats.mechanic?.id || null,
+        chainDamage: stats.damage * 0.3
+      });
+      return { actionPerformed: true, hitAny: false, killed: [] };
+    }
+
+    function executeAuraChargedNova(slot, stats) {
+      const config = chargedAttackConfig(stats, {
+        duration: 1.4,
+        damage: stats.damage * 2.5,
+        range: stats.range * 1.5,
+        radius: stats.range * 1.5
+      });
+      queueChargeCast({
+        type: "aura_charged_nova",
+        slot,
+        formId: stats.form?.id,
+        x: state.player.x,
+        y: state.player.y,
+        dirX: 1,
+        dirY: 0,
+        duration: config.duration,
+        range: config.range,
+        radius: config.radius,
+        damage: config.damage,
+        sourceSlot: slot,
+        mechanicId: stats.mechanic?.id || null,
+        chainDamage: stats.damage * 0.3
+      });
+      return { actionPerformed: true, hitAny: false, killed: [] };
+    }
+
+    function releaseChargeCast(cast) {
+      const killed = [];
+      let hitAny = false;
+      if (cast.type === "ranged_charge_cannon") {
+        const impact = { x: cast.impactX, y: cast.impactY };
+        for (const enemy of state.enemies) {
+          if (!enemy.dead && distance(enemy, impact) <= cast.radius + enemy.radius) {
+            hitAny = damageEnemyTracked(enemy, cast.damage, cast.sourceSlot, killed) || hitAny;
+          }
+        }
+        state.attacks.push({
+          type: "line",
+          x1: cast.x,
+          y1: cast.y,
+          x2: impact.x,
+          y2: impact.y,
+          ttl: 0.18,
+          maxTtl: 0.18,
+          width: 9,
+          color: "rgba(255, 224, 112, "
+        });
+        addCircleAttack(impact.x, impact.y, cast.radius, "rgba(255, 189, 79, ", 0.28);
+      } else if (cast.type === "melee_charged_cleave") {
+        const start = { x: cast.x, y: cast.y };
+        const end = { x: cast.x + cast.dirX * cast.range, y: cast.y + cast.dirY * cast.range };
+        for (const enemy of state.enemies) {
+          if (!enemy.dead && distancePointToSegment(enemy, start, end) <= cast.width + enemy.radius) {
+            hitAny = damageEnemyTracked(enemy, cast.damage, cast.sourceSlot, killed) || hitAny;
+          }
+        }
+        addSlashAttack(start, end, cast.width, 0.24);
+      } else if (cast.type === "aura_charged_nova") {
+        const center = { x: cast.x, y: cast.y };
+        for (const enemy of state.enemies) {
+          if (!enemy.dead && distance(enemy, center) <= cast.radius + enemy.radius) {
+            hitAny = damageEnemyTracked(enemy, cast.damage, cast.sourceSlot, killed) || hitAny;
+          }
+        }
+        addCircleAttack(cast.x, cast.y, cast.radius, "rgba(97, 211, 255, ", 0.32);
+      }
+
+      if (hitAny && cast.sourceSlot === "secondary" && state.moduleSynergy === "secondary_haste") {
+        state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
+      }
+      if (cast.mechanicId === "kill_chain" && killed.length > 0) {
+        applyKillChain(killed, cast.chainDamage || cast.damage * 0.3, cast.sourceSlot);
+      }
+      cast.done = true;
+    }
+
+    function updateChargeCasts(dt) {
+      for (const cast of state.chargeCasts) {
+        cast.elapsed += dt;
+        if (!cast.done && cast.elapsed >= cast.duration) {
+          releaseChargeCast(cast);
+        }
+      }
+      state.chargeCasts = state.chargeCasts.filter(cast => !cast.done);
+    }
+
     function triggerModuleAttack(slot, forced) {
       const stats = moduleCombatStats(slot);
       if (!stats) {
@@ -4792,6 +5080,9 @@
       } else if (formId === "ranged_laser") {
         const laserStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
         result = executeRangedLaser(slot, laserStats);
+      } else if (formId === "ranged_charge_cannon") {
+        const chargedStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
+        result = executeRangedChargeCannon(slot, chargedStats);
       } else if (formId === "melee_forward_slash") {
         const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
         result = executeMeleeForwardSlash(slot, meleeStats);
@@ -4803,6 +5094,9 @@
       } else if (formId === "melee_dash_slash") {
         const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
         result = executeMeleeForwardSlash(slot, meleeStats, 1.8, 0.9);
+      } else if (formId === "melee_charged_cleave") {
+        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
+        result = executeMeleeChargedCleave(slot, meleeStats);
       } else if (formId === "aura_steady") {
         result = executeAuraPulse(slot, actionStats);
       } else if (formId === "aura_pulse") {
@@ -4812,6 +5106,8 @@
         result = executeAuraPulse(slot, actionStats, { damageMultiplier: bonus, color: "rgba(75, 220, 118, " });
       } else if (formId === "aura_absorb") {
         result = executeAuraPulse(slot, actionStats, { absorb: true, color: "rgba(116, 255, 206, " });
+      } else if (formId === "aura_charged_nova") {
+        result = executeAuraChargedNova(slot, actionStats);
       } else if (formId === "deploy_mine") {
         result = executeDeployMine(slot, actionStats);
       } else if (formId === "deploy_turret") {
@@ -4839,14 +5135,15 @@
 
     function updateModuleUpgradeTimers(dt) {
       state.popupExecutionWindow = Math.max(0, state.popupExecutionWindow - dt);
+      state.cleanupComboWindow = Math.max(0, state.cleanupComboWindow - dt);
+      if (state.cleanupComboWindow <= 0) {
+        state.cleanupComboStacks = 0;
+      }
       for (const slot of ["primary", "secondary"]) {
         if (!state[slot + "Module"]) {
           continue;
         }
         state.moduleIdleTime[slot] += dt;
-        if (selectedMechanicForSlot(slot)?.id === "overcharge") {
-          state.moduleCharge[slot] = Math.min(8, state.moduleCharge[slot] + dt);
-        }
       }
     }
 
@@ -5102,7 +5399,7 @@
       }
 
       for (const id of completed) {
-        closePopup(id);
+        closePopup(id, { reason: "auto" });
       }
     }
 
@@ -5294,7 +5591,7 @@
       }
 
       for (const id of expiredCleanChallenges) {
-        closePopup(id);
+        closePopup(id, { reason: "auto" });
       }
 
       for (const popup of expiredVolatilePopups) {
@@ -5304,7 +5601,7 @@
             createPopup(basic);
           }
         }
-        closePopup(popup.id);
+        closePopup(popup.id, { reason: "auto" });
       }
 
       for (const popup of completedSponsored) {
@@ -5315,15 +5612,15 @@
         if (state.activePlaystyle === "sponsored_starter") {
           state.sponsoredAttackBoostStacks = Math.min(20, state.sponsoredAttackBoostStacks + 5);
         }
-        closePopup(popup.id);
+        closePopup(popup.id, { reason: "auto" });
       }
 
       for (const id of expiredStores) {
-        closePopup(id);
+        closePopup(id, { reason: "auto" });
       }
 
       for (const id of expiredSystemPopups) {
-        closePopup(id);
+        closePopup(id, { reason: "system" });
       }
 
       for (const popup of pendingBasicSpawns) {
@@ -5350,7 +5647,7 @@
 
       const basic = state.openPopups.find(popup => popup.def.type === "basic");
       if (basic) {
-        closePopup(basic.id);
+        closePopup(basic.id, { reason: "auto" });
       }
       state.autoCloseBasicTimer = Math.max(2, state.stats.autoCloseBasicInterval);
     }
@@ -5366,6 +5663,7 @@
       updateBossSpawns();
       updateModuleUpgradeTimers(dt);
       updateAutoAttack(dt);
+      updateChargeCasts(dt);
       updateProjectiles(dt);
       updateMines(dt);
       updateTurrets(dt);
@@ -5786,7 +6084,7 @@
       return true;
     }
 
-    function requestClosePopup(id) {
+    function requestClosePopup(id, options = {}) {
       const popup = state.openPopups.find(item => item.id === id);
       if (popup?.def.type === "stock_broker_app") {
         createSystemGrowthPopup("증권 앱 고정", "증권 앱은 닫을 수 없습니다. 최소화하거나 전량 매도만 할 수 있습니다.");
@@ -5800,7 +6098,7 @@
         createSystemGrowthPopup("정산 필요", "돈이 걸린 팝업은 내부의 정산/상환/매도 버튼으로 처리해야 닫을 수 있습니다.");
         return;
       }
-      closePopup(id);
+      closePopup(id, { reason: "manual", ...options });
     }
 
     function renderInterestOfferControls(body, popup) {
@@ -5837,7 +6135,7 @@
         const reject = document.createElement("button");
         reject.type = "button";
         reject.textContent = "닫기";
-        reject.addEventListener("click", () => closePopup(popup.id));
+        reject.addEventListener("click", () => requestClosePopup(popup.id));
 
         controls.appendChild(reject);
         body.append(summary, warning, controls);
@@ -5869,7 +6167,7 @@
       cancel.addEventListener("click", () => {
         if (confirm("중도 해지 시 예치 원금 40%만 반환됩니다. 해지하시겠습니까?")) {
           cancelInterestOffer(popup);
-          closePopup(popup.id);
+          closePopup(popup.id, { reason: "auto" });
         }
       });
 
@@ -5885,7 +6183,7 @@
 
       const note = document.createElement("div");
       note.className = "popupWarning";
-      note.textContent = "구매하면 미확인 아이템 1개를 즉시 얻습니다. 팝업 스토어는 Heat를 올리지 않습니다.";
+      note.textContent = "구매하면 미확인 아이템 1개를 즉시 얻습니다. 팝업 스토어는 난이도를 올리지 않습니다.";
 
       const controls = document.createElement("div");
       controls.className = "popupControls";
@@ -5947,7 +6245,7 @@
       summary.innerHTML =
         (buffs ? "열려 있는 동안: <strong>" + buffs + "</strong><br>" : "") +
         (rewards ? "완료 보상: <strong>" + rewards + "</strong><br>" : "") +
-        "Heat 없음. 중간에 닫으면 완료 보상은 취소됩니다.";
+        "난이도 상승 없음. 중간에 닫으면 완료 보상은 취소됩니다.";
 
       const controls = document.createElement("div");
       controls.className = "popupControls";
@@ -5958,7 +6256,7 @@
       const close = document.createElement("button");
       close.type = "button";
       close.textContent = "닫기";
-      close.addEventListener("click", () => closePopup(popup.id));
+      close.addEventListener("click", () => requestClosePopup(popup.id));
 
       controls.append(label, close);
       body.append(summary, progress, controls);
@@ -5981,7 +6279,7 @@
       if (!investment.accepted) {
         summary.innerHTML =
           "수락 후 " + investment.duration + "초 동안 새로 얻는 골드의 " + Math.round(investment.redirectRatio * 100) + "%를 자동 투자합니다.<br>" +
-          "만기 시 적립액 +" + Math.round(investment.maturityBonus * 100) + "%를 돌려받습니다. Heat 없음.";
+          "만기 시 적립액 +" + Math.round(investment.maturityBonus * 100) + "%를 돌려받습니다. 난이도 상승 없음.";
         const controls = document.createElement("div");
         controls.className = "popupControls";
         const accept = document.createElement("button");
@@ -5991,7 +6289,7 @@
         const close = document.createElement("button");
         close.type = "button";
         close.textContent = "닫기";
-        close.addEventListener("click", () => closePopup(popup.id));
+        close.addEventListener("click", () => requestClosePopup(popup.id));
         controls.append(accept, close);
         body.append(summary, controls);
         return;
@@ -6059,7 +6357,7 @@
         addGold(payout, "investmentPayout");
       }
       addCreditScore(7, "자동 적립 투자 만기");
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
     }
 
     function cancelRecurringInvestment(popup) {
@@ -6074,7 +6372,7 @@
         addGold(refund, "investmentPayout");
       }
       addCreditScore(-5, "자동 적립 중도 해지");
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
     }
 
     function renderLoanControls(body, popup) {
@@ -6095,7 +6393,7 @@
         const close = document.createElement("button");
         close.type = "button";
         close.textContent = "닫기";
-        close.addEventListener("click", () => closePopup(popup.id));
+        close.addEventListener("click", () => requestClosePopup(popup.id));
         controls.append(accept, close);
         body.append(summary, controls);
         return;
@@ -6160,7 +6458,7 @@
       state.debtGold = Math.max(0, state.debtGold - popup.loan.repay);
       popup.loan.resolved = true;
       addCreditScore(9, "대출 정상 상환");
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
     }
 
     function defaultLoan(popup) {
@@ -6172,7 +6470,7 @@
       state.gold = Math.floor(state.gold * 0.5);
       state.timedEffects.push({ stat: "debtItemCostMultiplier", value: 0.2, remaining: 30 });
       addCreditScore(-18, "대출 미상환");
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
     }
 
     function renderStockControls(body, popup) {
@@ -6199,7 +6497,7 @@
         const close = document.createElement("button");
         close.type = "button";
         close.textContent = "닫기";
-        close.addEventListener("click", () => closePopup(popup.id));
+        close.addEventListener("click", () => requestClosePopup(popup.id));
         controls.appendChild(close);
         body.append(summary, controls);
         return;
@@ -6263,12 +6561,12 @@
         addCreditScore(5, "주식 수익 매도");
       } else {
         addCreditScore(-8, "주식 손실 매도");
-        if (popup.def.cursedLossHeat) {
-          state.heat += popup.def.cursedLossHeat;
+        if (popup.def.cursedLossDifficulty) {
+          state.heat += popup.def.cursedLossDifficulty;
         }
       }
       stock.invested = false;
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
     }
 
     function stockBySymbol(symbol) {
@@ -6575,7 +6873,7 @@
       const close = document.createElement("button");
       close.type = "button";
       close.textContent = "포기";
-      close.addEventListener("click", () => closePopup(popup.id));
+      close.addEventListener("click", () => requestClosePopup(popup.id));
       controls.append(label, close);
       body.append(summary, progress, controls);
     }
@@ -6601,7 +6899,7 @@
       popup.cleanCompleted = true;
       applyRewardEffect(popup.def.reward || { type: "itemDiscount", value: 0.2, uses: 1 });
       addCreditScore(3, "청소 의뢰 완료");
-      closePopup(popup.id);
+      closePopup(popup.id, { reason: "auto" });
     }
 
     function renderVolatileControls(body, popup) {
@@ -6621,7 +6919,7 @@
       const close = document.createElement("button");
       close.type = "button";
       close.textContent = "지금 닫기";
-      close.addEventListener("click", () => closePopup(popup.id));
+      close.addEventListener("click", () => requestClosePopup(popup.id));
       controls.append(label, close);
       body.append(summary, progress, controls);
     }
@@ -6659,7 +6957,7 @@
         const button = document.createElement("button");
         button.type = "button";
         button.textContent = "닫기";
-        button.addEventListener("click", () => closePopup(id));
+        button.addEventListener("click", () => requestClosePopup(id));
         controls.appendChild(button);
         body.appendChild(controls);
       }
@@ -6688,7 +6986,7 @@
         const cancel = document.createElement("button");
         cancel.type = "button";
         cancel.textContent = "취소";
-        cancel.addEventListener("click", () => closePopup(id));
+        cancel.addEventListener("click", () => requestClosePopup(id));
         controls.append(label, cancel);
         body.append(progress, controls);
       }
@@ -6707,7 +7005,7 @@
         const note = document.createElement("div");
         note.className = "popupWarning";
         note.innerHTML =
-          "체크 상태로 수락: 높은 보상 + 위험 패널티 + Heat 증가<br>" +
+          "체크 상태로 수락: 높은 보상 + 위험 패널티 + 난이도 증가<br>" +
           "체크 해제 후 수락: 낮은 보상, 패널티 없음";
 
         const controls = document.createElement("div");
@@ -6725,7 +7023,7 @@
         const reject = document.createElement("button");
         reject.type = "button";
         reject.textContent = "거절";
-        reject.addEventListener("click", () => closePopup(id));
+        reject.addEventListener("click", () => requestClosePopup(id));
 
         controls.append(accept, reject);
         body.append(clause, note, controls);
@@ -6848,6 +7146,16 @@
       });
     }
 
+    function isCleanupCloseReason(reason) {
+      return reason === "manual" || reason === "emergency" || reason === "trash";
+    }
+
+    function startCleanupCombo() {
+      state.cleanupComboWindow = 3;
+      state.cleanupComboStacks = Math.min(5, (state.cleanupComboStacks || 0) + 1);
+      state.popupExecutionWindow = Math.max(state.popupExecutionWindow || 0, 3);
+    }
+
     function closePopup(id, options = {}) {
       const index = state.openPopups.findIndex(popup => popup.id === id);
       if (index < 0) {
@@ -6870,14 +7178,16 @@
       }
       popup.element.remove();
       state.openPopups.splice(index, 1);
-      if (!state.gameOver && popup.def.category !== "system" && popup.def.type !== "first_purchase_package") {
-        state.popupExecutionWindow = 4;
+      const isRealPopup = popup.def.category !== "system" && popup.def.type !== "first_purchase_package";
+      const isManualCleanupClose = isCleanupCloseReason(options.reason) && isRealPopup;
+      if (!state.gameOver && isManualCleanupClose) {
+        startCleanupCombo();
         state.popupCloseAttackPrimed = true;
         addGold(state.stats.goldPerPopupClose, "popupClose");
         applyPopupCloseDamage();
         checkLevelUp();
       }
-      if (!state.gameOver && popup.def.category !== "system" && popup.def.type !== "first_purchase_package" && state.moduleSynergy === "popup_trigger") {
+      if (!state.gameOver && isManualCleanupClose && state.moduleSynergy === "popup_trigger") {
         triggerModuleAttack("primary", true);
       }
     }
@@ -6897,7 +7207,7 @@
         createSystemGrowthPopup("긴급 닫기 실패", "열린 팝업이 모두 정산 필요 상태입니다.");
         return;
       }
-      closePopup(target.id);
+      closePopup(target.id, { reason: "emergency" });
       state.emergencyBoostTimer = 5;
       state.emergencyTimer = CONFIG.emergencyCloseCooldown * Math.max(0.25, 1 + state.stats.emergencyCooldownMultiplier);
     }
@@ -7081,6 +7391,53 @@
       }
     }
 
+    function drawChargeCasts() {
+      for (const cast of state.chargeCasts) {
+        const ratio = clamp(cast.elapsed / Math.max(0.001, cast.duration), 0, 1);
+        const start = worldToScreen({ x: cast.x, y: cast.y });
+        ctx.save();
+        if (cast.type === "ranged_charge_cannon") {
+          const impact = worldToScreen({ x: cast.impactX, y: cast.impactY });
+          ctx.strokeStyle = "rgba(255, 224, 112, " + (0.25 + ratio * 0.45) + ")";
+          ctx.lineWidth = 3 + ratio * 5;
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(impact.x, impact.y);
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(255, 189, 79, " + (0.2 + ratio * 0.3) + ")";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(impact.x, impact.y, cast.radius * (0.35 + ratio * 0.65), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(255, 224, 112, " + (0.08 + ratio * 0.12) + ")";
+          ctx.beginPath();
+          ctx.arc(start.x, start.y, 12 + ratio * 16, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (cast.type === "melee_charged_cleave") {
+          const end = worldToScreen({ x: cast.x + cast.dirX * cast.range, y: cast.y + cast.dirY * cast.range });
+          ctx.lineCap = "round";
+          ctx.strokeStyle = "rgba(255, 190, 106, " + (0.12 + ratio * 0.28) + ")";
+          ctx.lineWidth = cast.width * (0.35 + ratio * 0.65);
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.lineTo(end.x, end.y);
+          ctx.stroke();
+          ctx.lineCap = "butt";
+        } else if (cast.type === "aura_charged_nova") {
+          ctx.strokeStyle = "rgba(97, 211, 255, " + (0.2 + ratio * 0.35) + ")";
+          ctx.lineWidth = 3 + ratio * 4;
+          ctx.beginPath();
+          ctx.arc(start.x, start.y, cast.radius * (0.28 + ratio * 0.72), 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(97, 211, 255, " + (0.04 + ratio * 0.08) + ")";
+          ctx.beginPath();
+          ctx.arc(start.x, start.y, cast.radius * (0.18 + ratio * 0.55), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
     function drawPlayer() {
       const screen = worldToScreen(state.player);
 
@@ -7175,6 +7532,7 @@
       drawTurrets();
       drawEnemies();
       drawProjectiles();
+      drawChargeCasts();
       drawAttacks();
       drawPlayer();
       drawPausedText();
@@ -7261,17 +7619,17 @@
         return stacks <= 0 ? "무팝업 쿨타임 변화 없음" : "무팝업 쿨타임 " + formatSignedPercent(state.openPopups.length === 0 ? -0.18 * stacks : 0);
       }
       if (item.id === "empty_slot_charger") {
-        const emptySlots = Math.max(0, maxOpenPopups() - state.openPopups.length);
-        return stacks <= 0 ? "처형 피해 변화 없음" : "처형 피해 " + formatSignedPercent(state.popupExecutionWindow > 0 ? emptySlots * 0.04 * stacks : 0);
+        const combo = Math.min(5, state.cleanupComboStacks || 0);
+        return stacks <= 0 ? "정리 콤보 피해 변화 없음" : "정리 콤보 피해 " + formatSignedPercent(state.cleanupComboWindow > 0 ? (0.12 + combo * 0.04) * stacks : 0);
       }
       if (item.id === "close_combo") {
-        return stacks <= 0 ? "닫기 콤보 쿨타임 변화 없음" : "닫기 콤보 쿨타임 " + formatSignedPercent(state.popupExecutionWindow > 0 ? -0.15 * stacks : 0);
+        return stacks <= 0 ? "닫기 콤보 쿨타임 변화 없음" : "닫기 콤보 쿨타임 " + formatSignedPercent(state.cleanupComboWindow > 0 ? -0.15 * stacks : 0);
       }
       if (item.id === "heat_blade") {
-        return stacks <= 0 ? "Heat 피해 변화 없음" : "Heat 피해 " + formatSignedPercent(state.heat * 0.05 * stacks);
+        return stacks <= 0 ? "난이도 피해 변화 없음" : "난이도 피해 " + formatSignedPercent(state.heat * 0.05 * stacks);
       }
       if (item.id === "cursed_cache") {
-        return "획득 시 +60G / Heat +1";
+        return "획득 시 +60G / 난이도 +1";
       }
 
       const displayEffect = primaryDisplayEffect(item);
@@ -7357,7 +7715,17 @@
       return "선택 성장 완료";
     }
 
+    function updateDifficultyHud() {
+      const info = difficultyStageInfo();
+      difficultyHud.className = "difficulty-" + info.current.id;
+      difficultyStageLabel.textContent = info.current.label;
+      difficultyScoreLabel.textContent = info.score.toFixed(1);
+      difficultyProgressFill.style.width = (info.progress * 100).toFixed(1) + "%";
+      difficultyEffectLabel.textContent = difficultyEffectSummary();
+    }
+
     function updateUI() {
+      updateDifficultyHud();
       const itemCost = currentItemRollCost();
       hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
       goldText.textContent = state.gold.toString();
@@ -7392,13 +7760,14 @@
       const upgradeLabels = primaryUpgradeLabels();
       const starterSummary = starterCombatBonusSummary();
       const itemPoolSummary = itemPoolBiasSummary();
-      const executionWindowText = state.popupExecutionWindow > 0 ? " / 처형 창: " + state.popupExecutionWindow.toFixed(1) + "초" : "";
+      const difficultyInfo = difficultyStageInfo();
+      const executionWindowText = state.cleanupComboWindow > 0 ? " / 정리 콤보: x" + state.cleanupComboStacks + " " + state.cleanupComboWindow.toFixed(1) + "초" : "";
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>계약 특전: " + starterSummary +
         "<br>아이템 풀: " + itemPoolSummary +
-        "<br>Heat: " + state.heat.toFixed(1) +
+        "<br>난이도: " + difficultyInfo.current.label + " / 시간 +" + timeDifficultyScore().toFixed(1) + " / 선택 +" + manualDifficulty().toFixed(1) +
         " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 부채: " + state.debtGold + "G" +
         "<br>" + stockLine +
@@ -7425,13 +7794,13 @@
         "<br>배속: x" + state.timeScale +
         "<br>구매 횟수: " + state.itemRollCount +
         "<br>처치 수: " + state.killCount +
-        "<br>Heat: " + state.heat.toFixed(1) +
+        "<br>선택 난이도: +" + manualDifficulty().toFixed(1) +
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>빌드 계약: " + state.activePlaystyleName +
         "<br>계약 특전: " + starterSummary +
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
-        "<br>처형 창/닫기 연계: " + state.popupExecutionWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
+        "<br>정리 콤보/닫기 연계: x" + state.cleanupComboStacks + " " + state.cleanupComboWindow.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
@@ -7440,7 +7809,7 @@
         "<br>난장판 티어: " + clutterTierLabel() +
         "<br>첫 계약: " + (state.firstPurchasePackageChosen || "미선택") +
         "<br>보스 처치/패키지: " + state.metrics.bossKills + " / " + state.metrics.bossPackagesPurchased +
-        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + state.heat * 0.015).toFixed(2) +
+        "<br>팝업 생성 배율: x" + Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus()).toFixed(2) +
         "<br>약관 패널티: " + state.termsPenaltyCount +
         "<br>이자 수락/완료/손실: " + state.metrics.interestAccepted + " / " + state.metrics.interestCompleted + " / " + state.metrics.interestLost +
         "<br>팝업 상점 구매: " + state.metrics.popupStorePurchases +
@@ -7579,7 +7948,9 @@
           openAttackModuleSelection("primary_start");
         }
       } else if (button.dataset.debug === "executionWindow") {
-        state.popupExecutionWindow = 4;
+        state.cleanupComboWindow = 3;
+        state.cleanupComboStacks = Math.min(5, Math.max(1, state.cleanupComboStacks + 1));
+        state.popupExecutionWindow = 3;
       } else if (button.dataset.debug === "invested100") {
         state.investedGold += 100;
       } else if (button.dataset.debug === "sponsoredStacks") {
@@ -7737,7 +8108,7 @@
       }
 
       if (draggedPopupOverTrash(state.draggingPopup.popup)) {
-        closePopup(state.draggingPopup.popup.id);
+        closePopup(state.draggingPopup.popup.id, { reason: "trash" });
       } else {
         settleDraggedPopup(state.draggingPopup.popup);
       }
