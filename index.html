@@ -3504,7 +3504,9 @@
           baseX: 0,
           baseY: 0,
           x: 0,
-          y: 0
+          y: 0,
+          fallbackClickButton: null,
+          fallbackClickUntil: 0
         },
         draggingPopup: null
       };
@@ -10381,9 +10383,6 @@
       state.mobileInput.pointerId = event.pointerId;
       positionFloatingJoystick(event);
       mobileJoystick.classList.add("active");
-      if (shell.setPointerCapture) {
-        shell.setPointerCapture(event.pointerId);
-      }
       updateJoystickInput(event);
       event.preventDefault();
     }
@@ -10400,15 +10399,36 @@
       if (state.mobileInput.pointerId !== event.pointerId) {
         return;
       }
-      if (shell.releasePointerCapture) {
-        try {
-          shell.releasePointerCapture(event.pointerId);
-        } catch (error) {
-          // Some browsers release touch capture automatically.
-        }
-      }
       resetJoystickInput();
       event.preventDefault();
+    }
+
+    function handleMobileUiButtonFallback(event) {
+      if (event.pointerType === "mouse" || !state.mobileInput.active || event.pointerId === state.mobileInput.pointerId) {
+        return;
+      }
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest("button");
+      if (!button || button.disabled || button.closest("#mobileJoystick")) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      button.click();
+      state.mobileInput.fallbackClickButton = button;
+      state.mobileInput.fallbackClickUntil = performance.now() + 500;
+    }
+
+    function suppressNativeClickAfterFallback(event) {
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest("button");
+      if (!button || button !== state.mobileInput.fallbackClickButton || performance.now() > state.mobileInput.fallbackClickUntil) {
+        return;
+      }
+      state.mobileInput.fallbackClickButton = null;
+      state.mobileInput.fallbackClickUntil = 0;
+      event.preventDefault();
+      event.stopImmediatePropagation();
     }
 
     function updateDraggedPopup(event) {
@@ -10449,9 +10469,11 @@
     shell.addEventListener("pointerdown", startFloatingJoystick);
     document.addEventListener("pointerdown", recordPointerPosition);
     document.addEventListener("pointermove", recordPointerPosition);
+    document.addEventListener("pointerup", handleMobileUiButtonFallback, true);
     document.addEventListener("pointermove", updateFloatingJoystick);
     document.addEventListener("pointerup", finishFloatingJoystick);
     document.addEventListener("pointercancel", finishFloatingJoystick);
+    document.addEventListener("click", suppressNativeClickAfterFallback, true);
 
     mobileEmergencyButton.addEventListener("click", () => {
       emergencyCloseOldestPopup();
