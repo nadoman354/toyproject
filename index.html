@@ -232,16 +232,168 @@
       backdrop-filter: blur(8px);
     }
 
-    #hud {
+    #combatHud {
       top: 12px;
       left: 12px;
-      width: 250px;
+      width: 270px;
     }
 
-    #itemMachine {
+    #economyHud {
       top: 12px;
       right: 12px;
-      width: 235px;
+      width: 255px;
+    }
+
+    .hudCard {
+      padding: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.065);
+      margin-top: 7px;
+    }
+
+    .hudCard:first-of-type {
+      margin-top: 0;
+    }
+
+    .hudCardHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #d8e3f3;
+    }
+
+    .healthBar,
+    .xpBar,
+    .itemMachineMeter {
+      width: 100%;
+      height: 10px;
+      margin-top: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .healthFill,
+    .xpFill {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.14s linear;
+    }
+
+    .healthFill {
+      background: linear-gradient(90deg, #ff5964, #ff9c71);
+    }
+
+    .xpFill {
+      background: linear-gradient(90deg, var(--xp), #87d3ff);
+    }
+
+    .moduleHud {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .moduleSlot {
+      padding: 7px;
+      border: 1px solid rgba(132, 210, 255, 0.22);
+      border-radius: 7px;
+      background: rgba(21, 36, 52, 0.72);
+    }
+
+    .moduleSlot span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .moduleSlot strong {
+      display: block;
+      margin-top: 2px;
+      color: #f4f8ff;
+      font-size: 14px;
+    }
+
+    .moduleSlot small {
+      display: block;
+      margin-top: 2px;
+      color: #8fd4ff;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .moduleMeta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px 8px;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .moduleMeta .wide {
+      grid-column: 1 / -1;
+    }
+
+    .goldCounter {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(89, 65, 15, 0.88), rgba(47, 36, 18, 0.9));
+      border: 1px solid rgba(243, 200, 75, 0.42);
+      color: #ffe7a1;
+      font-weight: 1000;
+    }
+
+    .goldCounter span {
+      color: #f6d477;
+      font-size: 11px;
+    }
+
+    .goldCounter strong {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .itemMachineCard {
+      margin-top: 8px;
+      padding: 9px;
+      border-radius: 8px;
+      background: rgba(17, 29, 43, 0.78);
+      border: 1px solid rgba(115, 191, 255, 0.24);
+    }
+
+    .economyBadges {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+    }
+
+    .economyBadge {
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #dceeff;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .recentMini {
+      max-height: 72px;
+      overflow: hidden;
     }
 
     #statusPanel {
@@ -597,6 +749,13 @@
       pointer-events: none;
     }
 
+    #popupTelegraphLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 900;
+      pointer-events: none;
+    }
+
     #trashZone {
       position: absolute;
       left: 50%;
@@ -734,6 +893,83 @@
       overflow: hidden;
       pointer-events: auto;
       user-select: none;
+    }
+
+    .popupWindow.inputGrace .popupBody button,
+    .popupWindow.inputGrace .popupClose {
+      pointer-events: none;
+      filter: grayscale(0.5);
+      opacity: 0.48;
+    }
+
+    .popupWindow.inputGrace .popupBody {
+      position: relative;
+    }
+
+    .popupWindow.inputGrace .popupBody::after {
+      content: "입력 유예 중";
+      position: absolute;
+      right: 8px;
+      bottom: 6px;
+      padding: 2px 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.46);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 900;
+      pointer-events: none;
+    }
+
+    .popupTelegraph {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      border: 2px dashed rgba(255, 255, 255, 0.58);
+      border-radius: 8px;
+      background: rgba(11, 17, 25, 0.34);
+      box-shadow: inset 0 0 26px rgba(255, 255, 255, 0.08), 0 10px 24px rgba(0, 0, 0, 0.22);
+      color: #f6fbff;
+      text-align: center;
+      font-weight: 1000;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+      animation: telegraphPulse 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes telegraphPulse {
+      from { opacity: 0.58; transform: scale(0.992); }
+      to { opacity: 0.95; transform: scale(1); }
+    }
+
+    .popupTelegraphLabel {
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.38);
+      font-size: 12px;
+    }
+
+    .popupTelegraphTimer {
+      color: #ffe29a;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .popupTelegraph.sponsored_reward {
+      border-color: rgba(255, 218, 101, 0.72);
+      background: rgba(72, 52, 12, 0.36);
+    }
+
+    .popupTelegraph.legal_contract {
+      border-color: rgba(255, 89, 100, 0.72);
+      background: rgba(72, 12, 22, 0.36);
+    }
+
+    .popupTelegraph.finance,
+    .popupTelegraph.broker_app {
+      border-color: rgba(91, 213, 150, 0.72);
+      background: rgba(10, 62, 38, 0.32);
     }
 
     .popupWindow.ad_buff {
@@ -1146,8 +1382,8 @@
     }
 
     @media (max-width: 760px) {
-      #hud,
-      #itemMachine,
+      #combatHud,
+      #economyHud,
       #statusPanel {
         width: 210px;
         padding: 9px;
@@ -1227,18 +1463,18 @@
         margin-top: 3px;
       }
 
-      #hud {
+      #combatHud {
         top: max(6px, env(safe-area-inset-top));
         left: max(6px, env(safe-area-inset-left));
-        width: min(22vw, 132px);
+        width: min(25vw, 156px);
         max-height: 38vh;
         overflow-y: auto;
       }
 
-      #itemMachine {
+      #economyHud {
         top: max(6px, env(safe-area-inset-top));
         right: max(6px, env(safe-area-inset-right));
-        width: min(24vw, 146px);
+        width: min(26vw, 170px);
         max-height: 38vh;
         overflow-y: auto;
       }
@@ -1267,6 +1503,46 @@
 
       #rollItemButton {
         margin: 4px 0;
+      }
+
+      .hudCard,
+      .itemMachineCard {
+        padding: 5px;
+        margin-top: 4px;
+      }
+
+      .hudCardHeader,
+      .moduleMeta,
+      .economyBadge {
+        font-size: 8px;
+      }
+
+      .moduleSlot {
+        padding: 5px;
+      }
+
+      .moduleSlot strong {
+        font-size: 10px;
+      }
+
+      .moduleSlot small {
+        font-size: 8px;
+      }
+
+      .goldCounter {
+        padding: 6px;
+      }
+
+      .goldCounter strong {
+        font-size: 16px;
+      }
+
+      .popupTelegraphLabel {
+        font-size: 9px;
+      }
+
+      .popupTelegraphTimer {
+        font-size: 13px;
       }
 
       .compactSelect {
@@ -1398,8 +1674,8 @@
         display: block;
       }
 
-      #hud,
-      #itemMachine {
+      #combatHud,
+      #economyHud {
         width: calc(50vw - 12px);
         max-height: 30vh;
       }
@@ -1456,30 +1732,52 @@
         <div id="cleanupComboMeta" class="cleanupComboMeta">대기 중</div>
       </div>
 
-      <section id="hud" class="panel">
-        <h1 class="panelTitle">상태</h1>
-        <div class="statRow"><span>HP</span><strong id="hpText">5 / 5</strong></div>
-        <div class="statRow"><span>골드</span><strong id="goldText" class="gold">0</strong></div>
-        <div class="statRow"><span>레벨</span><strong id="levelText">1</strong></div>
-        <div class="statRow"><span>XP</span><strong id="xpText">0 / 40</strong></div>
-        <div class="bar"><div id="xpFill" class="barFill"></div></div>
-        <div class="statRow"><span>1차 모듈</span><strong id="primaryModuleText">미선택</strong></div>
-        <div class="statRow"><span>보조 모듈</span><strong id="secondaryModuleText">없음</strong></div>
-        <div class="statRow"><span>1차 숙련도</span><strong id="primaryMasteryText">0</strong></div>
-        <div class="statRow"><span>보조 숙련도</span><strong id="secondaryMasteryText">0</strong></div>
-        <div class="statRow"><span>다음 선택</span><strong id="nextChoiceText">시작 선택</strong></div>
-        <div class="statRow"><span>팝업</span><strong id="popupCountText">0 / 5</strong></div>
+      <section id="combatHud" class="panel combatHud">
+        <h1 class="panelTitle">전투 HUD</h1>
+        <div id="healthHud" class="hudCard">
+          <div class="hudCardHeader"><span>HP</span><strong id="hpText">100 / 100</strong></div>
+          <div class="healthBar"><div id="healthFill" class="healthFill"></div></div>
+        </div>
+        <div id="xpHud" class="hudCard">
+          <div class="hudCardHeader"><span>Lv. <strong id="levelText">1</strong></span><strong id="xpText">0 / 40</strong></div>
+          <div class="xpBar"><div id="xpFill" class="xpFill"></div></div>
+        </div>
+        <div id="moduleHud" class="moduleHud">
+          <div id="primaryModuleHud" class="moduleSlot">
+            <span>1차 모듈</span>
+            <strong id="primaryModuleText">미선택</strong>
+            <small id="primaryModuleDetail">기본형</small>
+          </div>
+          <div id="secondaryModuleHud" class="moduleSlot">
+            <span>보조 모듈</span>
+            <strong id="secondaryModuleText">없음</strong>
+            <small id="secondaryModuleDetail">대기 중</small>
+          </div>
+        </div>
+        <div class="moduleMeta">
+          <span>1차 숙련 <strong id="primaryMasteryText">0</strong></span>
+          <span>보조 숙련 <strong id="secondaryMasteryText">0</strong></span>
+          <span class="wide">다음 선택 <strong id="nextChoiceText">시작 선택</strong></span>
+          <span class="wide">팝업 <strong id="popupCountText">0 / 5</strong></span>
+        </div>
       </section>
 
-      <section id="itemMachine" class="panel">
-        <h2 class="panelTitle">아이템 머신</h2>
-        <div class="statRow"><span>비용</span><strong id="itemCostText">25G</strong></div>
-        <button id="rollItemButton">아이템 뽑기 - 25G</button>
+      <section id="economyHud" class="panel economyHud">
+        <div id="goldHud" class="goldCounter"><span>골드</span><strong><span id="goldText">0</span>G</strong></div>
+        <div id="itemMachineHud" class="itemMachineCard">
+          <h2 class="panelTitle">아이템 머신</h2>
+          <div class="statRow"><span>투입 비용</span><strong id="itemCostText">25G</strong></div>
+          <button id="rollItemButton">아이템 머신 - 25G 투입</button>
+          <div class="economyBadges">
+            <span id="discountText" class="economyBadge">할인 0%</span>
+            <span id="extraChoiceText" class="economyBadge">선택지 +0</span>
+          </div>
+        </div>
         <button id="openInventoryButton" type="button">보유 아이템 보기</button>
-        <div id="lastItem">최근 아이템: 없음</div>
-        <h2 class="panelTitle" style="margin-top: 12px;">아이템 목록</h2>
+        <div id="lastItem" class="recentMini">최근 아이템: 없음</div>
+        <h2 class="panelTitle" style="margin-top: 10px;">아이템 목록</h2>
         <div id="itemInventory">보유 아이템 없음</div>
-        <h2 class="panelTitle" style="margin-top: 12px;">최근 성장</h2>
+        <h2 class="panelTitle" style="margin-top: 10px;">최근 성장</h2>
         <div id="recentPerk">아직 없음</div>
       </section>
 
@@ -1522,6 +1820,7 @@
             <button type="button" data-debug="creditPlus">신용도 +10</button>
             <button type="button" data-debug="creditMinus">신용도 -10</button>
             <button type="button" data-debug="clear">팝업 제거</button>
+            <button type="button" data-debug="telegraphBasic">예고 팝업</button>
             <button type="button" data-popup="first_purchase_package">첫 계약</button>
             <button type="button" data-debug="investorMode">투자자 모드</button>
             <button type="button" data-debug="clearPlaystyle">계약 해제</button>
@@ -1549,6 +1848,7 @@
         </div>
       </section>
 
+      <div id="popupTelegraphLayer"></div>
       <div id="popupLayer"></div>
       <div id="trashZone">여기로 버리기</div>
       <div id="mobileControls" aria-label="모바일 조작">
@@ -2716,6 +3016,9 @@
     const canvas = document.getElementById("fieldCanvas");
     const ctx = canvas.getContext("2d");
     const shell = document.getElementById("gameShell");
+    const combatHud = document.getElementById("combatHud");
+    const economyHud = document.getElementById("economyHud");
+    const popupTelegraphLayer = document.getElementById("popupTelegraphLayer");
     const popupLayer = document.getElementById("popupLayer");
     const difficultyHud = document.getElementById("difficultyHud");
     const difficultyStageLabel = document.getElementById("difficultyStageLabel");
@@ -2732,17 +3035,22 @@
     const mobileEmergencyButton = document.getElementById("mobileEmergencyButton");
     const mobileFullscreenButton = document.getElementById("mobileFullscreenButton");
     const hpText = document.getElementById("hpText");
+    const healthFill = document.getElementById("healthFill");
     const goldText = document.getElementById("goldText");
     const levelText = document.getElementById("levelText");
     const xpText = document.getElementById("xpText");
     const xpFill = document.getElementById("xpFill");
     const primaryModuleText = document.getElementById("primaryModuleText");
     const secondaryModuleText = document.getElementById("secondaryModuleText");
+    const primaryModuleDetail = document.getElementById("primaryModuleDetail");
+    const secondaryModuleDetail = document.getElementById("secondaryModuleDetail");
     const primaryMasteryText = document.getElementById("primaryMasteryText");
     const secondaryMasteryText = document.getElementById("secondaryMasteryText");
     const nextChoiceText = document.getElementById("nextChoiceText");
     const popupCountText = document.getElementById("popupCountText");
     const itemCostText = document.getElementById("itemCostText");
+    const discountText = document.getElementById("discountText");
+    const extraChoiceText = document.getElementById("extraChoiceText");
     const rollItemButton = document.getElementById("rollItemButton");
     const openInventoryButton = document.getElementById("openInventoryButton");
     const lastItem = document.getElementById("lastItem");
@@ -2955,6 +3263,9 @@
         pickups: [],
         attacks: [],
         openPopups: [],
+        pendingPopupSpawns: [],
+        pointerScreenX: null,
+        pointerScreenY: null,
         lastMoveDir: {
           x: 1,
           y: 0
@@ -2973,6 +3284,7 @@
 
     function resetGame() {
       popupLayer.replaceChildren();
+      popupTelegraphLayer.replaceChildren();
       popupIdSeed = 1;
       zSeed = 1200;
       state = createInitialState();
@@ -5759,11 +6071,7 @@
     }
 
     function createNaturalPopup(def) {
-      if (def.type === "stock_broker_app") {
-        ensureStockBrokerApp();
-        return;
-      }
-      createPopup(def);
+      schedulePopupSpawn(def);
     }
 
     function updatePopupTimers(dt) {
@@ -5772,12 +6080,14 @@
       state.emergencyBoostTimer = Math.max(0, state.emergencyBoostTimer - dt);
 
       updateTimedAndDelayedEffects(dt);
+      updatePendingPopupSpawns(dt);
+      updatePopupInputGrace(dt);
       updateAutoCloseMacro(dt);
       updateSpecialPopups(dt);
       updateFirstPurchaseOffer(dt);
 
       if (state.popupTimer <= 0) {
-        if (state.openPopups.length < maxOpenPopups()) {
+        if (state.openPopups.length + state.pendingPopupSpawns.length < maxOpenPopups()) {
           if (state.popupFreezeTimer <= 0) {
             const pool = availablePopupDefinitions();
             if (pool.length > 0) {
@@ -6176,6 +6486,69 @@
       };
     }
 
+    function rectFromElementInPopupLayer(element, padding = 0) {
+      if (!element) {
+        return null;
+      }
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) {
+        return null;
+      }
+      const layerRect = popupLayer.getBoundingClientRect();
+      return {
+        x: rect.left - layerRect.left - padding,
+        y: rect.top - layerRect.top - padding,
+        w: rect.width + padding * 2,
+        h: rect.height + padding * 2
+      };
+    }
+
+    function getHudAvoidRects() {
+      const rects = [
+        rectFromElementInPopupLayer(combatHud, 10),
+        rectFromElementInPopupLayer(economyHud, 10),
+        rectFromElementInPopupLayer(difficultyHud, 10)
+      ].filter(Boolean);
+
+      if (cleanupComboHud.classList.contains("active")) {
+        const cleanupRect = rectFromElementInPopupLayer(cleanupComboHud, 8);
+        if (cleanupRect) {
+          rects.push(cleanupRect);
+        }
+      }
+
+      return rects;
+    }
+
+    function pointerAvoidRect() {
+      if (state.pointerScreenX === null || state.pointerScreenY === null) {
+        return null;
+      }
+      return {
+        x: state.pointerScreenX - 70,
+        y: state.pointerScreenY - 50,
+        w: 140,
+        h: 100
+      };
+    }
+
+    function reservedPopupRects(ignoreId) {
+      const rects = [];
+      for (const popup of state.openPopups) {
+        if (popup.id === ignoreId) {
+          continue;
+        }
+        rects.push(popupRectFromElement(popup));
+      }
+      for (const pending of state.pendingPopupSpawns) {
+        if (pending.id === ignoreId) {
+          continue;
+        }
+        rects.push({ x: pending.x, y: pending.y, w: pending.width, h: pending.height });
+      }
+      return rects;
+    }
+
     function overlapSize(a, b) {
       return {
         w: Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)),
@@ -6184,12 +6557,7 @@
     }
 
     function popupOverlapConflict(rect, ignoreId) {
-      for (const popup of state.openPopups) {
-        if (popup.id === ignoreId) {
-          continue;
-        }
-
-        const other = popupRectFromElement(popup);
+      for (const other of reservedPopupRects(ignoreId)) {
         const overlap = overlapSize(rect, other);
         const maxWidth = Math.min(rect.w, other.w) * CONFIG.popupOverlapMaxWidthRatio;
         const maxHeight = Math.min(rect.h, other.h) * CONFIG.popupOverlapMaxHeightRatio;
@@ -6200,14 +6568,16 @@
       return null;
     }
 
-    function popupPlacementScore(rect, safeRect, ignoreId) {
-      let score = rectsOverlap(rect, safeRect) ? 100000 : 0;
-      for (const popup of state.openPopups) {
-        if (popup.id === ignoreId) {
-          continue;
+    function popupPlacementScore(rect, avoidRects, ignoreId) {
+      let score = 0;
+      for (const avoid of avoidRects) {
+        const overlap = overlapSize(rect, avoid);
+        if (overlap.w > 0 && overlap.h > 0) {
+          score += 100000 + overlap.w * overlap.h * 20;
         }
+      }
 
-        const other = popupRectFromElement(popup);
+      for (const other of reservedPopupRects(ignoreId)) {
         const overlap = overlapSize(rect, other);
         const maxWidth = Math.min(rect.w, other.w) * CONFIG.popupOverlapMaxWidthRatio;
         const maxHeight = Math.min(rect.h, other.h) * CONFIG.popupOverlapMaxHeightRatio;
@@ -6248,7 +6618,8 @@
     function choosePopupPosition(width, height) {
       const layerWidth = popupLayer.clientWidth || CONFIG.canvasWidth;
       const layerHeight = popupLayer.clientHeight || CONFIG.canvasHeight;
-      const safeScale = Math.max(0.5, 1 + state.stats.safeZoneMultiplier);
+      const difficultySafeScale = Math.max(0.7, 1 - currentDifficultyScore() * 0.015);
+      const safeScale = Math.max(0.5, (1 + state.stats.safeZoneMultiplier) * difficultySafeScale);
       const safeWidth = layerWidth * CONFIG.centralSafeZoneWidthRatio * safeScale;
       const safeHeight = layerHeight * CONFIG.centralSafeZoneHeightRatio * safeScale;
       const playerScreen = worldToScreen(state.player);
@@ -6260,6 +6631,11 @@
         w: safeWidth,
         h: safeHeight
       };
+      const pointerRect = pointerAvoidRect();
+      const avoidRects = [safeRect, ...getHudAvoidRects()];
+      if (pointerRect) {
+        avoidRects.push(pointerRect);
+      }
       const margin = 12;
 
       const candidates = [
@@ -6279,7 +6655,7 @@
         const x = clamp(candidate.x, margin, layerWidth - width - margin);
         const y = clamp(candidate.y, margin, layerHeight - height - margin);
         const pushed = pushRectOutOfPopupOverlap({ x, y, w: width, h: height }, margin, layerWidth, layerHeight);
-        const score = popupPlacementScore(pushed, safeRect);
+        const score = popupPlacementScore(pushed, avoidRects);
 
         if (score < bestScore) {
           best = pushed;
@@ -6391,7 +6767,114 @@
       }
     }
 
-    function createPopup(def) {
+    function popupTelegraphDuration(def) {
+      if (def.type === "system_notice") return 0.3;
+      if (def.type === "boss_package_ad") return 1.2;
+      if (def.copyTone === "legal_contract") return 1.1;
+      if (def.copyTone === "finance") return 1.0;
+      if (def.copyTone === "sponsored_reward") return 0.9;
+      if (def.type === "popup_store") return 0.9;
+      if (def.type === "stock_broker_app") return 0.8;
+      return 0.8;
+    }
+
+    function popupTelegraphLabel(def) {
+      if (def.copyTone === "legal_contract") return "약관 창 예정";
+      if (def.copyTone === "finance" || def.copyTone === "broker_app") return "금융 창 예정";
+      if (def.copyTone === "sponsored_reward") return "스폰서 광고 예정";
+      if (def.copyTone === "game_package") return "패키지 창 예정";
+      if (def.copyTone === "cleanup_utility") return "정리 유틸 예정";
+      return "팝업 예정";
+    }
+
+    function createPopupTelegraphElement(pending) {
+      const element = document.createElement("div");
+      element.className = "popupTelegraph " + (pending.def.copyTone || pending.def.type || "product_ad");
+      element.style.left = pending.x + "px";
+      element.style.top = pending.y + "px";
+      element.style.width = pending.width + "px";
+      element.style.height = pending.height + "px";
+      const label = document.createElement("div");
+      label.className = "popupTelegraphLabel";
+      label.textContent = pending.label;
+      const timer = document.createElement("div");
+      timer.className = "popupTelegraphTimer";
+      timer.textContent = pending.timer.toFixed(1) + "초";
+      element.append(label, timer);
+      popupTelegraphLayer.appendChild(element);
+      return element;
+    }
+
+    function schedulePopupSpawn(def) {
+      if (!def || state.openPopups.length + state.pendingPopupSpawns.length >= maxOpenPopups()) {
+        return null;
+      }
+      if (def.type === "stock_broker_app" && getOpenStockBrokerApp()) {
+        bringPopupToFront(getOpenStockBrokerApp());
+        return null;
+      }
+
+      const size = popupSizeFor(def);
+      const pos = choosePopupPosition(size.width, size.height);
+      const duration = popupTelegraphDuration(def);
+      if (duration <= 0) {
+        return createPopup(def, { x: pos.x, y: pos.y, inputGrace: 0.25 });
+      }
+
+      const pending = {
+        id: "pending_" + popupIdSeed++,
+        def,
+        x: pos.x,
+        y: pos.y,
+        width: size.width,
+        height: size.height,
+        timer: duration,
+        duration,
+        label: popupTelegraphLabel(def),
+        created: false,
+        element: null
+      };
+      pending.element = createPopupTelegraphElement(pending);
+      state.pendingPopupSpawns.push(pending);
+      return pending;
+    }
+
+    function updatePendingPopupSpawns(dt) {
+      const remaining = [];
+      for (const pending of state.pendingPopupSpawns) {
+        pending.timer -= dt;
+        if (pending.element) {
+          const timer = pending.element.querySelector(".popupTelegraphTimer");
+          if (timer) {
+            timer.textContent = Math.max(0, pending.timer).toFixed(1) + "초";
+          }
+        }
+
+        if (pending.timer <= 0) {
+          if (pending.element) {
+            pending.element.remove();
+          }
+          if (state.openPopups.length < maxOpenPopups()) {
+            createPopup(pending.def, { x: pending.x, y: pending.y, inputGrace: 0.25 });
+          }
+        } else {
+          remaining.push(pending);
+        }
+      }
+      state.pendingPopupSpawns = remaining;
+    }
+
+    function updatePopupInputGrace(dt) {
+      for (const popup of state.openPopups) {
+        if (!popup.inputGraceTimer || popup.inputGraceTimer <= 0) {
+          continue;
+        }
+        popup.inputGraceTimer = Math.max(0, popup.inputGraceTimer - dt);
+        popup.element.classList.toggle("inputGrace", popup.inputGraceTimer > 0);
+      }
+    }
+
+    function createPopup(def, options = {}) {
       if (def.type === "stock_broker_app") {
         const existing = getOpenStockBrokerApp();
         if (existing) {
@@ -6401,18 +6884,22 @@
       }
 
       const size = popupSizeFor(def);
-      const pos = choosePopupPosition(size.width, size.height);
+      const pos = options.x !== undefined && options.y !== undefined
+        ? { x: options.x, y: options.y }
+        : choosePopupPosition(size.width, size.height);
       const id = popupIdSeed++;
       const popup = {
         id,
         def,
         elapsed: 0,
         rewarded: false,
+        inputGraceTimer: options.inputGrace || 0,
         element: document.createElement("div")
       };
       initializePopupRuntimeState(popup);
 
       popup.element.className = "popupWindow " + def.type;
+      popup.element.classList.toggle("inputGrace", popup.inputGraceTimer > 0);
       popup.element.dataset.copyTone = def.copyTone || "default";
       popup.element.style.width = size.width + "px";
       popup.element.style.left = pos.x + "px";
@@ -8215,19 +8702,30 @@
       updateDifficultyHud();
       updateCleanupComboHud();
       const itemCost = currentItemRollCost();
+      const healthRatio = state.player.maxHP > 0 ? clamp((state.player.hp / state.player.maxHP) * 100, 0, 100) : 0;
       hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
+      healthFill.style.width = healthRatio.toFixed(1) + "%";
       goldText.textContent = state.gold.toString();
       levelText.textContent = state.level.toString();
       xpText.textContent = state.xp + " / " + state.xpNeed;
       xpFill.style.width = clamp((state.xp / state.xpNeed) * 100, 0, 100).toFixed(1) + "%";
       primaryModuleText.textContent = state.primaryModule ? moduleName(state.primaryModule) : "미선택";
       secondaryModuleText.textContent = state.secondaryModule ? moduleName(state.secondaryModule) : "없음";
+      const primaryForm = state.primaryModule ? selectedFormForSlot("primary") : null;
+      const secondaryForm = state.secondaryModule ? selectedFormForSlot("secondary") : null;
+      const upgradeLabelsForHud = primaryUpgradeLabels();
+      primaryModuleDetail.textContent = state.primaryModule
+        ? (primaryForm ? primaryForm.name : "기본형") + (upgradeLabelsForHud.mechanic !== "미선택" ? " / " + upgradeLabelsForHud.mechanic : "")
+        : "모듈 선택 대기";
+      secondaryModuleDetail.textContent = state.secondaryModule
+        ? (secondaryForm ? secondaryForm.name : "기본형")
+        : "Lv.5 선택";
       primaryMasteryText.textContent = state.primaryMastery.toString();
       secondaryMasteryText.textContent = state.secondaryModule ? state.secondaryMastery.toString() : "-";
       nextChoiceText.textContent = nextGrowthChoiceLabel();
       popupCountText.textContent = state.openPopups.length + " / " + maxOpenPopups();
       itemCostText.textContent = itemCost + "G";
-      rollItemButton.textContent = "아이템 뽑기 - " + itemCost + "G";
+      rollItemButton.textContent = state.gold < itemCost ? "골드 부족 - " + itemCost + "G 필요" : "아이템 머신 - " + itemCost + "G 투입";
       rollItemButton.disabled = state.gameOver || state.paused || state.selectingItem || state.selectingPerk || state.selectingModule || state.gold < itemCost;
       openInventoryButton.disabled = state.gameOver || state.selectingItem || state.selectingPerk || state.selectingModule || state.selectingPaidReward;
       lastItem.innerHTML = state.lastItemText;
@@ -8237,6 +8735,9 @@
 
       const emergency = state.emergencyTimer > 0 ? state.emergencyTimer.toFixed(1) + "초" : "준비됨";
       const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
+      const totalDiscount = pendingDiscount + clutterThresholdBonuses().itemDiscount;
+      discountText.textContent = "할인 -" + Math.round(totalDiscount * 100) + "%";
+      extraChoiceText.textContent = "선택지 +" + state.nextItemExtraChoices;
       const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
       const stock = selectedStock();
       const stockInfo = stockProfitInfo();
@@ -8466,6 +8967,11 @@
         addCreditScore(-10, "디버그 조정");
       } else if (button.dataset.debug === "clear") {
         clearAllPopupsForDebug();
+      } else if (button.dataset.debug === "telegraphBasic") {
+        const basic = POPUP_DEFINITIONS.find(def => def.id === "basic_ad");
+        if (basic) {
+          schedulePopupSpawn(basic);
+        }
       } else if (button.dataset.debug === "investorMode") {
         state.activePlaystyle = "investor_starter";
         state.activePlaystyleName = "투자자 스타터 계약";
@@ -8480,6 +8986,12 @@
     });
 
     function clearAllPopupsForDebug() {
+      for (const pending of state.pendingPopupSpawns) {
+        if (pending.element) {
+          pending.element.remove();
+        }
+      }
+      state.pendingPopupSpawns = [];
       for (const popup of state.openPopups) {
         if (popup.def.type === "stock_broker_app" || popup.def.type === "first_purchase_package") {
           continue;
@@ -8612,7 +9124,15 @@
       event.preventDefault();
     }
 
+    function recordPointerPosition(event) {
+      const layerRect = popupLayer.getBoundingClientRect();
+      state.pointerScreenX = event.clientX - layerRect.left;
+      state.pointerScreenY = event.clientY - layerRect.top;
+    }
+
     shell.addEventListener("pointerdown", startFloatingJoystick);
+    document.addEventListener("pointerdown", recordPointerPosition);
+    document.addEventListener("pointermove", recordPointerPosition);
     document.addEventListener("pointermove", updateFloatingJoystick);
     document.addEventListener("pointerup", finishFloatingJoystick);
     document.addEventListener("pointercancel", finishFloatingJoystick);
