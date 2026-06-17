@@ -1902,6 +1902,7 @@
             <button type="button" data-debug="scalingSelect">Lv.17 최적화</button>
             <button type="button" data-debug="executionWindow">정리 콤보 +1</button>
             <button type="button" data-debug="cleanupCombo5">정리 콤보 x5</button>
+            <button type="button" data-debug="waveNormal">일반 웨이브</button>
             <button type="button" data-debug="waveSide">한쪽 웨이브</button>
             <button type="button" data-debug="waveSurround">포위 웨이브</button>
             <button type="button" data-debug="waveFast">빠른 웨이브</button>
@@ -1910,6 +1911,7 @@
             <button type="button" data-debug="installRealtimeGuard">실시간 감시 설치</button>
             <button type="button" data-debug="installPopupQuarantine">팝업 격리 설치</button>
             <button type="button" data-debug="installKernelGuard">커널 보안 설치</button>
+            <button type="button" data-debug="clearResidentPrograms">보안 제거</button>
             <button type="button" data-debug="invested100">투자금 +100</button>
             <button type="button" data-debug="sponsoredStacks">후원탄 +5</button>
             <button type="button" data-debug="boss">보스 소환</button>
@@ -3092,7 +3094,7 @@
       { id: "bounce_plus", name: "추가 반사", description: "반사형 공격의 연쇄 횟수 +1", compatibleTags: ["projectile", "bounce"] },
       { id: "overcharge", name: "과충전", description: "충전형 공격의 피해와 범위가 증가하지만 충전 시간이 조금 길어집니다.", compatibleTags: ["charge"] },
       { id: "kill_chain", name: "처치 연쇄", description: "이 공격으로 처치한 적 주변에 작은 2차 폭발을 냅니다.", compatibleTags: ["projectile", "beam", "melee", "area", "aura"] },
-      { id: "popup_close_trigger", name: "닫기 연계", description: "팝업을 닫으면 다음 1차 공격 피해 +25%", compatibleTags: ["any"] },
+      { id: "popup_close_trigger", name: "닫기 연계", description: "레거시: 팝업을 닫으면 다음 1차 공격 피해 +25%", compatibleTags: ["any"], hidden: true },
       { id: "compressed_attack", name: "압축 공격", description: "3초 이상 공격하지 못한 모듈의 다음 공격 피해 +30%", compatibleTags: ["beam", "charge", "deploy", "melee", "projectile"] },
       { id: "pierce", name: "관통", description: "투사체 관통 +1, 빔은 폭이 조금 넓어집니다.", compatibleTags: ["projectile", "beam"] }
     ];
@@ -3100,12 +3102,23 @@
     const BUILD_SCALINGS = [
       { id: "investor_capital_amplifier", name: "자본 증폭", playstyle: "investor", description: "투자 중 골드 50G당 주 공격 피해 +5%, 최대 +60%", compatibleTags: ["any"] },
       { id: "investor_credit_precision", name: "신용 정밀화", playstyle: "investor", description: "신용도가 높을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
-      { id: "sponsored_overcharge", name: "광고 과충전", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["projectile", "beam", "turret"] },
-      { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["area", "aura", "explosion", "beam", "field"] },
-      { id: "clean_precision", name: "정리 정밀화", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["projectile", "beam", "melee", "deploy", "line"] },
-      { id: "cleanup_combo_precision", name: "정리 콤보", playstyle: "clean", description: "최근 직접 닫은 팝업 콤보 수에 따라 주 공격 쿨타임과 피해가 증가합니다.", compatibleTags: ["any"] },
+      { id: "investor_reserve_range", name: "비상금 사거리", playstyle: "investor", description: "보유 골드 100G당 주 공격 사거리 +4%, 최대 +24%", compatibleTags: ["any"] },
+      { id: "sponsored_overcharge", name: "후원탄 보급", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["any"] },
+      { id: "sponsored_brand_expansion", name: "브랜드 확장", playstyle: "sponsored", description: "열린 스폰서 광고 수에 따라 주 공격 범위가 넓어집니다.", compatibleTags: ["any"] },
+      { id: "sponsored_monetization", name: "광고 수익화", playstyle: "sponsored", description: "최근 광고 완료 기록이 많을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
+      { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["any"] },
+      { id: "clutter_noise_amplifier", name: "잡음 증폭", playstyle: "clutter", description: "열린 팝업 수가 많을수록 폭발/연쇄/빔 판정이 더 넓어집니다.", compatibleTags: ["any"] },
+      { id: "clutter_adaptation", name: "혼잡 적응", playstyle: "clutter", description: "열린 팝업 수가 많을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
+      { id: "clean_precision", name: "집중 사격", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["any"] },
+      { id: "clean_clear_sight", name: "깨끗한 시야", playstyle: "clean", description: "팝업이 적을수록 사거리와 투사체/빔 판정이 안정적으로 증가합니다.", compatibleTags: ["any"] },
+      { id: "cleanup_combo_precision", name: "정리된 루틴", playstyle: "clean", description: "정리 콤보가 유지되는 동안 주 공격 범위와 쿨타임 안정성이 조금 좋아집니다.", compatibleTags: ["any"] },
       { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "난이도가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
-      { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["projectile", "beam", "line", "aura", "deploy"] }
+      { id: "risk_liability_waiver", name: "책임 면책", playstyle: "curse", description: "최근 피해를 입었거나 약관 패널티가 많을수록 방어적 전투 보정이 생깁니다.", compatibleTags: ["any"] },
+      { id: "risk_premium", name: "위험 프리미엄", playstyle: "curse", description: "현재 난이도 단계가 높을수록 공격 범위와 보상 기대치가 증가합니다.", compatibleTags: ["any"] },
+      { id: "generic_stable_output", name: "안정 출력", playstyle: "generic", description: "피해, 사거리, 쿨타임을 고르게 조금 개선합니다.", compatibleTags: ["any"] },
+      { id: "generic_expanded_ballistics", name: "확장 탄도", playstyle: "generic", description: "일반 사거리와 투사체/빔 판정을 넓힙니다.", compatibleTags: ["any"] },
+      { id: "generic_combat_maintenance", name: "전투 정비", playstyle: "generic", description: "쿨타임과 생존 보조를 조금 개선합니다.", compatibleTags: ["any"] },
+      { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["any"], hidden: true }
     ];
 
     const DEEPENING_OPTIONS = [
@@ -3118,7 +3131,8 @@
       {
         id: "popup_trigger",
         name: "창 닫기 연계",
-        description: "팝업을 닫을 때 1차 공격이 즉시 한 번 발동합니다."
+        description: "레거시: 팝업을 닫을 때 1차 공격이 즉시 한 번 발동합니다.",
+        hidden: true
       },
       {
         id: "secondary_haste",
@@ -3584,11 +3598,28 @@
       return Math.max(0.35, currentWaveMode().spawnMultiplier || 1);
     }
 
-    function combatPressurePopupMultiplier() {
+    function waveModeSpawnMultiplier() {
+      return wavePressureMultiplier();
+    }
+
+    function waveModeEnemyStatModifiers() {
+      const mode = currentWaveMode();
+      return {
+        hpMultiplier: mode.hpMultiplier || 1,
+        speedMultiplier: mode.speedMultiplier || 1,
+        tint: mode.tint || null
+      };
+    }
+
+    function combatPressurePopupIntervalMultiplier() {
       const id = currentWaveMode().id;
       if (id === "surround" || id === "fast_horde") return 1.18;
       if (id === "side_push" || id === "dense_horde") return 1.1;
       return 1;
+    }
+
+    function combatPressurePopupMultiplier() {
+      return combatPressurePopupIntervalMultiplier();
     }
 
     function setWaveMode(modeId, forced = false) {
@@ -3912,10 +3943,29 @@
         investor_starter: "investor",
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
-        clean_desk_starter: "clean",
-        risky_terms_starter: "curse"
+        clean_desk_starter: "cleanup",
+        risky_terms_starter: "risk"
       };
       return map[state.activePlaystyle] || "generic";
+    }
+
+    function buildLabel(buildId) {
+      const map = {
+        investor: "투자자",
+        sponsored: "스폰서",
+        clutter: "난장판",
+        cleanup: "클린업",
+        risk: "위험 계약자",
+        generic: "범용"
+      };
+      return map[buildId] || buildId;
+    }
+
+    function scalingBuild(scaling) {
+      const raw = scaling?.build || scaling?.playstyle || "generic";
+      if (raw === "clean") return "cleanup";
+      if (raw === "curse") return "risk";
+      return raw;
     }
 
     function totalOwnedItemCount() {
@@ -3940,6 +3990,77 @@
 
     function itemHasAnyTag(item, tags) {
       return tags.some(tag => itemHasTag(item, tag));
+    }
+
+    function calculateBuildAffinityScores() {
+      const scores = {
+        investor: 0,
+        sponsored: 0,
+        clutter: 0,
+        cleanup: 0,
+        risk: 0,
+        generic: 0
+      };
+      const contractBuild = activePlaystyleKey();
+      if (scores[contractBuild] !== undefined && contractBuild !== "generic") {
+        scores[contractBuild] += 5;
+      }
+
+      const directTags = {
+        investor: ["investor"],
+        sponsored: ["sponsored"],
+        clutter: ["clutter"],
+        cleanup: ["clean", "cleanup"],
+        risk: ["curse", "risk"]
+      };
+      const adjacentTags = {
+        investor: ["gold", "invested_gold", "credit", "stock", "investment", "economy"],
+        sponsored: ["ad_open", "ad_completion", "sponsor", "sponsored"],
+        clutter: ["popup_count", "crowded", "overload", "aoe"],
+        cleanup: ["low_popup", "popup_close", "emergency_close", "cleanup_combo", "safe"],
+        risk: ["risky", "terms", "difficulty", "heat", "cursed"]
+      };
+      const genericTags = ["generic", "combat", "damage", "range", "cooldown", "health", "vitality", "regen", "lifesteal", "utility"];
+
+      for (const item of ITEMS) {
+        const count = ownedItemCount(item.id);
+        if (count <= 0) {
+          continue;
+        }
+        const tags = itemTags(item);
+        for (const build of ["investor", "sponsored", "clutter", "cleanup", "risk"]) {
+          if (tags.some(tag => directTags[build].includes(tag))) {
+            scores[build] += 1.5 * count;
+          }
+          if (tags.some(tag => adjacentTags[build].includes(tag))) {
+            scores[build] += 0.7 * count;
+          }
+        }
+        if (tags.some(tag => genericTags.includes(tag))) {
+          scores.generic += 0.35 * count;
+        }
+      }
+
+      return scores;
+    }
+
+    function resolveRepresentativeBuild() {
+      const scores = calculateBuildAffinityScores();
+      const contractBuild = activePlaystyleKey();
+      const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+      const top = entries[0] || ["generic", 0];
+      const tied = entries.filter(([, score]) => Math.abs(score - top[1]) < 0.0001).map(([build]) => build);
+
+      if (contractBuild !== "generic" && tied.includes(contractBuild)) {
+        return contractBuild;
+      }
+      if (top[1] < 1 && contractBuild !== "generic") {
+        return contractBuild;
+      }
+      if (top[1] < 1) {
+        return "generic";
+      }
+      return top[0];
     }
 
     function tagLabel(tag) {
@@ -4105,6 +4226,8 @@
         cleanupComboTimer: state.cleanupComboTimer,
         manualDifficulty: manualDifficulty(),
         difficultyScore: currentDifficultyScore(),
+        difficultyStageId: difficultyStageInfo().current.id,
+        termsPenaltyCount: state.termsPenaltyCount,
         playerMaxHP: state.player.maxHP,
         playerHpRatio: hpRatio(),
         activePlaystyle: state.activePlaystyle
@@ -4151,10 +4274,22 @@
           upgraded.damageMultiplierFromUpgrade += Math.min(0.6, Math.floor(context.investedGold / 50) * 0.05);
         } else if (scaling.id === "investor_credit_precision") {
           upgraded.cooldownMultiplierFromUpgrade += context.creditScore >= 80 ? -0.15 : context.creditScore >= 60 ? -0.08 : 0;
+        } else if (scaling.id === "investor_reserve_range") {
+          upgraded.rangeMultiplierFromUpgrade += Math.min(0.24, Math.floor(context.gold / 100) * 0.04);
         } else if (scaling.id === "sponsored_overcharge") {
           upgraded.damageMultiplierFromUpgrade += Math.min(0.4, context.sponsoredCompletions * 0.03);
+        } else if (scaling.id === "sponsored_brand_expansion") {
+          upgraded.rangeMultiplierFromUpgrade += Math.min(0.24, context.openSponsoredAds * 0.08);
+        } else if (scaling.id === "sponsored_monetization") {
+          upgraded.cooldownMultiplierFromUpgrade += -Math.min(0.18, context.sponsoredCompletions * 0.015);
         } else if (scaling.id === "clutter_resonance") {
           upgraded.rangeMultiplierFromUpgrade += context.openPopupCount >= 7 ? 0.4 : context.openPopupCount >= 5 ? 0.25 : context.openPopupCount >= 3 ? 0.1 : 0;
+        } else if (scaling.id === "clutter_noise_amplifier") {
+          upgraded.rangeMultiplierFromUpgrade += Math.min(0.3, context.openPopupCount * 0.04);
+          upgraded.beamWidth += Math.min(8, context.openPopupCount);
+          upgraded.bounceCount += context.openPopupCount >= 5 && tags.includes("bounce") ? 1 : 0;
+        } else if (scaling.id === "clutter_adaptation") {
+          upgraded.cooldownMultiplierFromUpgrade += -Math.min(0.2, context.openPopupCount * 0.025);
         } else if (scaling.id === "clean_precision") {
           if (context.openPopupCount === 0) {
             upgraded.damageMultiplierFromUpgrade += 0.25;
@@ -4163,12 +4298,40 @@
             upgraded.damageMultiplierFromUpgrade += 0.15;
             upgraded.rangeMultiplierFromUpgrade += 0.1;
           }
+        } else if (scaling.id === "clean_clear_sight") {
+          if (context.openPopupCount === 0) {
+            upgraded.rangeMultiplierFromUpgrade += 0.22;
+            upgraded.beamWidth += 6;
+          } else if (context.openPopupCount <= 1) {
+            upgraded.rangeMultiplierFromUpgrade += 0.14;
+            upgraded.beamWidth += 4;
+          }
         } else if (scaling.id === "cleanup_combo_precision" && context.cleanupComboValue > 0) {
           const combo = Math.min(5, Math.floor(context.cleanupComboValue || 0));
-          upgraded.damageMultiplierFromUpgrade += combo * 0.06;
-          upgraded.cooldownMultiplierFromUpgrade += combo * -0.04;
+          upgraded.rangeMultiplierFromUpgrade += combo * 0.035;
+          upgraded.cooldownMultiplierFromUpgrade += combo * -0.018;
         } else if (scaling.id === "curse_heat_overload") {
           upgraded.damageMultiplierFromUpgrade += context.heat * 0.04 + (context.heat >= 5 ? 0.1 : 0);
+        } else if (scaling.id === "risk_liability_waiver") {
+          upgraded.damageMultiplierFromUpgrade += (context.playerHpRatio <= 0.7 ? 0.08 : 0) + Math.min(0.18, context.termsPenaltyCount * 0.04);
+          upgraded.rangeMultiplierFromUpgrade += context.playerHpRatio <= 0.35 ? 0.08 : 0;
+        } else if (scaling.id === "risk_premium") {
+          const stageIndex = Math.max(0, DIFFICULTY_STAGES.findIndex(stage => stage.id === context.difficultyStageId));
+          upgraded.rangeMultiplierFromUpgrade += Math.min(0.3, stageIndex * 0.05);
+          upgraded.damageMultiplierFromUpgrade += Math.min(0.25, stageIndex * 0.035);
+        } else if (scaling.id === "generic_stable_output") {
+          upgraded.damageMultiplierFromUpgrade += 0.08;
+          upgraded.rangeMultiplierFromUpgrade += 0.06;
+          upgraded.cooldownMultiplierFromUpgrade += -0.05;
+        } else if (scaling.id === "generic_expanded_ballistics") {
+          upgraded.rangeMultiplierFromUpgrade += 0.14;
+          upgraded.beamWidth += 4;
+          if (tags.includes("projectile")) {
+            upgraded.extraTargets += 1;
+          }
+        } else if (scaling.id === "generic_combat_maintenance") {
+          upgraded.cooldownMultiplierFromUpgrade += -0.08;
+          upgraded.rangeMultiplierFromUpgrade += 0.04;
         } else if (scaling.id === "gold_reserve_range") {
           upgraded.rangeMultiplierFromUpgrade += Math.min(0.25, Math.floor(context.gold / 100) * 0.05);
         }
@@ -4299,7 +4462,7 @@
       const timePressure = clamp(state.elapsed / CONFIG.popupPressureRampSeconds, 0, 1);
       const baseInterval = CONFIG.popupBaseSpawnInterval - (CONFIG.popupBaseSpawnInterval - CONFIG.popupMinSpawnInterval) * timePressure;
       const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus() + difficultyCombatPressure().popupSpawnMultiplier);
-      return Math.max(CONFIG.popupMinSpawnInterval, (baseInterval * combatPressurePopupMultiplier()) / spawnRate);
+      return Math.max(CONFIG.popupMinSpawnInterval, (baseInterval * combatPressurePopupIntervalMultiplier()) / spawnRate);
     }
 
     function timedRewardDuration(def) {
@@ -5159,6 +5322,9 @@
       );
 
       const candidates = ATTACK_MECHANICS.filter(mechanic => {
+        if (mechanic.hidden) {
+          return false;
+        }
         if (mechanic.id === "bounce_plus" && !form.tags.includes("bounce")) {
           return false;
         }
@@ -5184,7 +5350,8 @@
     function openBuildScalingSelection() {
       const form = selectedFormForSlot("primary");
       const tags = form?.tags || ["any"];
-      const active = activePlaystyleKey();
+      const representativeBuild = resolveRepresentativeBuild();
+      const scores = calculateBuildAffinityScores();
 
       state.selectingModule = true;
       state.selectingPerk = true;
@@ -5193,15 +5360,14 @@
 
       setModulePanelText(
         "Lv.17 빌드 최적화 선택",
-        "현재 런의 자원, 팝업 상태, 플레이스타일을 1차 공격 성장 조건으로 연결합니다."
+        "현재 빌드 판정: " + buildLabel(representativeBuild) + ". 첫 계약과 보유 아이템 태그를 기준으로 이번 최적화 방향이 결정되었습니다."
       );
 
-      const compatible = BUILD_SCALINGS.filter(scaling => tagsCompatible(scaling.compatibleTags, tags));
-      const ordered = [
-        ...compatible.filter(scaling => scaling.playstyle === active),
-        ...compatible.filter(scaling => scaling.playstyle === "generic"),
-        ...compatible.filter(scaling => scaling.playstyle !== active && scaling.playstyle !== "generic")
-      ];
+      const ordered = BUILD_SCALINGS.filter(scaling =>
+        !scaling.hidden &&
+        scalingBuild(scaling) === representativeBuild &&
+        tagsCompatible(scaling.compatibleTags, tags)
+      );
       const unique = [];
       for (const scaling of ordered) {
         if (!unique.some(item => item.id === scaling.id)) {
@@ -5209,15 +5375,21 @@
         }
       }
 
-      for (const scaling of unique.slice(0, 5)) {
+      const display = unique.slice(0, 3);
+      if (display.length === 0) {
+        const fallback = BUILD_SCALINGS.filter(scaling => !scaling.hidden && scalingBuild(scaling) === "generic").slice(0, 3);
+        display.push(...fallback);
+      }
+
+      for (const scaling of display) {
         const button = document.createElement("button");
         button.className = "moduleChoice";
         button.innerHTML =
           "<strong>" + scaling.name + "</strong>" +
-          "<span>" + scaling.description + "<br>계열: " + scaling.playstyle + "</span>";
+          "<span>" + scaling.description + "<br>판정 빌드: " + buildLabel(representativeBuild) + " / 점수 " + (scores[representativeBuild] || 0).toFixed(1) + "</span>";
         button.addEventListener("click", () => {
           state.moduleUpgrades.primary.scaling = scaling.id;
-          state.recentPerkText = "<strong>빌드 최적화:</strong> " + scaling.name;
+          state.recentPerkText = "<strong>빌드 최적화:</strong> " + buildLabel(representativeBuild) + " · " + scaling.name;
           closeModuleSelection();
         });
         perkChoices.appendChild(button);
@@ -5260,7 +5432,7 @@
 
       setModulePanelText("Lv.17 공격 연계 선택", "1차와 보조 공격이 서로 영향을 주는 임시 연계 규칙을 고릅니다.");
 
-      for (const option of SYNERGY_OPTIONS) {
+      for (const option of SYNERGY_OPTIONS.filter(item => !item.hidden)) {
         const button = document.createElement("button");
         button.className = "moduleChoice";
         button.innerHTML = "<strong>" + option.name + "</strong><span>" + option.description + "</span>";
@@ -5382,19 +5554,21 @@
 
     function spawnEnemy(options = {}) {
       const mode = options.mode || currentWaveMode();
+      const waveMods = waveModeEnemyStatModifiers();
       const pos = options.x !== undefined && options.y !== undefined
         ? { x: options.x, y: options.y }
         : spawnPositionForWave(mode);
       const ageBoost = Math.min(1.8, state.elapsed / 110);
       const pressure = difficultyCombatPressure();
-      const hpMultiplier = (options.hpMultiplier || 1) * (mode.hpMultiplier || 1);
-      const speedMultiplier = (options.speedMultiplier || 1) * (mode.speedMultiplier || 1);
+      const hpMultiplier = (options.hpMultiplier || 1) * waveMods.hpMultiplier;
+      const speedMultiplier = (options.speedMultiplier || 1) * waveMods.speedMultiplier;
       const radiusMultiplier = options.radiusMultiplier || 1;
       const hp = CONFIG.enemyHP * (1 + ageBoost * 0.3) * (1 + pressure.enemyHpMultiplier) * hpMultiplier;
       state.enemies.push({
         x: pos.x,
         y: pos.y,
         type: "normal",
+        waveModeId: mode.id,
         radius: 12 * radiusMultiplier,
         hp,
         maxHP: hp,
@@ -5403,7 +5577,7 @@
         hitFlash: 0,
         knockX: 0,
         knockY: 0,
-        tint: options.tint || null,
+        tint: options.tint || waveMods.tint,
         contactTimer: 0,
         dead: false
       });
@@ -5529,6 +5703,11 @@
       }
     }
 
+    function addScreenShake(amount, duration) {
+      state.screenShake.amount = Math.max(state.screenShake.amount || 0, amount);
+      state.screenShake.timer = Math.max(state.screenShake.timer || 0, duration);
+    }
+
     function applyEnemyKnockback(enemy, dirX, dirY, force) {
       if (!enemy || enemy.type === "boss" || force <= 0) {
         return;
@@ -5566,6 +5745,9 @@
           color: sourceSlot === "security" ? "#8be9ff" : undefined,
           size: dealt >= 40 ? 17 : undefined
         });
+        if (dealt >= 45 || state[sourceSlot + "Module"] === "deploy") {
+          addScreenShake(2.2, 0.08);
+        }
       }
       if ((sourceSlot === "primary" || sourceSlot === "secondary") && dealt > 0) {
         const rawHeal = dealt * effectiveLifeStealPercent() + state.stats.lifeStealFlat;
@@ -5575,6 +5757,9 @@
       if (enemy.hp <= 0 && !enemy.dead) {
         enemy.dead = true;
         addDeathBurst(enemy.x, enemy.y, enemy.type === "boss" ? "#ff4f7b" : "#ff7980");
+        if (enemy.type === "boss") {
+          addScreenShake(5, 0.18);
+        }
         recordEnemyKill(enemy);
       }
       return true;
@@ -5613,7 +5798,7 @@
       if (state.enemyTimer <= 0) {
         spawnEnemy();
         const pressure = Math.min(1.45, state.elapsed * 0.012);
-        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, (CONFIG.enemySpawnInterval - pressure) / wavePressureMultiplier());
+        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, (CONFIG.enemySpawnInterval - pressure) / waveModeSpawnMultiplier());
         state.enemyTimer = nextInterval;
       }
 
@@ -5781,11 +5966,6 @@
       if (stats.mechanic?.id === "compressed_attack" && state.moduleIdleTime[slot] >= 3) {
         multiplier += 0.3;
         boosted.consumeCompressed = true;
-      }
-      if (slot === "primary" && stats.mechanic?.id === "popup_close_trigger" && state.popupCloseAttackPrimed) {
-        multiplier += 0.25;
-        boosted.consumePrimed = true;
-        boosted.primedDamageMultiplier = 0.25;
       }
       if (slot === "primary" && state.activePlaystyle === "sponsored_starter" && state.sponsoredAttackBoostStacks > 0) {
         multiplier += 0.2;
@@ -6491,6 +6671,15 @@
       state.particles = state.particles.filter(particle => particle.ttl > 0);
     }
 
+    function updateScreenShake(dt) {
+      state.screenShake.timer = Math.max(0, (state.screenShake.timer || 0) - dt);
+      if (state.screenShake.timer <= 0) {
+        state.screenShake.amount = 0;
+      } else {
+        state.screenShake.amount *= Math.max(0, 1 - dt * 8);
+      }
+    }
+
     function countOpenAdPopups() {
       return state.openPopups.filter(popup => popup.def.type === "sponsored_ad").length;
     }
@@ -6838,6 +7027,7 @@
       updateResidentPrograms(dt);
       updateParticles(dt);
       updateFloatTexts(dt);
+      updateScreenShake(dt);
       updatePopupTimers(dt);
     }
 
@@ -8387,11 +8577,11 @@
       if (!base || state.openPopups.length + state.pendingPopupSpawns.length >= maxOpenPopups()) {
         return null;
       }
-      return createPopup({
+      return schedulePopupSpawn({
         ...base,
         title: program.name + " 알림",
         body: detail || "보안 모듈 업데이트가 필요합니다. 상주 프로그램은 계속 실행되지만 이 창은 직접 확인해야 사라집니다."
-      }, { inputGrace: 0.2 });
+      });
     }
 
     function installResidentProgram(type, popupId = null, options = {}) {
@@ -8442,6 +8632,17 @@
       }
       updateUI();
       return true;
+    }
+
+    function clearResidentPrograms() {
+      for (const program of state.residentPrograms) {
+        program.active = false;
+      }
+      applyReservedMaxHP();
+      state.residentPrograms = [];
+      state.residentProgramIdSeed = 1;
+      createSystemGrowthPopup("보안 프로그램 제거", "상주 보안 프로그램을 모두 제거하고 점유 HP를 복구했습니다.");
+      updateUI();
     }
 
     function securityOrbitPosition(program) {
@@ -8841,13 +9042,9 @@
       const isManualCleanupClose = isManualCleanupReason(options.reason) && isRealPopup;
       if (!state.gameOver && isManualCleanupClose) {
         registerCleanupCombo(options.reason, popup);
-        state.popupCloseAttackPrimed = true;
         addGold(state.stats.goldPerPopupClose, "popupClose");
         applyPopupCloseDamage();
         checkLevelUp();
-      }
-      if (!state.gameOver && isManualCleanupClose && state.moduleSynergy === "popup_trigger") {
-        triggerModuleAttack("primary", true);
       }
     }
 
@@ -9254,6 +9451,10 @@
     }
 
     function render() {
+      ctx.save();
+      if (state.screenShake.timer > 0 && state.screenShake.amount > 0) {
+        ctx.translate(randomRange(-state.screenShake.amount, state.screenShake.amount), randomRange(-state.screenShake.amount, state.screenShake.amount));
+      }
       drawBackground();
       drawPickups();
       drawMines();
@@ -9267,6 +9468,7 @@
       drawResidentPrograms();
       drawParticles();
       drawFloatTexts();
+      ctx.restore();
       drawPausedText();
     }
 
@@ -9563,6 +9765,7 @@
       const upgradeLabels = primaryUpgradeLabels();
       const starterSummary = starterCombatBonusSummary();
       const itemPoolSummary = itemPoolBiasSummary();
+      const representativeBuild = resolveRepresentativeBuild();
       const difficultyInfo = difficultyStageInfo();
       const regenText = effectiveHealthRegenPerSecond().toFixed(1);
       const lifestealText = Math.round(effectiveLifeStealPercent() * 100);
@@ -9572,6 +9775,7 @@
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
+        "<br>현재 판정 빌드: " + buildLabel(representativeBuild) +
         "<br>계약 특전: " + starterSummary +
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>난이도: " + difficultyInfo.current.label + " / 시간 +" + timeDifficultyScore().toFixed(1) + " / 선택 +" + manualDifficulty().toFixed(1) +
@@ -9607,13 +9811,14 @@
         "<br>선택 난이도: +" + manualDifficulty().toFixed(1) +
         "<br>신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
         "<br>빌드 계약: " + state.activePlaystyleName +
+        "<br>현재 판정 빌드: " + buildLabel(representativeBuild) +
         "<br>계약 특전: " + starterSummary +
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
         "<br>재생/흡혈/회복효율: +" + regenText + "/s / " + lifestealText + "% / " + formatSignedPercent(state.stats.healingMultiplier) +
         "<br>웨이브: " + waveModeLabel() + " / 남은 시간 " + Math.max(0, state.waveDirector.timer).toFixed(1) + "초" +
         "<br>보안 프로그램: " + state.residentPrograms.length + "개 / 점유 HP " + state.reservedMaxHP + " / 아이템 비용 +" + Math.round(totalResidentItemCostMultiplier() * 100) + "%" +
-        "<br>정리 콤보/닫기 연계: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
+        "<br>정리 콤보: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초" +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
@@ -9777,6 +9982,8 @@
         state.cleanupComboTimer = state.cleanupComboGrace;
         state.cleanupComboPulse = 0.22;
         syncLegacyCleanupComboFields();
+      } else if (button.dataset.debug === "waveNormal") {
+        setWaveMode("normal", true);
       } else if (button.dataset.debug === "waveSide") {
         setWaveMode("side_push", true);
       } else if (button.dataset.debug === "waveSurround") {
@@ -9793,6 +10000,8 @@
         installResidentProgram("popup_quarantine", null, { free: true });
       } else if (button.dataset.debug === "installKernelGuard") {
         installResidentProgram("kernel_guard", null, { free: true });
+      } else if (button.dataset.debug === "clearResidentPrograms") {
+        clearResidentPrograms();
       } else if (button.dataset.debug === "invested100") {
         state.investedGold += 100;
       } else if (button.dataset.debug === "sponsoredStacks") {
