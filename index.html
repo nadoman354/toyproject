@@ -3506,7 +3506,8 @@
           x: 0,
           y: 0,
           fallbackClickButton: null,
-          fallbackClickUntil: 0
+          fallbackClickUntil: 0,
+          fallbackTouches: Object.create(null)
         },
         draggingPopup: null
       };
@@ -10427,22 +10428,74 @@
     }
 
     function handleMobileUiButtonFallback(event) {
-      if (event.pointerType === "mouse" || !state.mobileInput.active || event.pointerId === state.mobileInput.pointerId) {
+      if (event.pointerType === "mouse" || event.pointerType === "touch" || !state.mobileInput.active || event.pointerId === state.mobileInput.pointerId) {
         return;
       }
       activateMobileFallbackButton(buttonFromTarget(event.target), event);
     }
 
-    function handleMobileTouchButtonFallback(event) {
+    function touchButtonAt(touch) {
+      return buttonFromTarget(document.elementFromPoint(touch.clientX, touch.clientY));
+    }
+
+    function rememberMobileTapCandidates(event) {
       if (!state.mobileInput.active || !event.changedTouches || event.changedTouches.length === 0) {
         return;
       }
       for (const touch of event.changedTouches) {
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        const button = buttonFromTarget(target);
-        if (activateMobileFallbackButton(button, event)) {
+        const button = touchButtonAt(touch);
+        if (!button) {
+          continue;
+        }
+        state.mobileInput.fallbackTouches[touch.identifier] = {
+          button,
+          startX: touch.clientX,
+          startY: touch.clientY,
+          moved: false
+        };
+      }
+    }
+
+    function updateMobileTapCandidates(event) {
+      if (!event.changedTouches || event.changedTouches.length === 0) {
+        return;
+      }
+      for (const touch of event.changedTouches) {
+        const candidate = state.mobileInput.fallbackTouches[touch.identifier];
+        if (!candidate) {
+          continue;
+        }
+        const moved = Math.hypot(touch.clientX - candidate.startX, touch.clientY - candidate.startY);
+        if (moved > 12) {
+          candidate.moved = true;
+        }
+      }
+    }
+
+    function finishMobileTapCandidates(event) {
+      if (!event.changedTouches || event.changedTouches.length === 0) {
+        return;
+      }
+      for (const touch of event.changedTouches) {
+        const candidate = state.mobileInput.fallbackTouches[touch.identifier];
+        if (!candidate) {
+          continue;
+        }
+        delete state.mobileInput.fallbackTouches[touch.identifier];
+        const button = touchButtonAt(touch);
+        if (!candidate.moved && button === candidate.button && activateMobileFallbackButton(button, event)) {
           return;
         }
+      }
+    }
+
+    function cancelMobileTapCandidates(event) {
+      if (!event.changedTouches || event.changedTouches.length === 0) {
+        state.mobileInput.fallbackTouches = Object.create(null);
+        return;
+      }
+      for (const touch of event.changedTouches) {
+        delete state.mobileInput.fallbackTouches[touch.identifier];
       }
     }
 
@@ -10495,7 +10548,10 @@
     shell.addEventListener("pointerdown", startFloatingJoystick);
     document.addEventListener("pointerdown", recordPointerPosition);
     document.addEventListener("pointermove", recordPointerPosition);
-    document.addEventListener("touchstart", handleMobileTouchButtonFallback, { capture: true, passive: false });
+    document.addEventListener("touchstart", rememberMobileTapCandidates, { capture: true, passive: true });
+    document.addEventListener("touchmove", updateMobileTapCandidates, { capture: true, passive: true });
+    document.addEventListener("touchend", finishMobileTapCandidates, { capture: true, passive: false });
+    document.addEventListener("touchcancel", cancelMobileTapCandidates, { capture: true, passive: true });
     document.addEventListener("pointerup", handleMobileUiButtonFallback, true);
     document.addEventListener("pointermove", updateFloatingJoystick);
     document.addEventListener("pointerup", finishFloatingJoystick);
