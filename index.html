@@ -5890,6 +5890,82 @@
       });
     }
 
+    function isEnemyInArcSector(enemy, originX, originY, dirX, dirY, radius, innerRadius, angleDeg) {
+      if (!enemy || enemy.dead) {
+        return false;
+      }
+      const dx = enemy.x - originX;
+      const dy = enemy.y - originY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > radius + enemy.radius) {
+        return false;
+      }
+      if (innerRadius > 0 && dist + enemy.radius < innerRadius) {
+        return false;
+      }
+      if (angleDeg >= 350) {
+        return true;
+      }
+      const direction = normalized(dirX, dirY, { x: 1, y: 0 });
+      const toward = normalized(dx, dy, direction);
+      const dot = toward.x * direction.x + toward.y * direction.y;
+      return dot >= Math.cos((angleDeg * Math.PI / 180) * 0.5);
+    }
+
+    function spawnSlashArcEffect(options) {
+      const ttl = options.ttl || 0.15;
+      state.attacks.push({
+        type: "slashArc",
+        x: options.x,
+        y: options.y,
+        dirX: options.dirX,
+        dirY: options.dirY,
+        radius: options.radius,
+        innerRadius: options.innerRadius || 0,
+        angleDeg: options.angleDeg,
+        ttl,
+        maxTtl: ttl,
+        color: options.color || "255, 214, 122",
+        kind: options.kind || "forward",
+        strength: options.strength || 1,
+        reverse: Boolean(options.reverse)
+      });
+    }
+
+    function applyMeleeImpact(enemy, direction, force, options = {}) {
+      enemy.hitFlash = Math.max(enemy.hitFlash || 0, options.heavy ? 0.16 : 0.12);
+      applyEnemyKnockback(enemy, direction.x, direction.y, force);
+      addHitSpark(enemy.x, enemy.y, options.color || "#ffd47a");
+      if (options.heavy) {
+        addHitSpark(enemy.x, enemy.y, "#fff2a2");
+      }
+    }
+
+    function performMeleeArcHit(options) {
+      const origin = options.origin || state.player;
+      const direction = normalized(options.direction.x, options.direction.y, { x: 1, y: 0 });
+      const killed = [];
+      let hitAny = false;
+      let hitCount = 0;
+      for (const enemy of state.enemies) {
+        if (isEnemyInArcSector(enemy, origin.x, origin.y, direction.x, direction.y, options.radius, options.innerRadius || 0, options.angleDeg)) {
+          const hit = damageEnemyTracked(enemy, options.damage, options.slot, killed);
+          if (hit) {
+            hitAny = true;
+            hitCount += 1;
+            applyMeleeImpact(enemy, direction, options.knockback || 150, {
+              color: options.sparkColor,
+              heavy: options.heavy
+            });
+          }
+        }
+      }
+      if (hitCount >= 3 || options.heavy) {
+        addScreenShake(options.heavy ? 4 : 2.4, options.heavy ? 0.14 : 0.08);
+      }
+      return { hitAny, killed, hitCount };
+    }
+
     function spawnProjectile(options) {
       state.projectiles.push({
         x: options.x,
@@ -5907,6 +5983,7 @@
         bounceDamage: options.bounceDamage || 0,
         bounceRange: options.bounceRange || 140,
         chainDamage: options.chainDamage || 0,
+        visual: options.visual || null,
         hitTargets: []
       });
     }
@@ -6059,53 +6136,107 @@
 
     function executeMeleeForwardSlash(slot, stats, rangeMultiplier = 1, widthMultiplier = 1) {
       const direction = getMeleeDirection(stats.range);
-      const start = { x: state.player.x, y: state.player.y };
-      const end = {
-        x: state.player.x + direction.x * stats.range * rangeMultiplier,
-        y: state.player.y + direction.y * stats.range * rangeMultiplier
-      };
-      const width = CONFIG.meleeSlashWidth * widthMultiplier;
-      const killed = [];
-      let hitAny = false;
-      for (const enemy of state.enemies) {
-        if (!enemy.dead && distancePointToSegment(enemy, start, end) <= width + enemy.radius) {
-          hitAny = damageEnemyTracked(enemy, stats.damage, slot, killed) || hitAny;
-        }
-      }
-      addSlashAttack(start, end, width, 0.16);
-      return { actionPerformed: true, hitAny, killed };
+      const breakthrough = rangeMultiplier > 1.35;
+      const radius = stats.range * (breakthrough ? rangeMultiplier : 1.08);
+      const angleDeg = breakthrough ? 86 : 108;
+      const innerRadius = state.player.radius * 0.45;
+      const hit = performMeleeArcHit({
+        slot,
+        damage: stats.damage,
+        direction,
+        radius,
+        innerRadius,
+        angleDeg,
+        knockback: breakthrough ? 215 : 165,
+        sparkColor: breakthrough ? "#ffbd68" : "#ffd47a",
+        heavy: breakthrough
+      });
+      spawnSlashArcEffect({
+        x: state.player.x,
+        y: state.player.y,
+        dirX: direction.x,
+        dirY: direction.y,
+        radius,
+        innerRadius,
+        angleDeg,
+        ttl: breakthrough ? 0.18 : 0.145,
+        kind: breakthrough ? "breakthrough" : "forward",
+        strength: breakthrough ? 1.45 : 1
+      });
+      return { actionPerformed: true, hitAny: hit.hitAny, killed: hit.killed };
     }
 
     function executeMeleeCircleSlash(slot, stats) {
-      const killed = [];
-      let hitAny = false;
-      for (const enemy of nearestTargets(stats.range, 999)) {
-        hitAny = damageEnemyTracked(enemy, stats.damage, slot, killed) || hitAny;
-      }
-      addCircleAttack(state.player.x, state.player.y, stats.range, "rgba(255, 190, 106, ", 0.18);
-      return { actionPerformed: true, hitAny, killed };
+      const direction = getMeleeDirection(stats.range);
+      const radius = stats.range * 0.94;
+      const hit = performMeleeArcHit({
+        slot,
+        damage: stats.damage * 0.88,
+        direction,
+        radius,
+        innerRadius: state.player.radius * 0.55,
+        angleDeg: 360,
+        knockback: 118,
+        sparkColor: "#ffc875"
+      });
+      spawnSlashArcEffect({
+        x: state.player.x,
+        y: state.player.y,
+        dirX: direction.x,
+        dirY: direction.y,
+        radius,
+        innerRadius: state.player.radius * 0.6,
+        angleDeg: 360,
+        ttl: 0.18,
+        kind: "circle",
+        strength: 1.05
+      });
+      return { actionPerformed: true, hitAny: hit.hitAny, killed: hit.killed };
     }
 
     function executeMeleeSwordWave(slot, stats) {
       const direction = getMeleeDirection(stats.range);
-      const speed = 340;
-      spawnProjectile({
+      const slashRadius = stats.range * 0.74;
+      const slashHit = performMeleeArcHit({
+        slot,
+        damage: stats.damage * 0.45,
+        direction,
+        radius: slashRadius,
+        innerRadius: state.player.radius * 0.4,
+        angleDeg: 94,
+        knockback: 128,
+        sparkColor: "#ffd47a"
+      });
+      spawnSlashArcEffect({
         x: state.player.x,
         y: state.player.y,
+        dirX: direction.x,
+        dirY: direction.y,
+        radius: slashRadius,
+        innerRadius: state.player.radius * 0.4,
+        angleDeg: 94,
+        ttl: 0.12,
+        kind: "wavePrep",
+        strength: 0.9
+      });
+      const speed = 315;
+      spawnProjectile({
+        x: state.player.x + direction.x * 24,
+        y: state.player.y + direction.y * 24,
         vx: direction.x * speed,
         vy: direction.y * speed,
-        radius: 15,
-        damage: stats.damage * 0.9,
-        ttl: Math.max(0.22, (stats.range * 1.55) / speed),
-        maxTtl: Math.max(0.22, (stats.range * 1.55) / speed),
+        radius: 18,
+        damage: stats.damage * 0.78,
+        ttl: Math.max(0.22, (stats.range * 1.35) / speed),
+        maxTtl: Math.max(0.22, (stats.range * 1.35) / speed),
         pierce: Math.max(1, stats.extraTargets || 0),
         sourceSlot: slot,
         mechanicId: stats.mechanic?.id || null,
         chainDamage: stats.damage * 0.3,
+        visual: "sword_wave",
         hitTargets: []
       });
-      addSlashAttack({ x: state.player.x, y: state.player.y }, { x: state.player.x + direction.x * 34, y: state.player.y + direction.y * 34 }, 28, 0.12);
-      return { actionPerformed: true, hitAny: false, killed: [] };
+      return { actionPerformed: true, hitAny: slashHit.hitAny, killed: slashHit.killed };
     }
 
     function executeAuraPulse(slot, stats, options = {}) {
@@ -6236,9 +6367,10 @@
       const config = chargedAttackConfig(stats, {
         duration: 0.9,
         damage: stats.damage * 2,
-        range: stats.range * 1.6,
+        range: stats.range * 1.58,
         width: CONFIG.meleeSlashWidth * 1.6,
-        radius: 0
+        radius: stats.range * 1.58,
+        angleDeg: 132
       });
       queueChargeCast({
         type: "melee_charged_cleave",
@@ -6252,6 +6384,8 @@
         range: config.range,
         width: config.width,
         radius: config.radius,
+        innerRadius: state.player.radius * 0.4,
+        angleDeg: config.angleDeg,
         damage: config.damage,
         sourceSlot: slot,
         mechanicId: stats.mechanic?.id || null,
@@ -6309,14 +6443,35 @@
         });
         addCircleAttack(impact.x, impact.y, cast.radius, "rgba(255, 189, 79, ", 0.28);
       } else if (cast.type === "melee_charged_cleave") {
-        const start = { x: cast.x, y: cast.y };
-        const end = { x: cast.x + cast.dirX * cast.range, y: cast.y + cast.dirY * cast.range };
-        for (const enemy of state.enemies) {
-          if (!enemy.dead && distancePointToSegment(enemy, start, end) <= cast.width + enemy.radius) {
-            hitAny = damageEnemyTracked(enemy, cast.damage, cast.sourceSlot, killed) || hitAny;
-          }
-        }
-        addSlashAttack(start, end, cast.width, 0.24);
+        const direction = normalized(cast.dirX, cast.dirY, { x: 1, y: 0 });
+        const result = performMeleeArcHit({
+          slot: cast.sourceSlot,
+          origin: { x: cast.x, y: cast.y },
+          damage: cast.damage,
+          direction,
+          radius: cast.radius || cast.range,
+          innerRadius: cast.innerRadius || 0,
+          angleDeg: cast.angleDeg || 132,
+          knockback: 285,
+          sparkColor: "#ffe38c",
+          heavy: true
+        });
+        hitAny = result.hitAny;
+        killed.push(...result.killed);
+        spawnSlashArcEffect({
+          x: cast.x,
+          y: cast.y,
+          dirX: direction.x,
+          dirY: direction.y,
+          radius: cast.radius || cast.range,
+          innerRadius: cast.innerRadius || 0,
+          angleDeg: cast.angleDeg || 132,
+          ttl: 0.24,
+          kind: "charged",
+          strength: 1.9,
+          color: "255, 224, 122"
+        });
+        addScreenShake(4.4, 0.16);
       } else if (cast.type === "aura_charged_nova") {
         const center = { x: cast.x, y: cast.y };
         for (const enemy of state.enemies) {
@@ -9242,6 +9397,25 @@
         };
         const tailScreen = worldToScreen(tail);
 
+        if (projectile.visual === "sword_wave") {
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.strokeStyle = "rgba(255, 210, 109, 0.28)";
+          ctx.lineWidth = projectile.radius * 1.7;
+          ctx.beginPath();
+          ctx.moveTo(tailScreen.x, tailScreen.y);
+          ctx.lineTo(screen.x, screen.y);
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(255, 246, 186, 0.92)";
+          ctx.lineWidth = Math.max(4, projectile.radius * 0.45);
+          ctx.beginPath();
+          ctx.moveTo(tailScreen.x, tailScreen.y);
+          ctx.lineTo(screen.x, screen.y);
+          ctx.stroke();
+          ctx.restore();
+          continue;
+        }
+
         ctx.beginPath();
         ctx.strokeStyle = "rgba(255, 246, 163, 0.45)";
         ctx.lineWidth = 3;
@@ -9254,6 +9428,65 @@
         ctx.arc(screen.x, screen.y, projectile.radius, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
+
+    function drawSlashArcShape(attack, alpha, previewRatio = 1) {
+      const screen = worldToScreen({ x: attack.x, y: attack.y });
+      const direction = normalized(attack.dirX, attack.dirY, { x: 1, y: 0 });
+      const face = Math.atan2(direction.y, direction.x);
+      const angle = (attack.angleDeg || 100) * Math.PI / 180;
+      const half = angle * 0.5 * previewRatio;
+      const start = face - half;
+      const end = face + half;
+      const radius = attack.radius * (attack.kind === "chargedPreview" ? 0.98 : 1);
+      const inner = Math.max(0, attack.innerRadius || 0);
+      const color = attack.color || "255, 214, 122";
+      const strength = attack.strength || 1;
+
+      ctx.save();
+      ctx.lineCap = "round";
+      if ((attack.angleDeg || 0) >= 350) {
+        const ringRadius = (radius + inner) * 0.5;
+        const lineWidth = Math.max(8, (radius - inner) * 0.32) * strength;
+        const gap = Math.PI * 0.28;
+        ctx.strokeStyle = "rgba(" + color + ", " + (alpha * 0.18) + ")";
+        ctx.lineWidth = lineWidth * 1.35;
+        ctx.beginPath();
+        ctx.arc(screen.x, screen.y, ringRadius, face - Math.PI + gap, face + Math.PI - gap);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(255, 246, 186, " + (alpha * 0.85) + ")";
+        ctx.lineWidth = Math.max(4, lineWidth * 0.36);
+        ctx.beginPath();
+        ctx.arc(screen.x, screen.y, ringRadius, face - Math.PI + gap * 0.55, face + Math.PI - gap * 0.55);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, radius, start, end);
+      if (inner > 0) {
+        ctx.arc(screen.x, screen.y, inner, end, start, true);
+      } else {
+        ctx.lineTo(screen.x, screen.y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "rgba(" + color + ", " + (alpha * 0.1 * strength) + ")";
+      ctx.fill();
+
+      const middleRadius = inner + (radius - inner) * 0.72;
+      ctx.strokeStyle = "rgba(" + color + ", " + (alpha * 0.34) + ")";
+      ctx.lineWidth = Math.max(10, (radius - inner) * 0.24) * strength;
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, middleRadius, start, end);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255, 247, 198, " + (alpha * 0.95) + ")";
+      ctx.lineWidth = Math.max(4, 5 * strength);
+      ctx.beginPath();
+      ctx.arc(screen.x, screen.y, radius * 0.9, start + angle * 0.08, end - angle * 0.08);
+      ctx.stroke();
+      ctx.restore();
     }
 
     function drawChargeCasts() {
@@ -9279,15 +9512,18 @@
           ctx.arc(start.x, start.y, 12 + ratio * 16, 0, Math.PI * 2);
           ctx.fill();
         } else if (cast.type === "melee_charged_cleave") {
-          const end = worldToScreen({ x: cast.x + cast.dirX * cast.range, y: cast.y + cast.dirY * cast.range });
-          ctx.lineCap = "round";
-          ctx.strokeStyle = "rgba(255, 190, 106, " + (0.12 + ratio * 0.28) + ")";
-          ctx.lineWidth = cast.width * (0.35 + ratio * 0.65);
-          ctx.beginPath();
-          ctx.moveTo(start.x, start.y);
-          ctx.lineTo(end.x, end.y);
-          ctx.stroke();
-          ctx.lineCap = "butt";
+          drawSlashArcShape({
+            x: cast.x,
+            y: cast.y,
+            dirX: cast.dirX,
+            dirY: cast.dirY,
+            radius: cast.radius || cast.range,
+            innerRadius: cast.innerRadius || 0,
+            angleDeg: cast.angleDeg || 132,
+            color: "255, 208, 112",
+            kind: "chargedPreview",
+            strength: 1.25
+          }, 0.24 + ratio * 0.46, 0.42 + ratio * 0.58);
         } else if (cast.type === "aura_charged_nova") {
           ctx.strokeStyle = "rgba(97, 211, 255, " + (0.2 + ratio * 0.35) + ")";
           ctx.lineWidth = 3 + ratio * 4;
@@ -9392,6 +9628,8 @@
           ctx.lineTo(end.x, end.y);
           ctx.stroke();
           ctx.lineCap = "butt";
+        } else if (attack.type === "slashArc") {
+          drawSlashArcShape(attack, alpha);
         } else {
           const start = worldToScreen({ x: attack.x1, y: attack.y1 });
           const end = worldToScreen({ x: attack.x2, y: attack.y2 });
