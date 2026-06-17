@@ -384,6 +384,41 @@
       border: 1px solid rgba(115, 191, 255, 0.24);
     }
 
+    .residentProgramHud {
+      display: grid;
+      gap: 6px;
+      margin-top: 9px;
+    }
+
+    #residentProgramList {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .residentProgramLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 5px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .residentProgramLine.suspended {
+      color: #ffc7c7;
+      background: rgba(255, 89, 100, 0.11);
+    }
+
+    .residentProgramSummary {
+      color: #bce8ff;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
     .economyBadges {
       display: flex;
       gap: 5px;
@@ -1133,6 +1168,11 @@
       background: #56339a;
     }
 
+    .security_installer .titleBar,
+    .security_update_notice .titleBar {
+      background: #15577b;
+    }
+
     .titleBar:active {
       cursor: grabbing;
     }
@@ -1171,6 +1211,44 @@
 
     .system_notice .popupBody {
       white-space: pre-line;
+    }
+
+    .popupWindow.security_installer,
+    .popupWindow.security_update_notice {
+      background: #e7f4ff;
+      border-color: #3996c6;
+      color: #102b3a;
+    }
+
+    .securityInstallBox {
+      display: grid;
+      gap: 5px;
+      margin-top: 8px;
+      padding: 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.62);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .popupWindow.quarantined {
+      outline: 3px solid rgba(91, 213, 255, 0.88);
+      box-shadow: 0 0 0 6px rgba(91, 213, 255, 0.14), 0 18px 44px rgba(0, 0, 0, 0.34);
+      filter: saturate(0.72);
+    }
+
+    .popupWindow.quarantined::after {
+      content: "격리 중";
+      position: absolute;
+      right: 8px;
+      bottom: 7px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      color: #073044;
+      background: #8be9ff;
+      font-size: 10px;
+      font-weight: 1000;
+      pointer-events: none;
     }
 
     .popupControls {
@@ -1784,6 +1862,10 @@
         </div>
         <button id="openInventoryButton" type="button">보유 아이템 보기</button>
         <div id="lastItem" class="recentMini">최근 아이템: 없음</div>
+        <div id="residentProgramHud" class="hudCard residentProgramHud">
+          <div class="hudCardHeader"><span>보안 프로그램</span><strong id="residentProgramCount">0</strong></div>
+          <div id="residentProgramList">설치 없음</div>
+        </div>
         <h2 class="panelTitle" style="margin-top: 10px;">아이템 목록</h2>
         <div id="itemInventory">보유 아이템 없음</div>
         <h2 class="panelTitle" style="margin-top: 10px;">최근 성장</h2>
@@ -1820,6 +1902,14 @@
             <button type="button" data-debug="scalingSelect">Lv.17 최적화</button>
             <button type="button" data-debug="executionWindow">정리 콤보 +1</button>
             <button type="button" data-debug="cleanupCombo5">정리 콤보 x5</button>
+            <button type="button" data-debug="waveSide">한쪽 웨이브</button>
+            <button type="button" data-debug="waveSurround">포위 웨이브</button>
+            <button type="button" data-debug="waveFast">빠른 웨이브</button>
+            <button type="button" data-debug="waveDense">두꺼운 웨이브</button>
+            <button type="button" data-debug="installKeyboardSecurity">키보드 보안 설치</button>
+            <button type="button" data-debug="installRealtimeGuard">실시간 감시 설치</button>
+            <button type="button" data-debug="installPopupQuarantine">팝업 격리 설치</button>
+            <button type="button" data-debug="installKernelGuard">커널 보안 설치</button>
             <button type="button" data-debug="invested100">투자금 +100</button>
             <button type="button" data-debug="sponsoredStacks">후원탄 +5</button>
             <button type="button" data-debug="boss">보스 소환</button>
@@ -2511,6 +2601,55 @@
         weight: 40
       },
       {
+        id: "keyboard_security_installer",
+        title: "키보드 보안 모듈 설치",
+        body: "상주 입력 보호 모듈입니다. 설치하면 작은 보안 에이전트가 플레이어 주변을 순찰하지만 이동 성능이 약간 감소합니다.",
+        type: "security_installer",
+        copyTone: "security_installer",
+        families: ["generic", "security"],
+        weight: 5,
+        installProgram: "keyboard_security"
+      },
+      {
+        id: "realtime_guard_installer",
+        title: "실시간 감시 엔진",
+        body: "실시간 감시 스캔을 켭니다. 주기적으로 적을 스캔하지만 아이템 머신 처리 비용이 소폭 증가합니다.",
+        type: "security_installer",
+        copyTone: "security_installer",
+        families: ["generic", "security"],
+        weight: 4,
+        installProgram: "realtime_guard"
+      },
+      {
+        id: "popup_quarantine_installer",
+        title: "팝업 격리소 설치",
+        body: "광고성 팝업을 자동 격리하는 상주 서비스입니다. 구독 유지 비용을 내지 못하면 기능이 일시 정지됩니다.",
+        type: "security_installer",
+        copyTone: "security_installer",
+        families: ["generic", "security"],
+        weight: 4,
+        installProgram: "popup_quarantine"
+      },
+      {
+        id: "kernel_guard_installer",
+        title: "커널 보안 모듈",
+        body: "강한 시스템 보호 스캔입니다. 전투 보조 성능은 높지만 최대 HP 일부를 시스템 자원으로 점유합니다.",
+        type: "security_installer",
+        copyTone: "security_installer",
+        families: ["generic", "security"],
+        weight: 3,
+        installProgram: "kernel_guard"
+      },
+      {
+        id: "security_update_notice",
+        title: "보안 모듈 업데이트 알림",
+        body: "상주 보안 프로그램이 업데이트 또는 구독 확인을 요청했습니다. 확인하지 않아도 전투는 계속되지만 창은 방해가 됩니다.",
+        type: "security_update_notice",
+        copyTone: "security_installer",
+        families: ["system", "security"],
+        weight: 0
+      },
+      {
         id: "ad_buff",
         title: "스폰서 보상 광고",
         body: "이 창을 유지하는 동안 후원 효과가 적용됩니다. 끝까지 유지하면 시청 보상 상태가 기록됩니다.",
@@ -3002,6 +3141,65 @@
       { id: "nightmare", label: "관리자 권한 상실", min: 16 }
     ];
 
+    const WAVE_MODES = [
+      { id: "normal", label: "일반 밀도", duration: [10, 16], spawnMultiplier: 1, hpMultiplier: 1, speedMultiplier: 1, pattern: "around", intense: false },
+      { id: "side_push", label: "한쪽 압박", duration: [8, 12], spawnMultiplier: 1.25, hpMultiplier: 1, speedMultiplier: 1, pattern: "side", intense: true },
+      { id: "surround", label: "포위 압박", duration: [7, 11], spawnMultiplier: 1.35, hpMultiplier: 0.95, speedMultiplier: 1, pattern: "ring", intense: true },
+      { id: "fast_horde", label: "빠른 물결", duration: [6, 9], spawnMultiplier: 1.3, hpMultiplier: 0.75, speedMultiplier: 1.28, pattern: "around", intense: true },
+      { id: "dense_horde", label: "두꺼운 물결", duration: [8, 12], spawnMultiplier: 0.95, hpMultiplier: 1.45, speedMultiplier: 0.82, pattern: "around", intense: true },
+      { id: "breather", label: "정리 구간", duration: [5, 8], spawnMultiplier: 0.65, hpMultiplier: 0.9, speedMultiplier: 0.9, pattern: "around", intense: false }
+    ];
+
+    const SECURITY_PROGRAM_DEFS = [
+      {
+        type: "keyboard_security",
+        name: "키보드 보안",
+        installCost: 35,
+        orbitRadius: 52,
+        attackInterval: 0.55,
+        range: 42,
+        damage: 6,
+        knockback: 85,
+        moveSpeedPenalty: -0.03,
+        updateInterval: [28, 38],
+        summary: "입력 보호 에이전트가 플레이어 주변을 돌며 근접 적을 약하게 밀어냅니다."
+      },
+      {
+        type: "realtime_guard",
+        name: "실시간 감시",
+        installCost: 45,
+        scanInterval: 3.5,
+        scanRadius: 135,
+        damage: 11,
+        itemCostMultiplier: 0.05,
+        updateInterval: [22, 30],
+        summary: "주기적으로 감시 스캔을 방출하고 감염 팝업 진행을 조금 늦춥니다."
+      },
+      {
+        type: "popup_quarantine",
+        name: "팝업 격리소",
+        installCost: 40,
+        quarantineInterval: 16,
+        upkeepGold: 6,
+        upkeepInterval: 20,
+        updateInterval: [26, 34],
+        summary: "가장 오래된 일반 광고성 팝업을 자동 격리합니다. 수동 정리 콤보는 오르지 않습니다."
+      },
+      {
+        type: "kernel_guard",
+        name: "커널 보안",
+        installCost: 55,
+        scanInterval: 4.5,
+        scanRadius: 168,
+        damage: 21,
+        knockback: 160,
+        reservedMaxHP: 20,
+        itemCostMultiplier: 0.06,
+        updateInterval: [30, 42],
+        summary: "강한 커널 스캔을 방출하지만 최대 HP 일부를 시스템 자원으로 점유합니다."
+      }
+    ];
+
     const canvas = document.getElementById("fieldCanvas");
     const ctx = canvas.getContext("2d");
     const shell = document.getElementById("gameShell");
@@ -3044,6 +3242,8 @@
     const rollItemButton = document.getElementById("rollItemButton");
     const openInventoryButton = document.getElementById("openInventoryButton");
     const lastItem = document.getElementById("lastItem");
+    const residentProgramCount = document.getElementById("residentProgramCount");
+    const residentProgramList = document.getElementById("residentProgramList");
     const itemInventory = document.getElementById("itemInventory");
     const recentPerk = document.getElementById("recentPerk");
     const statusPanel = document.getElementById("statusPanel");
@@ -3127,6 +3327,17 @@
         difficultyPulseTimer: 0,
         difficultyNoticeText: "",
         difficultyNoticeTimer: 0,
+        waveDirector: {
+          mode: "normal",
+          timer: randomRange(15, 25),
+          nextModeTimer: randomRange(15, 25),
+          intensity: 1,
+          noticeTimer: 0,
+          noticeText: "",
+          side: "left",
+          lastMode: "normal",
+          intenseLast: false
+        },
         popupExecutionWindow: 0,
         cleanupComboWindow: 0,
         cleanupComboStacks: 0,
@@ -3250,6 +3461,14 @@
         fields: [],
         projectiles: [],
         chargeCasts: [],
+        floatTexts: [],
+        particles: [],
+        screenShake: { amount: 0, timer: 0 },
+        residentPrograms: [],
+        residentProgramIdSeed: 1,
+        reservedMaxHP: 0,
+        securityUpdateTimer: randomRange(18, 26),
+        securityBillingTimer: 0,
         pickups: [],
         attacks: [],
         openPopups: [],
@@ -3349,10 +3568,79 @@
       return map[stage] || map.normal;
     }
 
+    function waveModeById(id) {
+      return WAVE_MODES.find(mode => mode.id === id) || WAVE_MODES[0];
+    }
+
+    function currentWaveMode() {
+      return waveModeById(state.waveDirector?.mode || "normal");
+    }
+
+    function waveModeLabel(mode = currentWaveMode()) {
+      return mode.label || "일반 밀도";
+    }
+
+    function wavePressureMultiplier() {
+      return Math.max(0.35, currentWaveMode().spawnMultiplier || 1);
+    }
+
+    function combatPressurePopupMultiplier() {
+      const id = currentWaveMode().id;
+      if (id === "surround" || id === "fast_horde") return 1.18;
+      if (id === "side_push" || id === "dense_horde") return 1.1;
+      return 1;
+    }
+
+    function setWaveMode(modeId, forced = false) {
+      const mode = waveModeById(modeId);
+      const duration = randomRange(mode.duration[0], mode.duration[1]);
+      state.waveDirector.lastMode = state.waveDirector.mode;
+      state.waveDirector.mode = mode.id;
+      state.waveDirector.timer = duration;
+      state.waveDirector.nextModeTimer = duration;
+      state.waveDirector.intenseLast = Boolean(mode.intense);
+      state.waveDirector.side = pickRandom(["left", "right", "top", "bottom"]);
+      state.waveDirector.noticeText = waveModeLabel(mode);
+      state.waveDirector.noticeTimer = forced ? 2.4 : 1.8;
+    }
+
+    function chooseNextWaveMode() {
+      if (state.elapsed < 25) {
+        return "normal";
+      }
+
+      if (state.waveDirector.intenseLast && Math.random() < 0.42) {
+        return "breather";
+      }
+
+      let candidates = ["normal", "side_push", "fast_horde"];
+      if (state.elapsed >= 60) {
+        candidates = candidates.concat(["surround", "dense_horde"]);
+      }
+      if (state.elapsed >= 90) {
+        candidates = candidates.concat(["side_push", "surround", "fast_horde", "dense_horde"]);
+      }
+
+      const previous = state.waveDirector.mode;
+      const filtered = candidates.filter(id => id !== previous || candidates.length <= 1);
+      return pickRandom(filtered.length > 0 ? filtered : candidates);
+    }
+
+    function updateWaveDirector(dt) {
+      const director = state.waveDirector;
+      director.noticeTimer = Math.max(0, director.noticeTimer - dt);
+      director.timer -= dt;
+      if (director.timer > 0) {
+        return;
+      }
+      setWaveMode(chooseNextWaveMode());
+    }
+
     function difficultyEffectSummary() {
       const pressure = difficultyCombatPressure();
       const notice = state.difficultyNoticeTimer > 0 ? " / " + state.difficultyNoticeText : "";
-      return "선택 난이도 +" + manualDifficulty().toFixed(1) + " / 팝업 압박 +" + Math.round((difficultyPressureBonus() + pressure.popupSpawnMultiplier) * 100) + "%" + notice;
+      const waveNotice = state.waveDirector.noticeTimer > 0 ? " / " + state.waveDirector.noticeText : "";
+      return "선택 난이도 +" + manualDifficulty().toFixed(1) + " / 팝업 압박 +" + Math.round((difficultyPressureBonus() + pressure.popupSpawnMultiplier) * 100) + "%" + notice + waveNotice;
     }
 
     function updateDifficultyStagePulse(dt) {
@@ -3477,19 +3765,19 @@
       }
 
       if (state.activePlaystyle === "investor_starter") {
-        return defs.filter(def => popupInFamily(def, "investor") || popupInFamily(def, "system"));
+        return defs.filter(def => popupInFamily(def, "investor") || popupInFamily(def, "security") || popupInFamily(def, "system"));
       }
       if (state.activePlaystyle === "sponsored_starter") {
-        return defs.filter(def => popupInFamily(def, "sponsored") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+        return defs.filter(def => popupInFamily(def, "sponsored") || popupInFamily(def, "generic") || popupInFamily(def, "security") || popupInFamily(def, "system"));
       }
       if (state.activePlaystyle === "clean_desk_starter") {
-        return defs.filter(def => popupInFamily(def, "clean") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+        return defs.filter(def => popupInFamily(def, "clean") || popupInFamily(def, "generic") || popupInFamily(def, "security") || popupInFamily(def, "system"));
       }
       if (state.activePlaystyle === "clutter_chaos_starter") {
-        return defs.filter(def => popupInFamily(def, "clutter") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+        return defs.filter(def => popupInFamily(def, "clutter") || popupInFamily(def, "generic") || popupInFamily(def, "security") || popupInFamily(def, "system"));
       }
       if (state.activePlaystyle === "risky_terms_starter") {
-        return defs.filter(def => popupInFamily(def, "curse") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
+        return defs.filter(def => popupInFamily(def, "curse") || popupInFamily(def, "generic") || popupInFamily(def, "security") || popupInFamily(def, "system"));
       }
       return defs;
     }
@@ -3971,8 +4259,36 @@
       return CONFIG.playerAttackRange * Math.max(0.2, 1 + state.stats.attackRangeMultiplier + dynamicItemRangeMultiplier());
     }
 
+    function activeResidentPrograms() {
+      return state.residentPrograms.filter(program => program.active && !program.suspended);
+    }
+
+    function totalResidentMoveSpeedPenalty() {
+      return activeResidentPrograms().reduce((sum, program) => sum + (program.moveSpeedPenalty || 0), 0);
+    }
+
+    function totalResidentItemCostMultiplier() {
+      return activeResidentPrograms().reduce((sum, program) => sum + (program.itemCostMultiplier || 0), 0);
+    }
+
+    function totalReservedMaxHP() {
+      return state.residentPrograms
+        .filter(program => program.active)
+        .reduce((sum, program) => sum + (program.reservedMaxHP || 0), 0);
+    }
+
+    function applyReservedMaxHP() {
+      const nextReserved = totalReservedMaxHP();
+      const delta = nextReserved - (state.reservedMaxHP || 0);
+      state.reservedMaxHP = nextReserved;
+      if (delta !== 0) {
+        state.player.maxHP = Math.max(20, state.player.maxHP - delta);
+        state.player.hp = clamp(state.player.hp, 0, state.player.maxHP);
+      }
+    }
+
     function effectiveMoveSpeed() {
-      let multiplier = state.stats.moveSpeedMultiplier;
+      let multiplier = state.stats.moveSpeedMultiplier + totalResidentMoveSpeedPenalty();
       if (state.emergencyBoostTimer > 0) {
         multiplier += state.stats.emergencyMoveSpeedMultiplier;
       }
@@ -3983,7 +4299,7 @@
       const timePressure = clamp(state.elapsed / CONFIG.popupPressureRampSeconds, 0, 1);
       const baseInterval = CONFIG.popupBaseSpawnInterval - (CONFIG.popupBaseSpawnInterval - CONFIG.popupMinSpawnInterval) * timePressure;
       const spawnRate = Math.max(0.2, 1 + state.stats.popupSpawnRateMultiplier + dynamicItemPopupSpawnMultiplier() + difficultyPressureBonus() + difficultyCombatPressure().popupSpawnMultiplier);
-      return Math.max(CONFIG.popupMinSpawnInterval, baseInterval / spawnRate);
+      return Math.max(CONFIG.popupMinSpawnInterval, (baseInterval * combatPressurePopupMultiplier()) / spawnRate);
     }
 
     function timedRewardDuration(def) {
@@ -4000,7 +4316,7 @@
       const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
       const discount = (state.openPopups.length >= 5 ? state.stats.crowdedItemDiscount : 0) + clutterThresholdBonuses().itemDiscount + pendingDiscount;
       const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
-      return Math.max(1, Math.floor(capped * Math.max(0.2, 1 - discount) * Math.max(1, 1 + debtPenalty)));
+      return Math.max(1, Math.floor(capped * Math.max(0.2, 1 - discount) * Math.max(1, 1 + debtPenalty + totalResidentItemCostMultiplier())));
     }
 
     function popupStorePrice(product) {
@@ -5015,9 +5331,7 @@
       }
     }
 
-    function spawnEnemy() {
-      const edge = Math.floor(Math.random() * 4);
-      const margin = 80;
+    function edgeSpawnPosition(edge = Math.floor(Math.random() * 4), margin = 80) {
       const left = state.camera.x;
       const top = state.camera.y;
       const right = left + CONFIG.canvasWidth;
@@ -5039,18 +5353,57 @@
         y = randomRange(top - margin, bottom + margin);
       }
 
+      return { x, y };
+    }
+
+    function spawnPositionForWave(mode) {
+      const margin = 86;
+      const left = state.camera.x;
+      const top = state.camera.y;
+      const right = left + CONFIG.canvasWidth;
+      const bottom = top + CONFIG.canvasHeight;
+      if (mode.pattern === "side") {
+        const side = state.waveDirector.side || "left";
+        if (side === "left") return { x: left - margin, y: randomRange(top - margin, bottom + margin) };
+        if (side === "right") return { x: right + margin, y: randomRange(top - margin, bottom + margin) };
+        if (side === "top") return { x: randomRange(left - margin, right + margin), y: top - margin };
+        return { x: randomRange(left - margin, right + margin), y: bottom + margin };
+      }
+      if (mode.pattern === "ring") {
+        const angle = randomRange(0, Math.PI * 2);
+        const radius = Math.max(CONFIG.canvasWidth, CONFIG.canvasHeight) * randomRange(0.58, 0.76);
+        return {
+          x: state.player.x + Math.cos(angle) * radius,
+          y: state.player.y + Math.sin(angle) * radius
+        };
+      }
+      return edgeSpawnPosition(Math.floor(Math.random() * 4), 80);
+    }
+
+    function spawnEnemy(options = {}) {
+      const mode = options.mode || currentWaveMode();
+      const pos = options.x !== undefined && options.y !== undefined
+        ? { x: options.x, y: options.y }
+        : spawnPositionForWave(mode);
       const ageBoost = Math.min(1.8, state.elapsed / 110);
       const pressure = difficultyCombatPressure();
-      const hp = CONFIG.enemyHP * (1 + ageBoost * 0.3) * (1 + pressure.enemyHpMultiplier);
+      const hpMultiplier = (options.hpMultiplier || 1) * (mode.hpMultiplier || 1);
+      const speedMultiplier = (options.speedMultiplier || 1) * (mode.speedMultiplier || 1);
+      const radiusMultiplier = options.radiusMultiplier || 1;
+      const hp = CONFIG.enemyHP * (1 + ageBoost * 0.3) * (1 + pressure.enemyHpMultiplier) * hpMultiplier;
       state.enemies.push({
-        x,
-        y,
+        x: pos.x,
+        y: pos.y,
         type: "normal",
-        radius: 12,
+        radius: 12 * radiusMultiplier,
         hp,
         maxHP: hp,
-        speed: CONFIG.enemySpeed * (1 + ageBoost * 0.18) * (1 + pressure.enemySpeedMultiplier),
+        speed: CONFIG.enemySpeed * (1 + ageBoost * 0.18) * (1 + pressure.enemySpeedMultiplier) * speedMultiplier,
         damage: CONFIG.enemyDamage,
+        hitFlash: 0,
+        knockX: 0,
+        knockY: 0,
+        tint: options.tint || null,
         contactTimer: 0,
         dead: false
       });
@@ -5129,6 +5482,71 @@
       updateInterestKillProgress();
     }
 
+    function addDamageNumber(x, y, amount, options = {}) {
+      if (amount <= 0 || state.floatTexts.length > 80) {
+        return;
+      }
+      state.floatTexts.push({
+        x: x + randomRange(-8, 8),
+        y: y + randomRange(-5, 5),
+        vx: randomRange(-8, 8),
+        vy: randomRange(-42, -28),
+        text: options.text || Math.max(1, Math.round(amount)).toString(),
+        color: options.color || "#fff2a2",
+        size: options.size || (amount >= 30 ? 16 : 12),
+        ttl: options.ttl || 0.65,
+        maxTtl: options.ttl || 0.65
+      });
+    }
+
+    function addParticle(x, y, options = {}) {
+      if (state.particles.length > 180) {
+        return;
+      }
+      const speed = options.speed || randomRange(35, 120);
+      const angle = options.angle ?? randomRange(0, Math.PI * 2);
+      state.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: options.radius || randomRange(2, 4),
+        color: options.color || "#ffb2b6",
+        ttl: options.ttl || 0.32,
+        maxTtl: options.ttl || 0.32
+      });
+    }
+
+    function addHitSpark(x, y, color = "#fff2a2") {
+      for (let i = 0; i < 3; i += 1) {
+        addParticle(x, y, { color, speed: randomRange(42, 105), radius: randomRange(1.5, 3), ttl: randomRange(0.16, 0.28) });
+      }
+    }
+
+    function addDeathBurst(x, y, color = "#ff7980") {
+      for (let i = 0; i < 7; i += 1) {
+        addParticle(x, y, { color, speed: randomRange(70, 150), radius: randomRange(2, 4.5), ttl: randomRange(0.26, 0.46) });
+      }
+    }
+
+    function applyEnemyKnockback(enemy, dirX, dirY, force) {
+      if (!enemy || enemy.type === "boss" || force <= 0) {
+        return;
+      }
+      enemy.knockX = (enemy.knockX || 0) + dirX * force;
+      enemy.knockY = (enemy.knockY || 0) + dirY * force;
+    }
+
+    function knockbackForceForSource(sourceSlot) {
+      const moduleId = sourceSlot === "primary" || sourceSlot === "secondary" ? state[sourceSlot + "Module"] : sourceSlot;
+      if (moduleId === "melee") return 135;
+      if (moduleId === "deploy") return 165;
+      if (moduleId === "aura") return 26;
+      if (moduleId === "ranged") return 44;
+      if (moduleId === "security") return 58;
+      return 34;
+    }
+
     function damageEnemy(enemy, amount, sourceSlot) {
       if (!enemy || enemy.dead) {
         return false;
@@ -5139,6 +5557,16 @@
       if (sourceSlot) {
         enemy.lastHitSlot = sourceSlot;
       }
+      if (dealt > 0) {
+        enemy.hitFlash = 0.08;
+        const pushDir = normalized(enemy.x - state.player.x, enemy.y - state.player.y, { x: 1, y: 0 });
+        applyEnemyKnockback(enemy, pushDir.x, pushDir.y, knockbackForceForSource(sourceSlot));
+        addHitSpark(enemy.x, enemy.y, sourceSlot === "security" ? "#8be9ff" : "#fff2a2");
+        addDamageNumber(enemy.x, enemy.y - enemy.radius, dealt, {
+          color: sourceSlot === "security" ? "#8be9ff" : undefined,
+          size: dealt >= 40 ? 17 : undefined
+        });
+      }
       if ((sourceSlot === "primary" || sourceSlot === "secondary") && dealt > 0) {
         const rawHeal = dealt * effectiveLifeStealPercent() + state.stats.lifeStealFlat;
         const healCap = state.player.maxHP * 0.04;
@@ -5146,6 +5574,7 @@
       }
       if (enemy.hp <= 0 && !enemy.dead) {
         enemy.dead = true;
+        addDeathBurst(enemy.x, enemy.y, enemy.type === "boss" ? "#ff4f7b" : "#ff7980");
         recordEnemyKill(enemy);
       }
       return true;
@@ -5184,11 +5613,17 @@
       if (state.enemyTimer <= 0) {
         spawnEnemy();
         const pressure = Math.min(1.45, state.elapsed * 0.012);
-        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, CONFIG.enemySpawnInterval - pressure);
+        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, (CONFIG.enemySpawnInterval - pressure) / wavePressureMultiplier());
         state.enemyTimer = nextInterval;
       }
 
       for (const enemy of state.enemies) {
+        enemy.hitFlash = Math.max(0, (enemy.hitFlash || 0) - dt);
+        enemy.x += (enemy.knockX || 0) * dt;
+        enemy.y += (enemy.knockY || 0) * dt;
+        const knockFriction = Math.max(0, 1 - dt * 7.5);
+        enemy.knockX = (enemy.knockX || 0) * knockFriction;
+        enemy.knockY = (enemy.knockY || 0) * knockFriction;
         const dx = state.player.x - enemy.x;
         const dy = state.player.y - enemy.y;
         const length = Math.max(0.001, Math.hypot(dx, dy));
@@ -6035,6 +6470,27 @@
       state.attacks = state.attacks.filter(attack => attack.ttl > 0);
     }
 
+    function updateFloatTexts(dt) {
+      for (const text of state.floatTexts) {
+        text.x += text.vx * dt;
+        text.y += text.vy * dt;
+        text.vy -= 8 * dt;
+        text.ttl -= dt;
+      }
+      state.floatTexts = state.floatTexts.filter(text => text.ttl > 0);
+    }
+
+    function updateParticles(dt) {
+      for (const particle of state.particles) {
+        particle.x += particle.vx * dt;
+        particle.y += particle.vy * dt;
+        particle.vx *= Math.max(0, 1 - dt * 3.2);
+        particle.vy *= Math.max(0, 1 - dt * 3.2);
+        particle.ttl -= dt;
+      }
+      state.particles = state.particles.filter(particle => particle.ttl > 0);
+    }
+
     function countOpenAdPopups() {
       return state.openPopups.filter(popup => popup.def.type === "sponsored_ad").length;
     }
@@ -6364,6 +6820,7 @@
 
       state.elapsed += dt;
       updateDifficultyStagePulse(dt);
+      updateWaveDirector(dt);
       updateCleanupCombo(dt);
       updatePlayer(dt);
       updateEnemies(dt);
@@ -6378,6 +6835,9 @@
       updateFields(dt);
       updatePickups(dt);
       updateAttacks(dt);
+      updateResidentPrograms(dt);
+      updateParticles(dt);
+      updateFloatTexts(dt);
       updatePopupTimers(dt);
     }
 
@@ -6441,6 +6901,12 @@
       }
       if (def.type === "system_notice") {
         return { width: 260, height: 120 };
+      }
+      if (def.type === "security_installer") {
+        return { width: 330, height: 220 };
+      }
+      if (def.type === "security_update_notice") {
+        return { width: 292, height: 150 };
       }
       return { width: 252, height: 132 };
     }
@@ -6756,6 +7222,7 @@
       if (def.copyTone === "legal_contract") return 1.1;
       if (def.copyTone === "finance") return 1.0;
       if (def.copyTone === "sponsored_reward") return 0.9;
+      if (def.copyTone === "security_installer") return 0.9;
       if (def.type === "popup_store") return 0.9;
       if (def.type === "stock_broker_app") return 0.8;
       return 0.8;
@@ -6767,6 +7234,7 @@
       if (def.copyTone === "sponsored_reward") return "스폰서 광고 예정";
       if (def.copyTone === "game_package") return "패키지 창 예정";
       if (def.copyTone === "cleanup_utility") return "정리 유틸 예정";
+      if (def.copyTone === "security_installer") return "보안 설치 창 예정";
       return "팝업 예정";
     }
 
@@ -7864,6 +8332,278 @@
       }
     }
 
+    function securityProgramDef(type) {
+      return SECURITY_PROGRAM_DEFS.find(program => program.type === type);
+    }
+
+    function installedResidentProgram(type) {
+      return state.residentPrograms.find(program => program.type === type && program.active);
+    }
+
+    function securityProgramBurdenText(def) {
+      const parts = [];
+      if (def.moveSpeedPenalty) parts.push("이동 " + formatSignedPercent(def.moveSpeedPenalty));
+      if (def.itemCostMultiplier) parts.push("아이템 비용 +" + Math.round(def.itemCostMultiplier * 100) + "%");
+      if (def.reservedMaxHP) parts.push("최대 HP 점유 " + def.reservedMaxHP);
+      if (def.upkeepGold) parts.push(def.upkeepGold + "G/" + def.upkeepInterval + "초 유지비");
+      if (parts.length === 0) parts.push("업데이트 팝업 발생");
+      return parts.join(" / ");
+    }
+
+    function renderSecurityInstallerControls(body, popup) {
+      const programDef = securityProgramDef(popup.def.installProgram);
+      if (!programDef) {
+        return;
+      }
+      const box = document.createElement("div");
+      box.className = "securityInstallBox";
+      box.innerHTML =
+        "<strong>" + programDef.name + "</strong>" +
+        "<span>" + programDef.summary + "</span>" +
+        "<span>설치 비용: " + programDef.installCost + "G</span>" +
+        "<span>상주 부담: " + securityProgramBurdenText(programDef) + "</span>";
+
+      const controls = document.createElement("div");
+      controls.className = "popupControls";
+      const install = document.createElement("button");
+      install.type = "button";
+      install.className = "securityInstallButton";
+      install.dataset.cost = String(programDef.installCost);
+      install.textContent = installedResidentProgram(programDef.type) ? "이미 설치됨" : "설치 - " + programDef.installCost + "G";
+      install.disabled = state.gold < programDef.installCost || Boolean(installedResidentProgram(programDef.type));
+      install.addEventListener("click", () => installResidentProgram(programDef.type, popup.id));
+
+      const later = document.createElement("button");
+      later.type = "button";
+      later.textContent = "나중에 하기";
+      later.addEventListener("click", () => requestClosePopup(popup.id));
+
+      controls.append(install, later);
+      body.append(box, controls);
+    }
+
+    function createSecurityUpdatePopup(program, detail) {
+      const base = POPUP_DEFINITIONS.find(def => def.id === "security_update_notice");
+      if (!base || state.openPopups.length + state.pendingPopupSpawns.length >= maxOpenPopups()) {
+        return null;
+      }
+      return createPopup({
+        ...base,
+        title: program.name + " 알림",
+        body: detail || "보안 모듈 업데이트가 필요합니다. 상주 프로그램은 계속 실행되지만 이 창은 직접 확인해야 사라집니다."
+      }, { inputGrace: 0.2 });
+    }
+
+    function installResidentProgram(type, popupId = null, options = {}) {
+      const def = securityProgramDef(type);
+      if (!def || installedResidentProgram(type)) {
+        createSystemGrowthPopup("보안 설치 취소", "이미 설치된 보안 프로그램입니다.");
+        return false;
+      }
+      if (!options.free && state.gold < def.installCost) {
+        createSystemGrowthPopup("설치 실패", "보안 프로그램 설치 비용이 부족합니다.");
+        return false;
+      }
+      if (!options.free) {
+        state.gold -= def.installCost;
+      }
+
+      const program = {
+        id: state.residentProgramIdSeed++,
+        type: def.type,
+        name: def.name,
+        angle: randomRange(0, Math.PI * 2),
+        orbitRadius: def.orbitRadius || 58,
+        attackTimer: randomRange(0.1, 0.6),
+        scanTimer: def.scanInterval || def.quarantineInterval || def.attackInterval || 3,
+        updateTimer: randomRange(def.updateInterval?.[0] || 24, def.updateInterval?.[1] || 34),
+        billingTimer: def.upkeepInterval || 0,
+        installCost: def.installCost || 0,
+        upkeepGold: def.upkeepGold || 0,
+        upkeepInterval: def.upkeepInterval || 0,
+        reservedMaxHP: def.reservedMaxHP || 0,
+        itemCostMultiplier: def.itemCostMultiplier || 0,
+        moveSpeedPenalty: def.moveSpeedPenalty || 0,
+        active: true,
+        suspended: false
+      };
+
+      if (type === "kernel_guard" && state.activePlaystyle === "risky_terms_starter") {
+        state.heat += 1;
+        program.damageBoost = 1.25;
+      }
+
+      state.residentPrograms.push(program);
+      applyReservedMaxHP();
+      addCircleAttack(state.player.x, state.player.y, 52, "rgba(139, 233, 255, ", 0.2);
+      createSystemGrowthPopup("보안 설치 완료", program.name + " 상주 프로그램이 활성화되었습니다.");
+      if (popupId !== null) {
+        closePopup(popupId, { reason: "security" });
+      }
+      updateUI();
+      return true;
+    }
+
+    function securityOrbitPosition(program) {
+      return {
+        x: state.player.x + Math.cos(program.angle) * (program.orbitRadius || 54),
+        y: state.player.y + Math.sin(program.angle) * (program.orbitRadius || 54)
+      };
+    }
+
+    function findSecurityQuarantineTarget() {
+      const allowedTypes = new Set(["basic", "timed_reward", "infection", "moving_close", "trash_drag"]);
+      return state.openPopups
+        .filter(popup => !popup.securityQuarantineTimer && !isPopupLocked(popup) && (allowedTypes.has(popup.def.type) || popup.def.copyTone === "product_ad"))
+        .sort((a, b) => a.id - b.id)[0] || null;
+    }
+
+    function startSecurityQuarantine(popup) {
+      if (!popup) {
+        return false;
+      }
+      popup.securityQuarantineTimer = 1.2;
+      popup.element.classList.add("quarantined");
+      return true;
+    }
+
+    function updateSecurityQuarantines(dt) {
+      const ready = [];
+      for (const popup of state.openPopups) {
+        if (!popup.securityQuarantineTimer) {
+          continue;
+        }
+        popup.securityQuarantineTimer = Math.max(0, popup.securityQuarantineTimer - dt);
+        if (popup.securityQuarantineTimer <= 0) {
+          ready.push(popup.id);
+        }
+      }
+      for (const id of ready) {
+        closePopup(id, { reason: "security" });
+      }
+    }
+
+    function runSecurityScan(program, radius, damage, color, knockback = 0) {
+      addCircleAttack(state.player.x, state.player.y, radius, color, 0.2);
+      for (const enemy of state.enemies) {
+        if (!enemy.dead && distance(enemy, state.player) <= radius + enemy.radius) {
+          damageEnemy(enemy, damage, "security");
+          if (knockback > 0) {
+            const dir = normalized(enemy.x - state.player.x, enemy.y - state.player.y, { x: 1, y: 0 });
+            applyEnemyKnockback(enemy, dir.x, dir.y, knockback);
+          }
+        }
+      }
+    }
+
+    function updateResidentPrograms(dt) {
+      updateSecurityQuarantines(dt);
+      for (const program of state.residentPrograms) {
+        if (!program.active) {
+          continue;
+        }
+        program.angle += dt * 1.75;
+        program.updateTimer -= dt;
+        if (program.updateTimer <= 0) {
+          createSecurityUpdatePopup(program, program.name + " 업데이트 확인이 필요합니다. 자동 보호는 유지되지만 팝업 압박이 증가합니다.");
+          const def = securityProgramDef(program.type);
+          program.updateTimer = randomRange(def?.updateInterval?.[0] || 24, def?.updateInterval?.[1] || 34);
+        }
+
+        if (program.upkeepGold > 0 && program.upkeepInterval > 0) {
+          program.billingTimer -= dt;
+          if (program.billingTimer <= 0) {
+            if (state.gold >= program.upkeepGold) {
+              state.gold -= program.upkeepGold;
+              program.suspended = false;
+              program.billingTimer = program.upkeepInterval;
+            } else {
+              program.suspended = true;
+              program.billingTimer = Math.max(6, program.upkeepInterval * 0.5);
+              createSecurityUpdatePopup(program, program.name + " 유지비 " + program.upkeepGold + "G 결제 실패. 프로그램이 일시 정지되었습니다.");
+            }
+          }
+        }
+
+        if (program.suspended) {
+          continue;
+        }
+
+        const def = securityProgramDef(program.type);
+        if (program.type === "keyboard_security") {
+          program.attackTimer -= dt;
+          if (program.attackTimer <= 0) {
+            const orbit = securityOrbitPosition(program);
+            const target = getNearestEnemyInRange(orbit, def.range);
+            if (target) {
+              damageEnemy(target, def.damage, "security");
+              const dir = normalized(target.x - orbit.x, target.y - orbit.y, { x: 1, y: 0 });
+              applyEnemyKnockback(target, dir.x, dir.y, def.knockback || 70);
+              state.attacks.push({
+                type: "line",
+                x1: orbit.x,
+                y1: orbit.y,
+                x2: target.x,
+                y2: target.y,
+                ttl: 0.1,
+                maxTtl: 0.1,
+                width: 3,
+                color: "rgba(139, 233, 255, "
+              });
+            }
+            program.attackTimer = def.attackInterval;
+          }
+        } else if (program.type === "realtime_guard") {
+          program.scanTimer -= dt;
+          if (program.scanTimer <= 0) {
+            runSecurityScan(program, def.scanRadius, def.damage, "rgba(139, 233, 255, ", 0);
+            for (const popup of state.openPopups) {
+              if (popup.def.type === "infection") {
+                popup.life = Math.max(0, (popup.life || 0) - 1.4);
+              }
+            }
+            program.scanTimer = def.scanInterval;
+          }
+        } else if (program.type === "popup_quarantine") {
+          program.scanTimer -= dt;
+          if (program.scanTimer <= 0) {
+            startSecurityQuarantine(findSecurityQuarantineTarget());
+            program.scanTimer = def.quarantineInterval;
+          }
+        } else if (program.type === "kernel_guard") {
+          program.scanTimer -= dt;
+          if (program.scanTimer <= 0) {
+            runSecurityScan(program, def.scanRadius, def.damage * (program.damageBoost || 1), "rgba(88, 137, 255, ", def.knockback || 140);
+            if (Math.random() < 0.45) {
+              startSecurityQuarantine(findSecurityQuarantineTarget());
+            }
+            program.scanTimer = def.scanInterval;
+          }
+        }
+      }
+    }
+
+    function updateResidentProgramHud() {
+      residentProgramCount.textContent = state.residentPrograms.length.toString();
+      if (state.residentPrograms.length === 0) {
+        residentProgramList.textContent = "설치 없음";
+        return;
+      }
+      const lines = state.residentPrograms.map(program => {
+        const status = program.suspended ? "정지" : "활성";
+        const next = program.upkeepGold > 0 ? Math.ceil(program.billingTimer) + "초 후 " + program.upkeepGold + "G" : Math.ceil(program.updateTimer) + "초 후 업데이트";
+        return "<div class=\"residentProgramLine " + (program.suspended ? "suspended" : "") + "\"><span>" + program.name + "</span><strong>" + status + "</strong></div><div class=\"residentProgramSummary\">" + next + "</div>";
+      });
+      if (state.reservedMaxHP > 0) {
+        lines.push("<div class=\"residentProgramSummary\">점유 HP: " + state.reservedMaxHP + "</div>");
+      }
+      const itemCostBurden = totalResidentItemCostMultiplier();
+      if (itemCostBurden > 0) {
+        lines.push("<div class=\"residentProgramSummary\">아이템 비용 부담 +" + Math.round(itemCostBurden * 100) + "%</div>");
+      }
+      residentProgramList.innerHTML = lines.join("");
+    }
+
     function buildPopupControls(def, body, id, popup) {
       if (def.type === "basic") {
         const controls = document.createElement("div");
@@ -7996,6 +8736,21 @@
 
       if (def.type === "boss_package_ad") {
         renderBossPackageControls(body, popup);
+      }
+
+      if (def.type === "security_installer") {
+        renderSecurityInstallerControls(body, popup);
+      }
+
+      if (def.type === "security_update_notice") {
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        const ok = document.createElement("button");
+        ok.type = "button";
+        ok.textContent = "확인";
+        ok.addEventListener("click", () => requestClosePopup(id));
+        controls.appendChild(ok);
+        body.appendChild(controls);
       }
 
       if (def.type === "system_notice") {
@@ -8208,9 +8963,18 @@
       for (const enemy of state.enemies) {
         const screen = worldToScreen(enemy);
         ctx.beginPath();
-        ctx.fillStyle = enemy.type === "boss" ? "#9b2140" : "#d7474c";
+        if (enemy.hitFlash > 0) {
+          ctx.fillStyle = "#ffffff";
+        } else {
+          ctx.fillStyle = enemy.tint || (enemy.type === "boss" ? "#9b2140" : "#d7474c");
+        }
         ctx.arc(screen.x, screen.y, enemy.radius, 0, Math.PI * 2);
         ctx.fill();
+        if (enemy.type !== "boss") {
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
 
         const hpRatio = clamp(enemy.hp / enemy.maxHP, 0, 1);
         const barWidth = enemy.type === "boss" ? 58 : 28;
@@ -8342,6 +9106,35 @@
       }
     }
 
+    function drawResidentPrograms() {
+      for (const program of state.residentPrograms) {
+        if (!program.active) {
+          continue;
+        }
+        const pos = securityOrbitPosition(program);
+        const screen = worldToScreen(pos);
+        const color = program.suspended ? "#8995a3" : program.type === "kernel_guard" ? "#7aa2ff" : "#8be9ff";
+        ctx.save();
+        ctx.globalAlpha = program.suspended ? 0.55 : 1;
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.arc(screen.x, screen.y, program.type === "kernel_guard" ? 8 : 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(8, 28, 43, 0.75)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        if (program.type === "realtime_guard" || program.type === "kernel_guard") {
+          const ratio = clamp((program.scanTimer || 0) / Math.max(0.1, securityProgramDef(program.type)?.scanInterval || 4), 0, 1);
+          ctx.strokeStyle = "rgba(139, 233, 255, " + (0.08 + (1 - ratio) * 0.18) + ")";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(worldToScreen(state.player).x, worldToScreen(state.player).y, (securityProgramDef(program.type)?.scanRadius || 120) * (1 - ratio * 0.18), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
     function drawPlayer() {
       const screen = worldToScreen(state.player);
 
@@ -8415,6 +9208,38 @@
       }
     }
 
+    function drawParticles() {
+      for (const particle of state.particles) {
+        const alpha = clamp(particle.ttl / particle.maxTtl, 0, 1);
+        const screen = worldToScreen(particle);
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.fillStyle = particle.color;
+        ctx.arc(screen.x, screen.y, particle.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawFloatTexts() {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const text of state.floatTexts) {
+        const alpha = clamp(text.ttl / text.maxTtl, 0, 1);
+        const screen = worldToScreen(text);
+        ctx.globalAlpha = alpha;
+        ctx.font = "900 " + text.size + "px Malgun Gothic, Arial";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.62)";
+        ctx.strokeText(text.text, screen.x, screen.y);
+        ctx.fillStyle = text.color;
+        ctx.fillText(text.text, screen.x, screen.y);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
     function drawPausedText() {
       if (!state.paused || state.selectingItem || state.selectingPerk || state.selectingModule || state.gameOver) {
         return;
@@ -8439,6 +9264,9 @@
       drawChargeCasts();
       drawAttacks();
       drawPlayer();
+      drawResidentPrograms();
+      drawParticles();
+      drawFloatTexts();
       drawPausedText();
     }
 
@@ -8684,6 +9512,7 @@
     function updateUI() {
       updateDifficultyHud();
       updateCleanupComboHud();
+      updateResidentProgramHud();
       const itemCost = currentItemRollCost();
       const healthRatio = state.player.maxHP > 0 ? clamp((state.player.hp / state.player.maxHP) * 100, 0, 100) : 0;
       hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
@@ -8739,6 +9568,7 @@
       const lifestealText = Math.round(effectiveLifeStealPercent() * 100);
       const cleanupComboCountValue = Math.floor(state.cleanupComboValue || 0);
       const executionWindowText = state.cleanupComboValue > 0 ? " / 정리 콤보: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초" : "";
+      const waveLine = waveModeLabel() + (state.waveDirector.noticeTimer > 0 ? " / 전환 알림" : "");
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
@@ -8755,6 +9585,8 @@
         " / 기믹: " + upgradeLabels.mechanic +
         "<br>빌드 최적화: " + upgradeLabels.scaling + executionWindowText +
         "<br>재생: +" + regenText + "/s / 흡혈: " + lifestealText + "%" +
+        "<br>웨이브: " + waveLine +
+        "<br>보안 프로그램: " + state.residentPrograms.length + "개 / 점유 HP " + state.reservedMaxHP +
         "<br>피해: " + effectiveDamage().toFixed(1) +
         " / 사거리: " + Math.round(effectiveAttackRange()) +
         " / 공격 간격: " + effectiveAttackInterval().toFixed(2) + "초" +
@@ -8779,6 +9611,8 @@
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
         "<br>재생/흡혈/회복효율: +" + regenText + "/s / " + lifestealText + "% / " + formatSignedPercent(state.stats.healingMultiplier) +
+        "<br>웨이브: " + waveModeLabel() + " / 남은 시간 " + Math.max(0, state.waveDirector.timer).toFixed(1) + "초" +
+        "<br>보안 프로그램: " + state.residentPrograms.length + "개 / 점유 HP " + state.reservedMaxHP + " / 아이템 비용 +" + Math.round(totalResidentItemCostMultiplier() * 100) + "%" +
         "<br>정리 콤보/닫기 연계: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초 / " + (state.popupCloseAttackPrimed ? "준비됨" : "없음") +
         "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
@@ -8818,6 +9652,16 @@
       document.querySelectorAll(".bossPackagePayButton").forEach(button => {
         const cost = Number.parseInt(button.dataset.cost, 10) || 0;
         button.disabled = state.gold < cost || state.gameOver;
+      });
+      document.querySelectorAll(".securityInstallButton").forEach(button => {
+        const cost = Number.parseInt(button.dataset.cost, 10) || 0;
+        const popupElement = button.closest(".popupWindow");
+        const popupId = popupElement ? Number.parseInt(popupElement.dataset.popupId, 10) : null;
+        const popup = state.openPopups.find(item => item.id === popupId);
+        const type = popup?.def.installProgram;
+        const installed = Boolean(type && installedResidentProgram(type));
+        button.disabled = state.gold < cost || state.gameOver || installed;
+        button.textContent = installed ? "이미 설치됨" : state.gold < cost ? "골드 부족 - " + cost + "G" : "설치 - " + cost + "G";
       });
       const mobileEmergencyBlocked =
         state.gameOver ||
@@ -8933,6 +9777,22 @@
         state.cleanupComboTimer = state.cleanupComboGrace;
         state.cleanupComboPulse = 0.22;
         syncLegacyCleanupComboFields();
+      } else if (button.dataset.debug === "waveSide") {
+        setWaveMode("side_push", true);
+      } else if (button.dataset.debug === "waveSurround") {
+        setWaveMode("surround", true);
+      } else if (button.dataset.debug === "waveFast") {
+        setWaveMode("fast_horde", true);
+      } else if (button.dataset.debug === "waveDense") {
+        setWaveMode("dense_horde", true);
+      } else if (button.dataset.debug === "installKeyboardSecurity") {
+        installResidentProgram("keyboard_security", null, { free: true });
+      } else if (button.dataset.debug === "installRealtimeGuard") {
+        installResidentProgram("realtime_guard", null, { free: true });
+      } else if (button.dataset.debug === "installPopupQuarantine") {
+        installResidentProgram("popup_quarantine", null, { free: true });
+      } else if (button.dataset.debug === "installKernelGuard") {
+        installResidentProgram("kernel_guard", null, { free: true });
       } else if (button.dataset.debug === "invested100") {
         state.investedGold += 100;
       } else if (button.dataset.debug === "sponsoredStacks") {
