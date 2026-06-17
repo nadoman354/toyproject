@@ -2283,9 +2283,17 @@
       {
         id: "close_combo",
         name: "닫기 콤보",
-        description: "팝업을 닫으면 다음 3초간 공격 간격 -15%",
+        description: "정리 콤보가 유지되는 동안 공격 간격 -15%",
         rarity: "Epic",
         tags: ["clean", "popup_close", "cleanup_combo", "cooldown", "combat"]
+      },
+      {
+        id: "cleanup_routine_timer",
+        name: "정리 루틴 타이머",
+        description: "정리 콤보 유지시간 +1초",
+        rarity: "Rare",
+        tags: ["clean", "popup_close", "cleanup_combo", "utility"],
+        effect: { stat: "cleanupComboGraceBonus", value: 1 }
       },
       {
         id: "heat_blade",
@@ -2389,6 +2397,7 @@
       drag: "드래그",
       emergency_close: "긴급닫기",
       cleanup_combo: "정리 콤보",
+      duration: "유지시간",
       combat: "전투",
       damage: "피해",
       cooldown: "쿨타임",
@@ -2957,7 +2966,7 @@
         efficiencyLabel: "화면 통제 효율 +180%",
         benefits: [
           "계약 효과: 저팝업 피해 +20%, 안전 구역 확대, 긴급 닫기 쿨타임 -15%, 팝업 닫기 +2G",
-          "전투 특전: 팝업 1개 이하 피해/사거리 증가, 직접 닫기 시 3초간 정리 콤보 활성",
+          "전투 특전: 팝업 1개 이하 피해/사거리 증가, 직접 닫기 시 4초간 정리 콤보 활성",
           "아이템 풀: 클린업/저팝업/닫기/긴급 닫기 태그 아이템이 더 자주 등장"
         ],
         cost: 10,
@@ -3095,7 +3104,6 @@
       { id: "overcharge", name: "과충전", description: "충전형 공격의 피해와 범위가 증가하지만 충전 시간이 조금 길어집니다.", compatibleTags: ["charge"] },
       { id: "kill_chain", name: "처치 연쇄", description: "이 공격으로 처치한 적 주변에 작은 2차 폭발을 냅니다.", compatibleTags: ["projectile", "beam", "melee", "area", "aura"] },
       { id: "popup_close_trigger", name: "닫기 연계", description: "레거시: 팝업을 닫으면 다음 1차 공격 피해 +25%", compatibleTags: ["any"], hidden: true },
-      { id: "compressed_attack", name: "압축 공격", description: "3초 이상 공격하지 못한 모듈의 다음 공격 피해 +30%", compatibleTags: ["beam", "charge", "deploy", "melee", "projectile"] },
       { id: "pierce", name: "관통", description: "투사체 관통 +1, 빔은 폭이 조금 넓어집니다.", compatibleTags: ["projectile", "beam"] }
     ];
 
@@ -3333,10 +3341,6 @@
           primary: 0,
           secondary: 0
         },
-        moduleIdleTime: {
-          primary: 0,
-          secondary: 0
-        },
         lastDifficultyStageId: "normal",
         difficultyPulseTimer: 0,
         difficultyNoticeText: "",
@@ -3357,7 +3361,7 @@
         cleanupComboStacks: 0,
         cleanupComboValue: 0,
         cleanupComboTimer: 0,
-        cleanupComboGrace: 3,
+        cleanupComboGrace: 4,
         cleanupComboMax: 20,
         cleanupComboPulse: 0,
         popupCloseAttackPrimed: false,
@@ -3467,7 +3471,8 @@
           missingHpRegenMultiplier: 0,
           lowHpDamageMultiplier: 0,
           lowHpCooldownMultiplier: 0,
-          maxHpDamageMultiplier: 0
+          maxHpDamageMultiplier: 0,
+          cleanupComboGraceBonus: 0
         },
         enemies: [],
         mines: [],
@@ -4792,6 +4797,15 @@
         return;
       }
 
+      if (effect.stat === "cleanupComboGraceBonus") {
+        state.stats.cleanupComboGraceBonus += effect.value;
+        if (state.cleanupComboTimer > 0) {
+          state.cleanupComboTimer += effect.value;
+          syncLegacyCleanupComboFields();
+        }
+        return;
+      }
+
       if (effect.stat === "maxOpenPopups") {
         state.stats.maxOpenPopups += effect.value;
         return;
@@ -6036,14 +6050,9 @@
       const boosted = { ...stats };
       let multiplier = 0;
       boosted.consumeOvercharge = false;
-      boosted.consumeCompressed = false;
       boosted.consumePrimed = false;
       boosted.consumeSponsoredStack = false;
 
-      if (stats.mechanic?.id === "compressed_attack" && state.moduleIdleTime[slot] >= 3) {
-        multiplier += 0.3;
-        boosted.consumeCompressed = true;
-      }
       if (slot === "primary" && state.activePlaystyle === "sponsored_starter" && state.sponsoredAttackBoostStacks > 0) {
         multiplier += 0.2;
         boosted.consumeSponsoredStack = true;
@@ -6062,11 +6071,6 @@
       }
       if (hitAny && slot === "secondary" && state.moduleSynergy === "secondary_haste") {
         state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - 0.25);
-      }
-      if (stats.consumeCompressed || stats.mechanic?.id === "compressed_attack") {
-        state.moduleIdleTime[slot] = 0;
-      } else {
-        state.moduleIdleTime[slot] = 0;
       }
       if (stats.consumePrimed) {
         state.popupCloseAttackPrimed = false;
@@ -6576,12 +6580,14 @@
 
     function updateModuleUpgradeTimers(dt) {
       state.popupExecutionWindow = Math.max(0, state.popupExecutionWindow - dt);
-      for (const slot of ["primary", "secondary"]) {
-        if (!state[slot + "Module"]) {
-          continue;
-        }
-        state.moduleIdleTime[slot] += dt;
-      }
+    }
+
+    function effectiveCleanupComboGrace() {
+      return Math.max(0.5, state.cleanupComboGrace + (state.stats.cleanupComboGraceBonus || 0));
+    }
+
+    function refreshCleanupComboTimer() {
+      state.cleanupComboTimer = effectiveCleanupComboGrace();
     }
 
     function syncLegacyCleanupComboFields() {
@@ -6592,7 +6598,7 @@
 
     function addCleanupComboDebug(amount) {
       state.cleanupComboValue = Math.min(state.cleanupComboMax, Math.max(0, state.cleanupComboValue) + amount);
-      state.cleanupComboTimer = state.cleanupComboGrace;
+      refreshCleanupComboTimer();
       state.cleanupComboPulse = 0.22;
       syncLegacyCleanupComboFields();
     }
@@ -6606,7 +6612,7 @@
         return;
       }
       state.cleanupComboValue = Math.min(state.cleanupComboMax, state.cleanupComboValue + 1);
-      state.cleanupComboTimer = state.cleanupComboGrace;
+      refreshCleanupComboTimer();
       state.cleanupComboPulse = 0.22;
       syncLegacyCleanupComboFields();
     }
@@ -9398,19 +9404,28 @@
         const tailScreen = worldToScreen(tail);
 
         if (projectile.visual === "sword_wave") {
+          const alpha = clamp(projectile.ttl / Math.max(0.001, projectile.maxTtl || projectile.ttl), 0, 1);
+          const angle = Math.atan2(projectile.vy, projectile.vx);
+          const bladeRadius = projectile.radius * 1.22;
           ctx.save();
+          ctx.translate(screen.x, screen.y);
+          ctx.rotate(angle);
           ctx.lineCap = "round";
-          ctx.strokeStyle = "rgba(255, 210, 109, 0.28)";
-          ctx.lineWidth = projectile.radius * 1.7;
           ctx.beginPath();
-          ctx.moveTo(tailScreen.x, tailScreen.y);
-          ctx.lineTo(screen.x, screen.y);
+          ctx.arc(0, 0, bladeRadius, -1.18, 1.18);
+          ctx.arc(0, 0, bladeRadius * 0.48, 0.86, -0.86, true);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(255, 188, 82, " + (alpha * 0.18) + ")";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255, 207, 95, " + (alpha * 0.48) + ")";
+          ctx.lineWidth = Math.max(8, projectile.radius * 0.8);
+          ctx.beginPath();
+          ctx.arc(0, 0, bladeRadius, -1.08, 1.08);
           ctx.stroke();
-          ctx.strokeStyle = "rgba(255, 246, 186, 0.92)";
+          ctx.strokeStyle = "rgba(255, 247, 194, " + (alpha * 0.95) + ")";
           ctx.lineWidth = Math.max(4, projectile.radius * 0.45);
           ctx.beginPath();
-          ctx.moveTo(tailScreen.x, tailScreen.y);
-          ctx.lineTo(screen.x, screen.y);
+          ctx.arc(0, 0, bladeRadius * 0.98, -0.96, 0.96);
           ctx.stroke();
           ctx.restore();
           continue;
@@ -9732,6 +9747,7 @@
       if (stat === "lowHpDamageMultiplier") return "저체력 피해";
       if (stat === "lowHpCooldownMultiplier") return "저체력 쿨타임";
       if (stat === "maxHpDamageMultiplier") return "최대 HP 피해";
+      if (stat === "cleanupComboGraceBonus") return "정리 콤보 유지";
       if (stat === "instantHeal") return "즉시 회복";
       return stat;
     }
@@ -9768,6 +9784,7 @@
         effect.stat === "lowHpDamageMultiplier" ||
         effect.stat === "lowHpCooldownMultiplier" ||
         effect.stat === "maxHpDamageMultiplier" ||
+        effect.stat === "cleanupComboGraceBonus" ||
         effect.stat === "instantHeal"
       ));
     }
@@ -9815,6 +9832,9 @@
       if (item.id === "close_combo") {
         return stacks <= 0 ? "닫기 콤보 쿨타임 변화 없음" : "닫기 콤보 쿨타임 " + formatSignedPercent(state.cleanupComboValue > 0 ? -0.15 * stacks : 0);
       }
+      if (item.id === "cleanup_routine_timer") {
+        return stacks <= 0 ? "정리 콤보 유지 변화 없음" : "정리 콤보 유지 +" + stacks.toFixed(1) + "초";
+      }
       if (item.id === "heat_blade") {
         return stacks <= 0 ? "난이도 피해 변화 없음" : "난이도 피해 " + formatSignedPercent(state.heat * 0.05 * stacks);
       }
@@ -9852,6 +9872,9 @@
       }
       if (displayEffect.stat === "healthRegenPerSecond" || displayEffect.stat === "missingHpRegenMultiplier") {
         return label + " +" + total.toFixed(1) + "/s";
+      }
+      if (displayEffect.stat === "cleanupComboGraceBonus") {
+        return label + " +" + total.toFixed(1) + "초";
       }
       return label + " " + formatSignedNumber(total);
     }
@@ -9934,7 +9957,8 @@
     function updateCleanupComboHud() {
       const visible = state.activePlaystyle === "clean_desk_starter" || state.cleanupComboValue > 0;
       const combo = Math.floor(state.cleanupComboValue || 0);
-      const ratio = state.cleanupComboGrace > 0 ? clamp(state.cleanupComboTimer / state.cleanupComboGrace, 0, 1) : 0;
+      const comboGrace = effectiveCleanupComboGrace();
+      const ratio = comboGrace > 0 ? clamp(state.cleanupComboTimer / comboGrace, 0, 1) : 0;
       cleanupComboHud.classList.toggle("active", visible);
       cleanupComboHud.classList.toggle("decaying", state.cleanupComboValue > 0 && state.cleanupComboTimer <= 0);
       cleanupComboHud.classList.toggle("pulse", state.cleanupComboPulse > 0);
@@ -10217,7 +10241,7 @@
         addCleanupComboDebug(1);
       } else if (button.dataset.debug === "cleanupCombo5") {
         state.cleanupComboValue = Math.max(state.cleanupComboValue, 5);
-        state.cleanupComboTimer = state.cleanupComboGrace;
+        refreshCleanupComboTimer();
         state.cleanupComboPulse = 0.22;
         syncLegacyCleanupComboFields();
       } else if (button.dataset.debug === "waveNormal") {
