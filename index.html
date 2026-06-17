@@ -10420,18 +10420,10 @@
         return false;
       }
       event.preventDefault();
-      event.stopPropagation();
       button.click();
       state.mobileInput.fallbackClickButton = button;
       state.mobileInput.fallbackClickUntil = performance.now() + 500;
       return true;
-    }
-
-    function handleMobileUiButtonFallback(event) {
-      if (event.pointerType === "mouse" || event.pointerType === "touch" || !state.mobileInput.active || event.pointerId === state.mobileInput.pointerId) {
-        return;
-      }
-      activateMobileFallbackButton(buttonFromTarget(event.target), event);
     }
 
     function touchButtonAt(touch) {
@@ -10552,7 +10544,6 @@
     document.addEventListener("touchmove", updateMobileTapCandidates, { capture: true, passive: true });
     document.addEventListener("touchend", finishMobileTapCandidates, { capture: true, passive: false });
     document.addEventListener("touchcancel", cancelMobileTapCandidates, { capture: true, passive: true });
-    document.addEventListener("pointerup", handleMobileUiButtonFallback, true);
     document.addEventListener("pointermove", updateFloatingJoystick);
     document.addEventListener("pointerup", finishFloatingJoystick);
     document.addEventListener("pointercancel", finishFloatingJoystick);
