@@ -290,6 +290,15 @@
       background: linear-gradient(90deg, #ff5964, #ff9c71);
     }
 
+    .healthBar.lowHp .healthFill {
+      background: linear-gradient(90deg, #ff9f43, #ffd36a);
+    }
+
+    .healthBar.criticalHp .healthFill {
+      background: linear-gradient(90deg, #ff2d4d, #ff5964);
+      box-shadow: 0 0 10px rgba(255, 89, 100, 0.55);
+    }
+
     .xpFill {
       background: linear-gradient(90deg, var(--xp), #87d3ff);
     }
@@ -1736,7 +1745,7 @@
         <h1 class="panelTitle">전투 HUD</h1>
         <div id="healthHud" class="hudCard">
           <div class="hudCardHeader"><span>HP</span><strong id="hpText">100 / 100</strong></div>
-          <div class="healthBar"><div id="healthFill" class="healthFill"></div></div>
+          <div id="healthBar" class="healthBar"><div id="healthFill" class="healthFill"></div></div>
         </div>
         <div id="xpHud" class="hudCard">
           <div class="hudCardHeader"><span>Lv. <strong id="levelText">1</strong></span><strong id="xpText">0 / 40</strong></div>
@@ -2857,25 +2866,6 @@
         ]
       },
       {
-        id: "vitality_starter",
-        name: "생명력 스타터 계약",
-        theme: "재생/흡혈 생존 빌드",
-        description: "최대 체력, 체력 재생, 흡혈을 통해 피해를 버티며 전투를 이어갑니다.",
-        efficiencyLabel: "생존 지속 효율 +170%",
-        benefits: [
-          "계약 효과: 최대 HP +30, 초당 체력 재생 +0.8",
-          "전투 특전: 무기 피해의 2%를 흡혈, 체력이 낮을수록 재생이 증가",
-          "아이템 풀: 생명력/재생/흡혈/저체력 태그 아이템이 더 자주 등장"
-        ],
-        cost: 10,
-        effects: [
-          { stat: "maxHP", value: 30 },
-          { stat: "healthRegenPerSecond", value: 0.8 },
-          { stat: "lifeStealPercent", value: 0.02 },
-          { stat: "missingHpRegenMultiplier", value: 2.0 }
-        ]
-      },
-      {
         id: "risky_terms_starter",
         name: "위험 계약자 스타터 계약",
         theme: "난이도 상승 보상 빌드",
@@ -2974,7 +2964,6 @@
       { id: "sponsored_overcharge", name: "광고 과충전", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["projectile", "beam", "turret"] },
       { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["area", "aura", "explosion", "beam", "field"] },
       { id: "clean_precision", name: "정리 정밀화", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["projectile", "beam", "melee", "deploy", "line"] },
-      { id: "vitality_blood_engine", name: "생명 순환", playstyle: "vitality", description: "최대 HP와 잃은 체력 비율에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["any"] },
       { id: "cleanup_combo_precision", name: "정리 콤보", playstyle: "clean", description: "최근 직접 닫은 팝업 콤보 수에 따라 주 공격 쿨타임과 피해가 증가합니다.", compatibleTags: ["any"] },
       { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "난이도가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
       { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["projectile", "beam", "line", "aura", "deploy"] }
@@ -3035,6 +3024,7 @@
     const mobileEmergencyButton = document.getElementById("mobileEmergencyButton");
     const mobileFullscreenButton = document.getElementById("mobileFullscreenButton");
     const hpText = document.getElementById("hpText");
+    const healthBar = document.getElementById("healthBar");
     const healthFill = document.getElementById("healthFill");
     const goldText = document.getElementById("goldText");
     const levelText = document.getElementById("levelText");
@@ -3498,9 +3488,6 @@
       if (state.activePlaystyle === "clutter_chaos_starter") {
         return defs.filter(def => popupInFamily(def, "clutter") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
       }
-      if (state.activePlaystyle === "vitality_starter") {
-        return defs.filter(def => popupInFamily(def, "generic") || popupInFamily(def, "system"));
-      }
       if (state.activePlaystyle === "risky_terms_starter") {
         return defs.filter(def => popupInFamily(def, "curse") || popupInFamily(def, "generic") || popupInFamily(def, "system"));
       }
@@ -3638,7 +3625,6 @@
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
         clean_desk_starter: "clean",
-        vitality_starter: "vitality",
         risky_terms_starter: "curse"
       };
       return map[state.activePlaystyle] || "generic";
@@ -3678,7 +3664,6 @@
         sponsored_starter: "sponsored",
         clutter_chaos_starter: "clutter",
         clean_desk_starter: "clean",
-        vitality_starter: "vitality",
         risky_terms_starter: "curse"
       };
       return map[state.activePlaystyle] || null;
@@ -3690,7 +3675,6 @@
         sponsored: ["ad_open", "ad_completion", "economy"],
         clutter: ["popup_count", "aoe", "range"],
         clean: ["low_popup", "safe", "range", "popup_close", "emergency_close", "cleanup_combo"],
-        vitality: ["health", "regen", "lifesteal", "healing", "low_hp", "safe"],
         curse: ["heat", "terms", "risky", "cursed"]
       };
       return map[buildTag] || [];
@@ -3702,7 +3686,7 @@
         return 1;
       }
 
-      const buildTags = ["investor", "sponsored", "clutter", "clean", "vitality", "curse"];
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "curse"];
       let multiplier = 1;
       if (itemHasTag(item, buildTag)) {
         multiplier *= 1.7;
@@ -3729,7 +3713,7 @@
     }
 
     function renderItemTagChips(item) {
-      const buildTags = ["investor", "sponsored", "clutter", "clean", "vitality", "curse"];
+      const buildTags = ["investor", "sponsored", "clutter", "clean", "curse"];
       return "<div class=\"itemTags\">" + prioritizedItemTags(item).map(tag => {
         const className = buildTags.includes(tag) ? "itemTag itemTagBuild" : "itemTag";
         return "<span class=\"" + className + "\">" + tagLabel(tag) + "</span>";
@@ -3891,9 +3875,6 @@
             upgraded.damageMultiplierFromUpgrade += 0.15;
             upgraded.rangeMultiplierFromUpgrade += 0.1;
           }
-        } else if (scaling.id === "vitality_blood_engine") {
-          const missingRatio = clamp(1 - context.playerHpRatio, 0, 1);
-          upgraded.damageMultiplierFromUpgrade += Math.min(0.5, Math.floor(context.playerMaxHP / 50) * 0.03 + missingRatio * 0.2);
         } else if (scaling.id === "cleanup_combo_precision" && context.cleanupComboValue > 0) {
           const combo = Math.min(5, Math.floor(context.cleanupComboValue || 0));
           upgraded.damageMultiplierFromUpgrade += combo * 0.06;
@@ -4196,18 +4177,6 @@
           bonuses.cooldownMultiplier += -Math.min(0.22, combo * 0.02);
           bonuses.rangeMultiplier += Math.min(0.15, combo * 0.012);
           bonuses.notes.push("정리 콤보 x" + combo);
-        }
-      } else if (state.activePlaystyle === "vitality_starter") {
-        const ratio = hpRatio();
-        bonuses.notes.push("재생 활성");
-        bonuses.notes.push("흡혈 " + Math.round(effectiveLifeStealPercent() * 100) + "%");
-        if (ratio <= 0.3) {
-          bonuses.damageMultiplier += 0.2;
-          bonuses.cooldownMultiplier += -0.08;
-          bonuses.notes.push("저체력 화력");
-        } else if (ratio <= 0.5) {
-          bonuses.damageMultiplier += 0.1;
-          bonuses.notes.push("상처 적응");
         }
       } else if (state.activePlaystyle === "risky_terms_starter") {
         const heatDamage = state.heat * 0.04 + (state.heat >= 5 ? 0.1 : 0);
@@ -6510,6 +6479,20 @@
         rectFromElementInPopupLayer(difficultyHud, 10)
       ].filter(Boolean);
 
+      if (!statusPanel.classList.contains("minimized")) {
+        const statusRect = rectFromElementInPopupLayer(statusPanel, 8);
+        if (statusRect) {
+          rects.push(statusRect);
+        }
+      }
+
+      if (getComputedStyle(debugPanel).display !== "none" && !debugPanel.classList.contains("minimized")) {
+        const debugRect = rectFromElementInPopupLayer(debugPanel, 8);
+        if (debugRect) {
+          rects.push(debugRect);
+        }
+      }
+
       if (cleanupComboHud.classList.contains("active")) {
         const cleanupRect = rectFromElementInPopupLayer(cleanupComboHud, 8);
         if (cleanupRect) {
@@ -8705,6 +8688,8 @@
       const healthRatio = state.player.maxHP > 0 ? clamp((state.player.hp / state.player.maxHP) * 100, 0, 100) : 0;
       hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
       healthFill.style.width = healthRatio.toFixed(1) + "%";
+      healthBar.classList.toggle("lowHp", healthRatio <= 35 && healthRatio > 20);
+      healthBar.classList.toggle("criticalHp", healthRatio <= 20);
       goldText.textContent = state.gold.toString();
       levelText.textContent = state.level.toString();
       xpText.textContent = state.xp + " / " + state.xpNeed;
@@ -8736,8 +8721,8 @@
       const emergency = state.emergencyTimer > 0 ? state.emergencyTimer.toFixed(1) + "초" : "준비됨";
       const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
       const totalDiscount = pendingDiscount + clutterThresholdBonuses().itemDiscount;
-      discountText.textContent = "할인 -" + Math.round(totalDiscount * 100) + "%";
-      extraChoiceText.textContent = "선택지 +" + state.nextItemExtraChoices;
+      discountText.textContent = totalDiscount > 0 ? "할인 -" + Math.round(totalDiscount * 100) + "%" : "할인 없음";
+      extraChoiceText.textContent = state.nextItemExtraChoices > 0 ? "추가 선택지 +" + state.nextItemExtraChoices : "기본 선택지";
       const debtPenalty = state.stats.debtItemCostMultiplier + activeTimedMultiplier("debtItemCostMultiplier");
       const stock = selectedStock();
       const stockInfo = stockProfitInfo();
