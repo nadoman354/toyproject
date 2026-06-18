@@ -1906,6 +1906,8 @@
             <button type="button" data-debug="waveSurround">포위 웨이브</button>
             <button type="button" data-debug="waveFast">빠른 웨이브</button>
             <button type="button" data-debug="waveDense">두꺼운 웨이브</button>
+            <button type="button" data-debug="dropMagnetPickup">자석 드랍</button>
+            <button type="button" data-debug="dropHealPickup">회복 드랍</button>
             <button type="button" data-debug="installKeyboardSecurity">키보드 보안 설치</button>
             <button type="button" data-debug="installRealtimeGuard">실시간 감시 설치</button>
             <button type="button" data-debug="installPopupQuarantine">팝업 격리 설치</button>
@@ -2003,6 +2005,10 @@
       playerAttackInterval: 0.6,
       playerAttackRange: 140,
       pickupRange: 48,
+      magnetPickupDropChance: 0.025,
+      healPickupDropChance: 0.025,
+      healPickupFlat: 20,
+      healPickupPercent: 0.18,
       rangedProjectileSpeed: 420,
       rangedProjectileRadius: 5,
       meleeSlashWidth: 42,
@@ -2085,7 +2091,7 @@
       {
         id: "magnetic_cursor",
         name: "자석 커서",
-        description: "획득 범위 +30%",
+        description: "골드/XP 획득 범위 +30%",
         rarity: "Common",
         tags: ["generic", "utility", "pickup"],
         effect: { stat: "pickupRangeMultiplier", value: 0.3 }
@@ -2133,7 +2139,7 @@
       {
         id: "data_collector",
         name: "데이터 수집기",
-        description: "획득 범위 +45%, 팝업 생성률 +5%",
+        description: "골드/XP 획득 범위 +45%, 팝업 생성률 +5%",
         rarity: "Rare",
         tags: ["generic", "utility", "pickup", "popup_pressure"],
         effects: [
@@ -5786,21 +5792,47 @@
       }
     }
 
+    function spawnFieldPickup(type, x, y, options = {}) {
+      const pickupConfig = {
+        gold: { radius: 6, value: CONFIG.goldPerKill },
+        xp: { radius: 5, value: CONFIG.xpPerKill },
+        magnet: { radius: 8, value: 1 },
+        heal: { radius: 8, value: 1 }
+      }[type];
+      if (!pickupConfig) {
+        return null;
+      }
+      const pickup = {
+        type,
+        x,
+        y,
+        value: options.value ?? pickupConfig.value,
+        radius: options.radius ?? pickupConfig.radius
+      };
+      state.pickups.push(pickup);
+      return pickup;
+    }
+
+    function spawnSpecialConsumableDrop(enemy) {
+      const roll = Math.random();
+      let type = null;
+      if (roll < CONFIG.magnetPickupDropChance) {
+        type = "magnet";
+      } else if (roll < CONFIG.magnetPickupDropChance + CONFIG.healPickupDropChance) {
+        type = "heal";
+      }
+      if (!type) {
+        return;
+      }
+      const angle = randomRange(0, Math.PI * 2);
+      const offset = randomRange(10, 18);
+      spawnFieldPickup(type, enemy.x + Math.cos(angle) * offset, enemy.y + Math.sin(angle) * offset);
+    }
+
     function spawnPickups(enemy) {
-      state.pickups.push({
-        type: "gold",
-        x: enemy.x - 7,
-        y: enemy.y,
-        value: CONFIG.goldPerKill,
-        radius: 6
-      });
-      state.pickups.push({
-        type: "xp",
-        x: enemy.x + 7,
-        y: enemy.y,
-        value: CONFIG.xpPerKill,
-        radius: 5
-      });
+      spawnFieldPickup("gold", enemy.x - 7, enemy.y, { value: CONFIG.goldPerKill });
+      spawnFieldPickup("xp", enemy.x + 7, enemy.y, { value: CONFIG.xpPerKill });
+      spawnSpecialConsumableDrop(enemy);
     }
 
     function recordEnemyKill(enemy) {
@@ -6493,11 +6525,37 @@
       return config;
     }
 
+    function isSlotCharging(slot) {
+      return state.chargeCasts.some(cast => cast.blocksSlot && cast.sourceSlot === slot && !cast.done);
+    }
+
+    function chargeOrigin(cast) {
+      if (cast.anchor === "player") {
+        return { x: state.player.x, y: state.player.y };
+      }
+      return { x: cast.x, y: cast.y };
+    }
+
+    function chargeImpactPoint(cast) {
+      const origin = chargeOrigin(cast);
+      const direction = normalized(cast.dirX, cast.dirY, { x: 1, y: 0 });
+      const fallbackDistance = cast.impactX !== undefined && cast.impactY !== undefined
+        ? distance({ x: cast.x, y: cast.y }, { x: cast.impactX, y: cast.impactY })
+        : cast.range || 0;
+      const impactDistance = cast.impactDistance ?? fallbackDistance;
+      return {
+        x: origin.x + direction.x * impactDistance,
+        y: origin.y + direction.y * impactDistance
+      };
+    }
+
     function queueChargeCast(cast) {
       state.chargeCasts.push({
         id: Date.now() + Math.random(),
         elapsed: 0,
         done: false,
+        anchor: "player",
+        blocksSlot: true,
         ...cast
       });
     }
@@ -6525,11 +6583,13 @@
         dirY: direction.y,
         impactX: state.player.x + direction.x * impactDistance,
         impactY: state.player.y + direction.y * impactDistance,
+        impactDistance,
         duration: config.duration,
         range: config.range,
         radius: config.radius,
         damage: config.damage,
         sourceSlot: slot,
+        cooldownAfterRelease: stats.cooldown,
         mechanicId: stats.mechanic?.id || null,
         chainDamage: stats.damage * 0.3
       });
@@ -6562,6 +6622,7 @@
         angleDeg: config.angleDeg,
         damage: config.damage,
         sourceSlot: slot,
+        cooldownAfterRelease: stats.cooldown,
         mechanicId: stats.mechanic?.id || null,
         chainDamage: stats.damage * 0.3
       });
@@ -6588,6 +6649,7 @@
         radius: config.radius,
         damage: config.damage,
         sourceSlot: slot,
+        cooldownAfterRelease: stats.cooldown,
         mechanicId: stats.mechanic?.id || null,
         chainDamage: stats.damage * 0.3
       });
@@ -6598,7 +6660,8 @@
       const killed = [];
       let hitAny = false;
       if (cast.type === "ranged_charge_cannon") {
-        const impact = { x: cast.impactX, y: cast.impactY };
+        const origin = chargeOrigin(cast);
+        const impact = chargeImpactPoint(cast);
         for (const enemy of state.enemies) {
           if (!enemy.dead && distance(enemy, impact) <= cast.radius + enemy.radius) {
             hitAny = damageEnemyTracked(enemy, cast.damage, cast.sourceSlot, killed) || hitAny;
@@ -6606,8 +6669,8 @@
         }
         state.attacks.push({
           type: "line",
-          x1: cast.x,
-          y1: cast.y,
+          x1: origin.x,
+          y1: origin.y,
           x2: impact.x,
           y2: impact.y,
           ttl: 0.18,
@@ -6617,10 +6680,11 @@
         });
         addCircleAttack(impact.x, impact.y, cast.radius, "rgba(255, 189, 79, ", 0.28);
       } else if (cast.type === "melee_charged_cleave") {
+        const origin = chargeOrigin(cast);
         const direction = normalized(cast.dirX, cast.dirY, { x: 1, y: 0 });
         const result = performMeleeArcHit({
           slot: cast.sourceSlot,
-          origin: { x: cast.x, y: cast.y },
+          origin,
           damage: cast.damage,
           direction,
           radius: cast.radius || cast.range,
@@ -6633,8 +6697,8 @@
         hitAny = result.hitAny;
         killed.push(...result.killed);
         spawnSlashArcEffect({
-          x: cast.x,
-          y: cast.y,
+          x: origin.x,
+          y: origin.y,
           dirX: direction.x,
           dirY: direction.y,
           radius: cast.radius || cast.range,
@@ -6647,13 +6711,13 @@
         });
         addScreenShake(4.4, 0.16);
       } else if (cast.type === "aura_charged_nova") {
-        const center = { x: cast.x, y: cast.y };
+        const center = chargeOrigin(cast);
         for (const enemy of state.enemies) {
           if (!enemy.dead && distance(enemy, center) <= cast.radius + enemy.radius) {
             hitAny = damageEnemyTracked(enemy, cast.damage, cast.sourceSlot, killed) || hitAny;
           }
         }
-        addCircleAttack(cast.x, cast.y, cast.radius, "rgba(97, 211, 255, ", 0.32);
+        addCircleAttack(center.x, center.y, cast.radius, "rgba(97, 211, 255, ", 0.32);
       }
 
       if (hitAny && cast.sourceSlot === "secondary" && state.moduleSynergy === "secondary_haste") {
@@ -6661,6 +6725,9 @@
       }
       if (cast.mechanicId === "kill_chain" && killed.length > 0) {
         applyKillChain(killed, cast.chainDamage || cast.damage * 0.3, cast.sourceSlot);
+      }
+      if (cast.sourceSlot && state.moduleTimers[cast.sourceSlot] !== undefined) {
+        state.moduleTimers[cast.sourceSlot] = Math.max(state.moduleTimers[cast.sourceSlot], cast.cooldownAfterRelease || 0);
       }
       cast.done = true;
     }
@@ -6678,6 +6745,9 @@
     function triggerModuleAttack(slot, forced) {
       const stats = moduleCombatStats(slot);
       if (!stats) {
+        return false;
+      }
+      if (stats.tags?.includes("charge") && isSlotCharging(slot)) {
         return false;
       }
 
@@ -6740,10 +6810,10 @@
       state.moduleTimers.primary = Math.max(0, state.moduleTimers.primary - dt);
       state.moduleTimers.secondary = Math.max(0, state.moduleTimers.secondary - dt);
 
-      if (state.primaryModule && state.moduleTimers.primary <= 0) {
+      if (state.primaryModule && state.moduleTimers.primary <= 0 && !isSlotCharging("primary")) {
         triggerModuleAttack("primary", false);
       }
-      if (state.secondaryModule && state.moduleTimers.secondary <= 0) {
+      if (state.secondaryModule && state.moduleTimers.secondary <= 0 && !isSlotCharging("secondary")) {
         triggerModuleAttack("secondary", false);
       }
     }
@@ -6947,28 +7017,73 @@
       state.fields = state.fields.filter(field => !field.done);
     }
 
+    function activateMagnetPickup() {
+      let affected = 0;
+      for (const pickup of state.pickups) {
+        if (pickup.type === "gold" || pickup.type === "xp") {
+          pickup.forceMagnet = true;
+          affected += 1;
+        }
+      }
+      addDamageNumber(state.player.x, state.player.y - 18, 1, {
+        text: "자석 발동",
+        color: "#79f6ff",
+        size: 16,
+        ttl: 0.75
+      });
+      addCircleAttack(state.player.x, state.player.y, Math.min(220, 80 + affected * 6), "rgba(125, 246, 255, ", 0.24);
+      for (let i = 0; i < 14; i += 1) {
+        addParticle(state.player.x, state.player.y, {
+          color: i % 2 === 0 ? "#a87dff" : "#79f6ff",
+          speed: randomRange(70, 170),
+          radius: randomRange(2, 4),
+          ttl: randomRange(0.25, 0.55)
+        });
+      }
+    }
+
+    function collectPickup(pickup) {
+      pickup.collected = true;
+      if (pickup.type === "gold") {
+        const crowdedBonus = state.openPopups.length >= 4 ? state.stats.crowdedGoldMultiplier : 0;
+        addGold(Math.round(pickup.value * Math.max(0.1, 1 + crowdedBonus)), "pickup");
+      } else if (pickup.type === "xp") {
+        state.xp += pickup.value;
+      } else if (pickup.type === "magnet") {
+        activateMagnetPickup();
+      } else if (pickup.type === "heal") {
+        const healAmount = Math.max(CONFIG.healPickupFlat, state.player.maxHP * CONFIG.healPickupPercent);
+        const healed = healPlayer(healAmount, "pickup");
+        addDamageNumber(state.player.x, state.player.y - 16, healed || 0, {
+          text: "+" + Math.round(healed || 0) + " HP",
+          color: "#70ff96",
+          size: 15,
+          ttl: 0.72
+        });
+        addCircleAttack(state.player.x, state.player.y, 52, "rgba(112, 255, 150, ", 0.18);
+      }
+    }
+
     function updatePickups(dt) {
       const pickupRange = effectivePickupRange();
-      const collectRange = Math.max(16, pickupRange * 0.35);
+      const collectPadding = 8;
       for (const pickup of state.pickups) {
         const d = distance(pickup, state.player);
-        if (d < pickupRange) {
+        const forceMagnet = pickup.forceMagnet && (pickup.type === "gold" || pickup.type === "xp");
+        if (forceMagnet || d < pickupRange) {
           const dx = state.player.x - pickup.x;
           const dy = state.player.y - pickup.y;
           const length = Math.max(0.001, Math.hypot(dx, dy));
-          const pull = (130 + pickupRange * 1.4) * dt;
+          const pullSpeed = forceMagnet
+            ? Math.min(980, 380 + d * 1.35)
+            : 150 + Math.min(90, pickupRange * 0.45);
+          const pull = Math.min(length, pullSpeed * dt);
           pickup.x += (dx / length) * pull;
           pickup.y += (dy / length) * pull;
         }
 
-        if (distance(pickup, state.player) < state.player.radius + pickup.radius + collectRange) {
-          pickup.collected = true;
-          if (pickup.type === "gold") {
-            const crowdedBonus = state.openPopups.length >= 4 ? state.stats.crowdedGoldMultiplier : 0;
-            addGold(Math.round(pickup.value * Math.max(0.1, 1 + crowdedBonus)), "pickup");
-          } else {
-            state.xp += pickup.value;
-          }
+        if (distance(pickup, state.player) < state.player.radius + pickup.radius + collectPadding) {
+          collectPickup(pickup);
         }
       }
 
@@ -9491,10 +9606,41 @@
     function drawPickups() {
       for (const pickup of state.pickups) {
         const screen = worldToScreen(pickup);
-        ctx.beginPath();
-        ctx.fillStyle = pickup.type === "gold" ? "#f3c84b" : "#4aa8ff";
-        ctx.arc(screen.x, screen.y, pickup.radius, 0, Math.PI * 2);
-        ctx.fill();
+        if (pickup.type === "magnet") {
+          ctx.save();
+          ctx.strokeStyle = "#79f6ff";
+          ctx.fillStyle = "#8f66ff";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, pickup.radius + 2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, pickup.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, pickup.radius * 0.52, Math.PI * 0.1, Math.PI * 0.9);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, pickup.radius * 0.52, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.stroke();
+          ctx.restore();
+        } else if (pickup.type === "heal") {
+          ctx.save();
+          ctx.fillStyle = "#52e37c";
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, pickup.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(screen.x - 2, screen.y - pickup.radius * 0.58, 4, pickup.radius * 1.16);
+          ctx.fillRect(screen.x - pickup.radius * 0.58, screen.y - 2, pickup.radius * 1.16, 4);
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.fillStyle = pickup.type === "gold" ? "#f3c84b" : "#4aa8ff";
+          ctx.arc(screen.x, screen.y, pickup.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
 
@@ -9688,10 +9834,11 @@
     function drawChargeCasts() {
       for (const cast of state.chargeCasts) {
         const ratio = clamp(cast.elapsed / Math.max(0.001, cast.duration), 0, 1);
-        const start = worldToScreen({ x: cast.x, y: cast.y });
+        const origin = chargeOrigin(cast);
+        const start = worldToScreen(origin);
         ctx.save();
         if (cast.type === "ranged_charge_cannon") {
-          const impact = worldToScreen({ x: cast.impactX, y: cast.impactY });
+          const impact = worldToScreen(chargeImpactPoint(cast));
           ctx.strokeStyle = "rgba(255, 224, 112, " + (0.25 + ratio * 0.45) + ")";
           ctx.lineWidth = 3 + ratio * 5;
           ctx.beginPath();
@@ -9709,8 +9856,8 @@
           ctx.fill();
         } else if (cast.type === "melee_charged_cleave") {
           drawSlashArcShape({
-            x: cast.x,
-            y: cast.y,
+            x: origin.x,
+            y: origin.y,
             dirX: cast.dirX,
             dirY: cast.dirY,
             radius: cast.radius || cast.range,
@@ -9929,8 +10076,8 @@
       if (stat === "lowHpCooldownMultiplier") return "저체력 쿨타임";
       if (stat === "maxHpDamageMultiplier") return "최대 HP 피해";
       if (stat === "cleanupComboGraceBonus") return "정리 콤보 유지";
-      if (stat === "pickupRangeMultiplier") return "획득 범위";
-      if (stat === "pickupRangeFlat") return "획득 범위";
+      if (stat === "pickupRangeMultiplier") return "골드/XP 획득 범위";
+      if (stat === "pickupRangeFlat") return "골드/XP 획득 범위";
       if (stat === "cleanupComboPickupRangeMultiplier") return "정리 콤보 획득";
       if (stat === "critChance") return "치명타 확률";
       if (stat === "critDamageMultiplier") return "치명타 피해";
@@ -10471,6 +10618,10 @@
         setWaveMode("fast_horde", true);
       } else if (button.dataset.debug === "waveDense") {
         setWaveMode("dense_horde", true);
+      } else if (button.dataset.debug === "dropMagnetPickup") {
+        spawnFieldPickup("magnet", state.player.x + randomRange(-24, 24), state.player.y + randomRange(-24, 24));
+      } else if (button.dataset.debug === "dropHealPickup") {
+        spawnFieldPickup("heal", state.player.x + randomRange(-24, 24), state.player.y + randomRange(-24, 24));
       } else if (button.dataset.debug === "installKeyboardSecurity") {
         installResidentProgram("keyboard_security", null, { free: true });
       } else if (button.dataset.debug === "installRealtimeGuard") {
