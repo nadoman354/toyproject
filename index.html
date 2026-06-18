@@ -1040,9 +1040,25 @@
       border-color: #3caa5f;
     }
 
-    .popupWindow.trash_drag {
-      background: #ece7ff;
-      border-color: #8d78db;
+    .popupWindow.infected_popup {
+      background: #19281e;
+      border-color: #4bdd73;
+      color: #dfffea;
+    }
+
+    .infected_popup .popupWarning {
+      background: rgba(75, 221, 115, 0.14);
+      color: #dfffea;
+    }
+
+    .popupWindow.infectionTarget {
+      box-shadow: 0 0 0 3px rgba(56, 184, 111, 0.45), 0 14px 36px rgba(0, 0, 0, 0.46);
+      animation: infectionTargetPulse 0.9s ease-in-out infinite alternate;
+    }
+
+    @keyframes infectionTargetPulse {
+      from { filter: saturate(1); }
+      to { filter: saturate(1.45) brightness(1.08); }
     }
 
     .popupWindow.first_purchase_package {
@@ -1124,8 +1140,8 @@
       background: #207a3e;
     }
 
-    .trash_drag .titleBar {
-      background: #5843ad;
+    .infected_popup .titleBar {
+      background: #105a2d;
     }
 
     .first_purchase_package .titleBar {
@@ -1922,7 +1938,7 @@
             <button type="button" data-debug="creditPlus">신용도 +10</button>
             <button type="button" data-debug="creditMinus">신용도 -10</button>
             <button type="button" data-debug="clear">팝업 제거</button>
-            <button type="button" data-debug="telegraphBasic">예고 팝업</button>
+            <button type="button" data-debug="telegraphMoving">예고 이동 팝업</button>
             <button type="button" data-popup="first_purchase_package">첫 계약</button>
             <button type="button" data-debug="investorMode">투자자 모드</button>
             <button type="button" data-debug="clearPlaystyle">계약 해제</button>
@@ -1931,7 +1947,6 @@
             <button type="button" data-popup="loan_offer">대출</button>
             <button type="button" data-popup="stock_broker_app">증권 앱</button>
             <button type="button" data-popup="popup_store">팝업 상점</button>
-            <button type="button" data-popup="basic_ad">기본 팝업</button>
             <button type="button" data-popup="ad_buff">광고 버프</button>
             <button type="button" data-popup="ad_coupon">광고 할인</button>
             <button type="button" data-popup="ad_free_sample">광고 샘플</button>
@@ -1943,9 +1958,8 @@
             <button type="button" data-popup="terms_malicious_optimization">악성 약관</button>
             <button type="button" data-popup="clean_challenge_basic">청소 의뢰</button>
             <button type="button" data-popup="volatile_bomb_popup">불안정 창</button>
-            <button type="button" data-popup="moving_close">움직이는 X</button>
+            <button type="button" data-popup="moving_close">떠다니는 광고</button>
             <button type="button" data-popup="infection">감염</button>
-            <button type="button" data-popup="trash_drag">쓰레기통</button>
           </div>
         </div>
       </section>
@@ -2177,7 +2191,7 @@
       {
         id: "auto_click_macro",
         name: "자동 클릭 매크로",
-        description: "8초마다 가장 오래된 기본 팝업 자동 제거",
+        description: "8초마다 가장 오래된 광고성 팝업 자동 제거",
         rarity: "Epic",
         tags: ["clean", "popup_close", "utility"],
         effect: { stat: "autoCloseBasicInterval", value: 8 }
@@ -2582,7 +2596,7 @@
       {
         id: "task_manager",
         name: "작업 관리자",
-        description: "긴급 닫기가 Basic보다 위험 팝업을 우선 닫습니다.",
+        description: "긴급 닫기가 더 위험한 팝업을 우선 닫습니다.",
         rarity: "Epic",
         effect: { stat: "smartEmergencyClose", value: 1 }
       },
@@ -2672,15 +2686,6 @@
         efficiencyLabel: "보상 선택 효율 +260%",
         families: ["system"],
         weight: 0
-      },
-      {
-        id: "basic_ad",
-        title: "오늘만 무료 혜택",
-        body: "한정 혜택이 도착했습니다. 관심이 없더라도 이 창은 이미 열렸습니다.",
-        type: "basic",
-        copyTone: "product_ad",
-        families: ["generic"],
-        weight: 40
       },
       {
         id: "keyboard_security_installer",
@@ -2970,20 +2975,19 @@
       {
         id: "volatile_bomb_popup",
         title: "긴급 최적화 스캔",
-        body: "불안정한 창이 감지되었습니다. 지금 닫으면 주변 프로세스가 함께 정리됩니다. 지연 시 추가 광고 창이 열릴 수 있습니다.",
+        body: "불안정한 창이 감지되었습니다. 지금 닫으면 주변 프로세스가 함께 정리됩니다. 지연 시 다음 팝업 압박이 앞당겨질 수 있습니다.",
         type: "volatile_popup",
         copyTone: "cleanup_utility",
         families: ["clean"],
         weight: 8,
         duration: 8,
         closeDamage: 25,
-        closeRadius: 150,
-        timeoutSpawnBasic: true
+        closeRadius: 150
       },
       {
         id: "moving_close",
-        title: "신규 상품 알림",
-        body: "추천 상품이 준비되었습니다. 닫기 버튼은 고객 관심도에 따라 유동적으로 배치됩니다.",
+        title: "떠다니는 광고 창",
+        body: "화면 보호기처럼 떠다니는 추천 창입니다. 직접 따라가서 닫아야 합니다.",
         type: "moving_close",
         copyTone: "product_ad",
         families: ["generic"],
@@ -2992,21 +2996,12 @@
       {
         id: "infection",
         title: "무료 보안 확장 프로그램",
-        body: "검증되지 않은 확장 기능이 대기 중입니다. 방치 시 추천 창을 추가로 설치할 수 있습니다.",
+        body: "검증되지 않은 확장 기능이 대기 중입니다. 방치하면 열려 있는 유용한 팝업 하나를 오염시켜 보상과 기능을 손상시킵니다.",
         type: "infection",
         copyTone: "product_ad",
         families: ["generic", "clutter"],
         weight: 12,
-        duration: 8
-      },
-      {
-        id: "trash_drag",
-        title: "원클릭 클리너 설치 완료",
-        body: "닫기 버튼 없는 초경량 유틸리티입니다. 화면 아래 정리 영역으로 끌어 제거하세요.",
-        type: "trash_drag",
-        copyTone: "cleanup_utility",
-        families: ["generic"],
-        weight: 12
+        duration: 7.5
       }
     ];
 
@@ -7139,6 +7134,155 @@
       schedulePopupSpawn(def);
     }
 
+    function updateMovingPopupPosition(popup, dt) {
+      if (state.draggingPopup?.popup?.id === popup.id) {
+        return;
+      }
+      const layerWidth = popupLayer.clientWidth || CONFIG.canvasWidth;
+      const layerHeight = popupLayer.clientHeight || CONFIG.canvasHeight;
+      const rect = popupRectFromElement(popup);
+      let nextX = rect.x + (popup.moveVx || 90) * dt;
+      let nextY = rect.y + (popup.moveVy || 70) * dt;
+      if (nextX <= 4 || nextX + rect.w >= layerWidth - 4) {
+        popup.moveVx = Math.abs(popup.moveVx || 90) * (nextX <= 4 ? 1 : -1);
+        nextX = clamp(nextX, 4, Math.max(4, layerWidth - rect.w - 4));
+      }
+      if (nextY <= 4 || nextY + rect.h >= layerHeight - 4) {
+        popup.moveVy = Math.abs(popup.moveVy || 70) * (nextY <= 4 ? 1 : -1);
+        nextY = clamp(nextY, 4, Math.max(4, layerHeight - rect.h - 4));
+      }
+      popup.element.style.left = nextX + "px";
+      popup.element.style.top = nextY + "px";
+    }
+
+    function infectionForbiddenType(type) {
+      return type === "infection" ||
+        type === "infected_popup" ||
+        type === "first_purchase_package" ||
+        type === "boss_package_ad" ||
+        type === "stock_broker_app" ||
+        type === "system_notice" ||
+        type === "interest_offer" ||
+        type === "recurring_investment" ||
+        type === "loan_offer" ||
+        type === "stock_market";
+    }
+
+    function isEligibleInfectionTarget(sourcePopup, targetPopup) {
+      if (!sourcePopup || !targetPopup || sourcePopup.id === targetPopup.id) {
+        return false;
+      }
+      if (infectionForbiddenType(targetPopup.def.type) || targetPopup.def.category === "system" || isPopupLocked(targetPopup)) {
+        return false;
+      }
+      if (targetPopup.infectedByPopup || targetPopup.securityQuarantineTimer) {
+        return false;
+      }
+      return targetPopup.def.type === "sponsored_ad" ||
+        targetPopup.def.type === "timed_reward" ||
+        targetPopup.def.type === "clean_challenge" ||
+        targetPopup.def.type === "popup_store" ||
+        targetPopup.def.type === "volatile_popup" ||
+        targetPopup.def.type === "moving_close" ||
+        targetPopup.def.copyTone === "product_ad";
+    }
+
+    function infectionPriority(popup) {
+      const scores = {
+        sponsored_ad: 6,
+        timed_reward: 5,
+        clean_challenge: 5,
+        popup_store: 4,
+        volatile_popup: 3,
+        moving_close: 2
+      };
+      return scores[popup.def.type] || (popup.def.copyTone === "product_ad" ? 1 : 0);
+    }
+
+    function clearInfectionTarget(sourcePopup) {
+      if (!sourcePopup?.infectionTargetId) {
+        return;
+      }
+      const target = state.openPopups.find(popup => popup.id === sourcePopup.infectionTargetId);
+      if (target && target.infectionSourceId === sourcePopup.id) {
+        target.infectedByPopup = false;
+        target.infectionSourceId = null;
+        target.element.classList.remove("infectionTarget");
+      }
+      sourcePopup.infectionTargetId = null;
+    }
+
+    function chooseInfectionTarget(sourcePopup) {
+      const current = state.openPopups.find(popup => popup.id === sourcePopup.infectionTargetId);
+      if (isEligibleInfectionTarget(sourcePopup, current)) {
+        return current;
+      }
+      clearInfectionTarget(sourcePopup);
+      const target = state.openPopups
+        .filter(popup => isEligibleInfectionTarget(sourcePopup, popup))
+        .sort((a, b) => infectionPriority(b) - infectionPriority(a) || a.id - b.id)[0] || null;
+      if (target) {
+        sourcePopup.infectionTargetId = target.id;
+        sourcePopup.infectionTimer = 0;
+        target.infectedByPopup = true;
+        target.infectionSourceId = sourcePopup.id;
+        target.element.classList.add("infectionTarget");
+      }
+      return target;
+    }
+
+    function updateInfectionPopupUI(sourcePopup, target, ratio) {
+      const progress = sourcePopup.element.querySelector(".popupProgressFill");
+      if (progress) {
+        progress.style.width = (ratio * 100).toFixed(1) + "%";
+        progress.style.background = "#38b86f";
+      }
+      const label = sourcePopup.element.querySelector(".infectionTargetLabel");
+      if (label) {
+        label.textContent = target ? "감염 대상: " + target.def.title : "감염할 대상 없음";
+      }
+    }
+
+    function infectedPopupDefinition(originalTitle) {
+      return {
+        id: "infected_popup_" + Date.now() + "_" + Math.floor(Math.random() * 10000),
+        title: "감염된 팝업",
+        body: "'" + originalTitle + "' 창이 오염되었습니다. 원래 보상과 기능은 손상되었고, 이 창은 직접 닫아야 합니다.",
+        type: "infected_popup",
+        copyTone: "product_ad",
+        families: ["generic", "clutter"],
+        weight: 0
+      };
+    }
+
+    function removePopupWithoutReward(popup) {
+      const index = state.openPopups.findIndex(item => item.id === popup.id);
+      if (index < 0) {
+        return false;
+      }
+      popup.element.remove();
+      state.openPopups.splice(index, 1);
+      return true;
+    }
+
+    function infectPopup(sourcePopup) {
+      const target = state.openPopups.find(popup => popup.id === sourcePopup.infectionTargetId);
+      if (!isEligibleInfectionTarget(sourcePopup, target)) {
+        sourcePopup.infectionTimer = 0;
+        clearInfectionTarget(sourcePopup);
+        return false;
+      }
+      const rect = popupRectFromElement(target);
+      const originalTitle = target.def.title;
+      clearInfectionTarget(sourcePopup);
+      if (!removePopupWithoutReward(target)) {
+        return false;
+      }
+      createPopup(infectedPopupDefinition(originalTitle), { x: rect.x, y: rect.y, inputGrace: 0.15 });
+      createSystemGrowthPopup("팝업 감염", originalTitle + " 창이 감염되어 보상과 기능이 손상되었습니다.");
+      return true;
+    }
+
     function updatePopupTimers(dt) {
       state.popupTimer -= dt;
       state.emergencyTimer = Math.max(0, state.emergencyTimer - dt);
@@ -7241,7 +7385,7 @@
     function updateSpecialPopups(dt) {
       updateStockMarket(dt);
 
-      const pendingBasicSpawns = [];
+      const completedInfections = [];
       const completedInterest = [];
       const completedSponsored = [];
       const completedRecurring = [];
@@ -7260,25 +7404,20 @@
         }
 
         if (popup.def.type === "moving_close") {
-          const close = popup.element.querySelector(".popupClose");
-          if (close) {
-            const x = Math.sin(popup.life * 2.4) * 18;
-            const y = Math.cos(popup.life * 1.8) * 5;
-            close.style.transform = "translate(" + x.toFixed(1) + "px, " + y.toFixed(1) + "px)";
-          }
+          updateMovingPopupPosition(popup, dt);
         }
 
         if (popup.def.type === "infection") {
-          const duration = popup.def.duration || 8;
-          const ratio = clamp((popup.life % duration) / duration, 0, 1);
-          const progress = popup.element.querySelector(".popupProgressFill");
-          if (progress) {
-            progress.style.width = (ratio * 100).toFixed(1) + "%";
-            progress.style.background = "#38b86f";
+          const target = chooseInfectionTarget(popup);
+          if (target) {
+            popup.infectionTimer += dt;
           }
-          if (popup.life >= duration && !popup.infecting) {
-            popup.infecting = true;
-            pendingBasicSpawns.push(popup);
+          const duration = popup.infectionDuration || popup.def.duration || 7.5;
+          const ratio = target ? clamp(popup.infectionTimer / duration, 0, 1) : 0;
+          updateInfectionPopupUI(popup, target, ratio);
+          if (target && popup.infectionTimer >= duration && !popup.infectionResolved) {
+            popup.infectionResolved = true;
+            completedInfections.push(popup);
           }
         }
 
@@ -7396,12 +7535,7 @@
       }
 
       for (const popup of expiredVolatilePopups) {
-        if (popup.def.timeoutSpawnBasic && state.openPopups.length < maxOpenPopups()) {
-          const basic = POPUP_DEFINITIONS.find(def => def.id === "basic_ad");
-          if (basic) {
-            createPopup(basic);
-          }
-        }
+        state.popupTimer = Math.min(state.popupTimer, 0.9);
         closePopup(popup.id, { reason: "auto" });
       }
 
@@ -7424,15 +7558,9 @@
         closePopup(id, { reason: "system" });
       }
 
-      for (const popup of pendingBasicSpawns) {
-        if (state.openPopups.length < maxOpenPopups()) {
-          const basic = POPUP_DEFINITIONS.find(def => def.id === "basic_ad");
-          if (basic) {
-            createPopup(basic);
-          }
-        }
-        popup.life = 0;
-        popup.infecting = false;
+      for (const popup of completedInfections) {
+        infectPopup(popup);
+        closePopup(popup.id, { reason: "auto" });
       }
     }
 
@@ -7446,9 +7574,18 @@
         return;
       }
 
-      const basic = state.openPopups.find(popup => popup.def.type === "basic");
-      if (basic) {
-        closePopup(basic.id, { reason: "auto" });
+      const target = state.openPopups.find(popup =>
+        !isPopupLocked(popup) &&
+        popup.def.category !== "system" &&
+        (
+          popup.def.type === "moving_close" ||
+          popup.def.type === "infection" ||
+          popup.def.type === "infected_popup" ||
+          popup.def.copyTone === "product_ad"
+        )
+      );
+      if (target) {
+        closePopup(target.id, { reason: "auto" });
       }
       state.autoCloseBasicTimer = Math.max(2, state.stats.autoCloseBasicInterval);
     }
@@ -7513,8 +7650,8 @@
       if (def.type === "infection") {
         return { width: 286, height: 168 };
       }
-      if (def.type === "trash_drag") {
-        return { width: 276, height: 142 };
+      if (def.type === "infected_popup") {
+        return { width: 292, height: 150 };
       }
       if (def.type === "first_purchase_package") {
         return { width: 336, height: 236 };
@@ -7850,6 +7987,20 @@
         popup.volatileExpired = false;
       }
 
+      if (popup.def.type === "moving_close") {
+        const angle = randomRange(0, Math.PI * 2);
+        const speed = randomRange(70, 120);
+        popup.moveVx = Math.cos(angle) * speed;
+        popup.moveVy = Math.sin(angle) * speed;
+      }
+
+      if (popup.def.type === "infection") {
+        popup.infectionTimer = 0;
+        popup.infectionDuration = popup.def.duration || 7.5;
+        popup.infectionTargetId = null;
+        popup.infectionResolved = false;
+      }
+
       if (popup.def.type === "stock_broker_app") {
         popup.stockApp = {
           minimized: false
@@ -8017,7 +8168,7 @@
         event.stopPropagation();
         requestClosePopup(id);
       });
-      if (def.type !== "trash_drag" && def.type !== "stock_broker_app" && def.type !== "first_purchase_package") {
+      if (def.type !== "stock_broker_app" && def.type !== "first_purchase_package") {
         titleBar.appendChild(close);
       }
 
@@ -8936,7 +9087,7 @@
       summary.className = "popupWarning";
       summary.innerHTML =
         "시간 안에 닫기: 주변 " + popup.def.closeRadius + "px 적에게 " + popup.def.closeDamage + " 피해<br>" +
-        "시간 초과: 기본 팝업이 추가로 생길 수 있습니다.";
+        "시간 초과: 다음 팝업 압박이 앞당겨질 수 있습니다.";
       const progress = document.createElement("div");
       progress.className = "popupProgress";
       progress.innerHTML = "<div class=\"popupProgressFill volatileProgressFill\"></div>";
@@ -9110,7 +9261,7 @@
     }
 
     function findSecurityQuarantineTarget() {
-      const allowedTypes = new Set(["basic", "timed_reward", "infection", "moving_close", "trash_drag"]);
+      const allowedTypes = new Set(["timed_reward", "infection", "infected_popup", "moving_close"]);
       return state.openPopups
         .filter(popup => !popup.securityQuarantineTimer && !isPopupLocked(popup) && (allowedTypes.has(popup.def.type) || popup.def.copyTone === "product_ad"))
         .sort((a, b) => a.id - b.id)[0] || null;
@@ -9263,17 +9414,6 @@
     }
 
     function buildPopupControls(def, body, id, popup) {
-      if (def.type === "basic") {
-        const controls = document.createElement("div");
-        controls.className = "popupControls";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "닫기";
-        button.addEventListener("click", () => requestClosePopup(id));
-        controls.appendChild(button);
-        body.appendChild(controls);
-      }
-
       if (def.type === "ad_buff") {
         const note = document.createElement("div");
         note.style.marginTop = "8px";
@@ -9346,18 +9486,28 @@
         progress.className = "popupProgress";
         progress.innerHTML = "<div class=\"popupProgressFill\"></div>";
         const note = document.createElement("div");
+        note.className = "infectionTargetLabel";
         note.style.marginTop = "8px";
         note.style.fontWeight = "800";
-        note.textContent = "초록 막대가 차면 팝업을 퍼뜨립니다.";
-        body.append(progress, note);
+        note.textContent = "감염할 대상 검색 중";
+        const warning = document.createElement("div");
+        warning.className = "popupWarning";
+        warning.textContent = "막대가 차기 전에 이 창을 닫으면 감염을 막을 수 있습니다.";
+        body.append(progress, note, warning);
       }
 
-      if (def.type === "trash_drag") {
-        const note = document.createElement("div");
-        note.style.marginTop = "8px";
-        note.style.fontWeight = "800";
-        note.textContent = "아래쪽 쓰레기통 영역에 놓으면 제거됩니다.";
-        body.appendChild(note);
+      if (def.type === "infected_popup") {
+        const warning = document.createElement("div");
+        warning.className = "popupWarning";
+        warning.textContent = "감염된 창입니다. 원래 보상은 지급되지 않습니다.";
+        const controls = document.createElement("div");
+        controls.className = "popupControls";
+        const close = document.createElement("button");
+        close.type = "button";
+        close.textContent = "감염 창 닫기";
+        close.addEventListener("click", () => requestClosePopup(id));
+        controls.appendChild(close);
+        body.append(warning, controls);
       }
 
       if (def.type === "interest_offer") {
@@ -9496,6 +9646,9 @@
       if (popup.def.type === "volatile_popup" && !popup.volatileExpired) {
         triggerVolatilePopupClose(popup);
       }
+      if (popup.def.type === "infection") {
+        clearInfectionTarget(popup);
+      }
       popup.element.remove();
       state.openPopups.splice(index, 1);
       const isRealPopup = popup.def.category !== "system" && popup.def.type !== "first_purchase_package";
@@ -9513,7 +9666,7 @@
         return;
       }
       const target = state.stats.smartEmergencyClose > 0
-        ? (state.openPopups.find(popup => popup.def.type !== "basic" && isEmergencyClosablePopup(popup)) || state.openPopups.find(isEmergencyClosablePopup))
+        ? (state.openPopups.find(popup => popup.def.category !== "system" && isEmergencyClosablePopup(popup)) || state.openPopups.find(isEmergencyClosablePopup))
         : state.openPopups.find(isEmergencyClosablePopup);
       if (!target) {
         if (state.openPopups.some(popup => popup.def.type === "stock_broker_app")) {
@@ -9558,19 +9711,6 @@
       const settled = pushRectOutOfPopupOverlap(rect, 4, layerWidth, layerHeight, popup.id);
       popup.element.style.left = settled.x + "px";
       popup.element.style.top = settled.y + "px";
-    }
-
-    function draggedPopupOverTrash(popup) {
-      if (popup.def.type !== "trash_drag") {
-        return false;
-      }
-
-      const popupRect = popup.element.getBoundingClientRect();
-      const trashRect = trashZone.getBoundingClientRect();
-      return popupRect.left < trashRect.right &&
-        popupRect.right > trashRect.left &&
-        popupRect.top < trashRect.bottom &&
-        popupRect.bottom > trashRect.top;
     }
 
     function drawBackground() {
@@ -10367,7 +10507,7 @@
       lastItem.innerHTML = state.lastItemText;
       itemInventory.innerHTML = renderItemInventory();
       recentPerk.innerHTML = state.recentPerkText;
-      trashZone.classList.toggle("active", state.openPopups.some(popup => popup.def.type === "trash_drag"));
+      trashZone.classList.remove("active");
 
       const emergency = state.emergencyTimer > 0 ? state.emergencyTimer.toFixed(1) + "초" : "준비됨";
       const pendingDiscount = state.nextItemDiscounts.reduce((sum, discount) => sum + discount.value, 0);
@@ -10660,10 +10800,10 @@
         addCreditScore(-10, "디버그 조정");
       } else if (button.dataset.debug === "clear") {
         clearAllPopupsForDebug();
-      } else if (button.dataset.debug === "telegraphBasic") {
-        const basic = POPUP_DEFINITIONS.find(def => def.id === "basic_ad");
-        if (basic) {
-          schedulePopupSpawn(basic);
+      } else if (button.dataset.debug === "telegraphMoving") {
+        const moving = POPUP_DEFINITIONS.find(def => def.id === "moving_close");
+        if (moving) {
+          schedulePopupSpawn(moving);
         }
       } else if (button.dataset.debug === "investorMode") {
         state.activePlaystyle = "investor_starter";
@@ -10896,11 +11036,7 @@
         return;
       }
 
-      if (draggedPopupOverTrash(state.draggingPopup.popup)) {
-        closePopup(state.draggingPopup.popup.id, { reason: "trash" });
-      } else {
-        settleDraggedPopup(state.draggingPopup.popup);
-      }
+      settleDraggedPopup(state.draggingPopup.popup);
       state.draggingPopup = null;
       event.preventDefault();
     }
