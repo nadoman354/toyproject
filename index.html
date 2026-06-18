@@ -1878,7 +1878,7 @@
           <button id="statusToggleButton" class="panelToggle" type="button" title="조작 패널 접기">−</button>
         </div>
         <div id="statusBody">
-          <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, X 일반 팝업 닫기, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
+          <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, 팝업 우상단 닫기 버튼, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
           <div class="statRow" style="margin-top: 8px;"><span>배속</span><select id="speedSelect" class="compactSelect"></select></div>
           <div id="runStats" style="margin-top: 8px;"></div>
         </div>
@@ -7893,6 +7893,9 @@
       close.className = "popupClose";
       close.type = "button";
       close.textContent = "x";
+      close.addEventListener("pointerdown", event => {
+        event.stopPropagation();
+      });
       close.addEventListener("click", event => {
         event.stopPropagation();
         requestClosePopup(id);
@@ -7980,29 +7983,6 @@
       return true;
     }
 
-    function popupZIndex(popup) {
-      return Number.parseInt(popup?.element?.style?.zIndex || "0", 10) || 0;
-    }
-
-    function topmostClosablePopup() {
-      return state.openPopups
-        .filter(popup => isEmergencyClosablePopup(popup))
-        .sort((a, b) => popupZIndex(b) - popupZIndex(a))[0] || null;
-    }
-
-    function isTypingTarget(target) {
-      return target instanceof Element && Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
-    }
-
-    function closeTopmostPopupByKeyboard() {
-      const popup = topmostClosablePopup();
-      if (!popup) {
-        createSystemGrowthPopup("닫을 수 있는 창 없음", "현재 X키로 닫을 수 있는 팝업이 없습니다.");
-        return;
-      }
-      requestClosePopup(popup.id, { reason: "manual" });
-    }
-
     function requestClosePopup(id, options = {}) {
       const popup = state.openPopups.find(item => item.id === id);
       if (popup?.def.type === "stock_broker_app") {
@@ -8010,7 +7990,7 @@
         return;
       }
       if (popup?.def.type === "first_purchase_package") {
-        createSystemGrowthPopup("첫 결제 대기", "첫 결제 팝업은 X나 긴급 닫기로 닫을 수 없습니다. 결제하거나 거절을 선택하세요.");
+        createSystemGrowthPopup("첫 결제 대기", "첫 결제 팝업은 창 닫기나 긴급 닫기로 닫을 수 없습니다. 결제하거나 거절을 선택하세요.");
         return;
       }
       if (popup && isPopupLocked(popup)) {
@@ -9356,6 +9336,9 @@
     function attachDrag(popup, titleBar) {
       titleBar.addEventListener("pointerdown", event => {
         if (event.pointerType === "mouse" && event.button !== 0) {
+          return;
+        }
+        if (event.target instanceof Element && event.target.closest("button, input, select, textarea, a")) {
           return;
         }
         bringPopupToFront(popup);
@@ -10850,12 +10833,6 @@
 
       if (key === "p" && !state.gameOver && !state.selectingItem && !state.selectingPerk && !state.selectingModule) {
         state.paused = !state.paused;
-        event.preventDefault();
-        return;
-      }
-
-      if (key === "x" && !state.gameOver && !state.selectingItem && !state.selectingPerk && !state.selectingModule && !state.selectingPaidReward && !isTypingTarget(event.target)) {
-        closeTopmostPopupByKeyboard();
         event.preventDefault();
         return;
       }
