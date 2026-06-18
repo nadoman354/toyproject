@@ -384,6 +384,41 @@
       border: 1px solid rgba(115, 191, 255, 0.24);
     }
 
+    .investorDashboard {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+      border-color: rgba(243, 200, 75, 0.28);
+      background: linear-gradient(180deg, rgba(20, 31, 38, 0.88), rgba(17, 24, 30, 0.9));
+    }
+
+    .investorDashboard.hidden {
+      display: none;
+    }
+
+    #investorDashboardBody {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .investorLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 5px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .investorLine strong {
+      color: #ffe4a3;
+      white-space: nowrap;
+    }
+
     .residentProgramHud {
       display: grid;
       gap: 6px;
@@ -1866,6 +1901,10 @@
 
       <section id="economyHud" class="panel economyHud">
         <div id="goldHud" class="goldCounter"><span>골드</span><strong><span id="goldText">0</span>G</strong></div>
+        <div id="investorDashboard" class="hudCard investorDashboard hidden">
+          <div class="hudCardHeader"><span>투자자 터미널</span><strong id="investorCreditMini">신용 50</strong></div>
+          <div id="investorDashboardBody">투자자 계약 대기 중</div>
+        </div>
         <div id="itemMachineHud" class="itemMachineCard">
           <h2 class="panelTitle">아이템 머신</h2>
           <div class="statRow"><span>투입 비용</span><strong id="itemCostText">25G</strong></div>
@@ -1944,7 +1983,7 @@
             <button type="button" data-debug="clearPlaystyle">계약 해제</button>
             <button type="button" data-popup="interest_offer">이자 상품</button>
             <button type="button" data-popup="recurring_investment">자동 투자</button>
-            <button type="button" data-popup="loan_offer">대출</button>
+            <button type="button" data-popup="loan_offer">신용 현금화</button>
             <button type="button" data-popup="stock_broker_app">증권 앱</button>
             <button type="button" data-popup="popup_store">팝업 상점</button>
             <button type="button" data-popup="ad_buff">광고 버프</button>
@@ -2873,32 +2912,32 @@
       {
         id: "interest_offer",
         title: "단기 예치 상품 안내",
-        body: "보유 골드 일부를 단기 예치합니다. 만기 조건을 충족하면 원금과 약정 수익이 지급되며, 중도 해지 시 원금 일부만 반환됩니다.",
+        body: "현재 보유 골드 일부를 한 번 묶는 예치 상품입니다. 만기 후 원금과 약정 수익이 지급되며, 중도 해지 시 손실이 발생합니다.",
         type: "interest_offer",
         copyTone: "finance",
         families: ["investor"],
-        weight: 10
+        weight: 11
       },
       {
         id: "recurring_investment",
         title: "자동 적립 투자 설정",
-        body: "새로 획득하는 골드 일부를 자동으로 예치합니다. 만기까지 유지하면 적립액과 보너스 수익이 정산됩니다.",
+        body: "새로 들어오는 주요 수익 일부를 자동으로 적립합니다. 투자 중 적립액은 전투 보너스에도 기여하며, 만기 시 적립액과 보너스가 정산됩니다.",
         type: "recurring_investment",
         copyTone: "finance",
         families: ["investor"],
-        weight: 8,
+        weight: 10,
         duration: 30,
         redirectRatio: 0.3,
         maturityBonus: 0.3
       },
       {
         id: "loan_offer",
-        title: "즉시 유동성 한도",
-        body: "현재 신용도 기준으로 대출 한도가 산정되었습니다. 기한 내 상환하지 않을 경우 보유 골드 압류 및 가격 페널티가 적용됩니다.",
+        title: "신용 현금화 제안",
+        body: "신용도를 깎아 즉시 골드를 확보합니다. 상환 의무는 없지만 낮아진 신용도는 투자자 보너스와 조건에 영향을 줍니다.",
         type: "loan_offer",
         copyTone: "finance",
         families: ["investor"],
-        weight: 8
+        weight: 6
       },
       {
         id: "stock_broker_app",
@@ -2907,7 +2946,7 @@
         type: "stock_broker_app",
         copyTone: "broker_app",
         families: ["investor"],
-        weight: 9
+        weight: 0
       },
       {
         id: "stock_stable",
@@ -2956,8 +2995,8 @@
         type: "popup_store",
         copyTone: "game_package",
         efficiencyLabel: "랜덤 구매 효율 +160%",
-        families: ["generic"],
-        weight: 10,
+        families: ["generic", "investor"],
+        weight: 12,
         duration: 18
       },
       {
@@ -3066,13 +3105,13 @@
       {
         id: "investor_starter",
         name: "투자자 스타터 계약",
-        theme: "이자/투자/대출 경제 빌드",
+        theme: "이자/투자/신용 현금화 경제 빌드",
         description: "돈을 묶어 두고 정산하는 팝업이 더 자주 나오며, 이자 지급과 상점 효율이 좋아집니다.",
         efficiencyLabel: "자본 운용 효율 +200%",
         benefits: [
-          "계약 효과: 투자자 팝업 풀 활성화, 이자 상품 출현 +55%, 이자 지급 +18%, 상점 할인 +10%",
+          "계약 효과: 투자자 팝업 풀 활성화, 이자/자동 적립 출현 +55%, 이자 지급 +18%, 상점 할인 +10%",
           "전투 특전: 투자 중 골드 50G당 피해 +4%, 신용 60/80 이상 공격 템포 강화, 보유 골드 사거리 보너스",
-          "전용 UI: 증권 LIVE 앱이 자동으로 열리고, 이후 자연 스폰은 투자자 팝업 중심으로 전환"
+          "전용 UI: 증권 LIVE 앱이 자동으로 열리고, 신용 현금화는 상환 없는 즉시 자금 선택지로 등장"
         ],
         cost: 10,
         effects: [
@@ -3327,6 +3366,9 @@
     const itemCostText = document.getElementById("itemCostText");
     const discountText = document.getElementById("discountText");
     const extraChoiceText = document.getElementById("extraChoiceText");
+    const investorDashboard = document.getElementById("investorDashboard");
+    const investorCreditMini = document.getElementById("investorCreditMini");
+    const investorDashboardBody = document.getElementById("investorDashboardBody");
     const rollItemButton = document.getElementById("rollItemButton");
     const openInventoryButton = document.getElementById("openInventoryButton");
     const lastItem = document.getElementById("lastItem");
@@ -3464,13 +3506,14 @@
         stockMarket: {
           selectedSymbol: "POP",
           tickTimer: 1,
+          lastBiasLabel: "조용한 장세",
           stock: {
             symbol: "POP",
             name: "팝업 테마주",
             price: 100,
             history: [100],
-            volatility: 0.065,
-            drift: 0.002,
+            volatility: 0.085,
+            drift: 0.003,
             shares: 0,
             avgCost: 0,
             lastChange: 0
@@ -4684,14 +4727,28 @@
       return state.openPopups.filter(popup => popup.def.type === "recurring_investment" && popup.investment?.accepted && !popup.investment?.matured);
     }
 
+    function shouldRecurringInvestmentRedirect(source) {
+      // Recurring investment payout/refund is excluded to avoid reinvesting its own settlement loop.
+      const excludedSources = new Set([
+        "debug",
+        "effect",
+        "system",
+        "investmentPayout",
+        "investmentRefund",
+        "creditCashout",
+        "loan"
+      ]);
+      return Boolean(source) && !excludedSources.has(source);
+    }
+
     function addGold(amount, source) {
       let remaining = amount;
-      const recurringPopups = source !== "investmentPayout" ? activeRecurringInvestments() : [];
+      const recurringPopups = shouldRecurringInvestmentRedirect(source) ? activeRecurringInvestments() : [];
       for (const recurring of recurringPopups) {
         if (remaining <= 0 || amount <= 0) {
           break;
         }
-        const redirected = Math.min(remaining, Math.floor(amount * recurring.investment.redirectRatio));
+        const redirected = Math.min(remaining, Math.floor(remaining * recurring.investment.redirectRatio));
         if (redirected > 0) {
           recurring.investment.accumulated += redirected;
           state.investedGold += redirected;
@@ -4740,6 +4797,13 @@
       return Math.max(0, state.investedGold || 0);
     }
 
+    function investorBonusBreakdown() {
+      const investedDamage = Math.min(0.6, Math.floor(totalInvestorPowerGold() / 50) * 0.04);
+      const creditCooldown = state.creditScore >= 80 ? -0.1 : state.creditScore >= 60 ? -0.05 : 0;
+      const heldGoldRange = Math.min(0.15, Math.floor(state.gold / 100) * 0.03);
+      return { investedDamage, creditCooldown, heldGoldRange };
+    }
+
     function activeStarterCombatBonuses() {
       const bonuses = {
         damageMultiplier: 0,
@@ -4750,15 +4814,13 @@
       };
 
       if (state.activePlaystyle === "investor_starter") {
-        const investedDamage = Math.min(0.6, Math.floor(totalInvestorPowerGold() / 50) * 0.04);
-        const creditCooldown = state.creditScore >= 80 ? -0.1 : state.creditScore >= 60 ? -0.05 : 0;
-        const heldGoldRange = Math.min(0.15, Math.floor(state.gold / 100) * 0.03);
-        bonuses.damageMultiplier += investedDamage;
-        bonuses.cooldownMultiplier += creditCooldown;
-        bonuses.rangeMultiplier += heldGoldRange;
-        if (investedDamage > 0) bonuses.notes.push("투자 피해 " + formatSignedPercent(investedDamage));
-        if (creditCooldown < 0) bonuses.notes.push("신용 템포 " + formatSignedPercent(creditCooldown));
-        if (heldGoldRange > 0) bonuses.notes.push("자금 사거리 " + formatSignedPercent(heldGoldRange));
+        const investor = investorBonusBreakdown();
+        bonuses.damageMultiplier += investor.investedDamage;
+        bonuses.cooldownMultiplier += investor.creditCooldown;
+        bonuses.rangeMultiplier += investor.heldGoldRange;
+        if (investor.investedDamage > 0) bonuses.notes.push("투자 피해 " + formatSignedPercent(investor.investedDamage));
+        if (investor.creditCooldown < 0) bonuses.notes.push("신용 템포 " + formatSignedPercent(investor.creditCooldown));
+        if (investor.heldGoldRange > 0) bonuses.notes.push("자금 사거리 " + formatSignedPercent(investor.heldGoldRange));
       } else if (state.activePlaystyle === "sponsored_starter") {
         if (countOpenAdPopups() > 0) {
           bonuses.damageMultiplier += 0.1;
@@ -4895,11 +4957,12 @@
       closePopup(popupId, { reason: "auto" });
     }
 
-    function loanTermsByCredit(score) {
-      if (score < 40) return { receive: 70, repay: 105, deadline: 35 };
-      if (score < 60) return { receive: 100, repay: 130, deadline: 45 };
-      if (score < 80) return { receive: 120, repay: 145, deadline: 45 };
-      return { receive: 150, repay: 175, deadline: 60 };
+    function creditCashoutOptions() {
+      return [
+        { id: "small", label: "소액 현금화", creditCost: 6, gold: 50 },
+        { id: "medium", label: "중간 현금화", creditCost: 12, gold: 110 },
+        { id: "large", label: "대형 현금화", creditCost: 20, gold: 210 }
+      ];
     }
 
     function applyEffects(source) {
@@ -5100,7 +5163,7 @@
       const refund = Math.floor(popup.interestPrincipal * 0.4);
       popup.interestMatured = true;
       state.investedGold = Math.max(0, state.investedGold - popup.interestPrincipal);
-      addGold(refund, "investmentPayout");
+      addGold(refund, "investmentRefund");
       addCreditScore(-8, "예치 상품 중도 해지");
       state.metrics.interestLost += 1;
     }
@@ -5112,7 +5175,7 @@
 
       popup.interestMatured = true;
       state.investedGold = Math.max(0, state.investedGold - popup.interestPrincipal);
-      addGold(interestPayout(popup), "investmentPayout");
+      addGold(interestPayout(popup), "interest");
       addCreditScore(8, "예치 상품 만기 정산");
       state.metrics.interestCompleted += 1;
       closePopup(popup.id, { reason: "auto" });
@@ -7389,7 +7452,6 @@
       const completedInterest = [];
       const completedSponsored = [];
       const completedRecurring = [];
-      const defaultedLoans = [];
       const completedCleanChallenges = [];
       const expiredCleanChallenges = [];
       const expiredVolatilePopups = [];
@@ -7456,14 +7518,6 @@
           }
         }
 
-        if (popup.def.type === "loan_offer" && popup.loan.accepted && !popup.loan.resolved) {
-          popup.loan.elapsed += dt;
-          updateLoanUI(popup);
-          if (popup.loan.elapsed >= popup.loan.deadline) {
-            defaultedLoans.push(popup);
-          }
-        }
-
         if (popup.def.type === "stock_market" && popup.stock.invested) {
           popup.stock.elapsed += dt;
           popup.stock.tickTimer -= dt;
@@ -7520,10 +7574,6 @@
 
       for (const popup of completedRecurring) {
         completeRecurringInvestment(popup);
-      }
-
-      for (const popup of defaultedLoans) {
-        defaultLoan(popup);
       }
 
       for (const popup of completedCleanChallenges) {
@@ -7957,10 +8007,8 @@
 
       if (popup.def.type === "loan_offer") {
         popup.loan = {
-          accepted: false,
           resolved: false,
-          elapsed: 0,
-          ...loanTermsByCredit(state.creditScore)
+          cashoutOptions: creditCashoutOptions()
         };
       }
 
@@ -8262,7 +8310,7 @@
         return;
       }
       if (popup && isPopupLocked(popup)) {
-        createSystemGrowthPopup("정산 필요", "돈이 걸린 팝업은 내부의 정산/상환/매도 버튼으로 처리해야 닫을 수 있습니다.");
+        createSystemGrowthPopup("정산 필요", "돈이 걸린 팝업은 내부의 정산/해지/매도 버튼으로 처리해야 닫을 수 있습니다.");
         return;
       }
       closePopup(id, { reason: "manual", ...options });
@@ -8274,9 +8322,9 @@
 
       if (!popup.interestAccepted) {
         summary.innerHTML =
-          "<strong>현재 골드 비율 예치</strong><br>" +
+          "<strong>현재 보유 골드 일부를 한 번 예치</strong><br>" +
           "만기 조건: " + interestMaturityText(popup) + "<br>" +
-          "중도 해지 시 원금 40%만 반환, 신용도 감소";
+          "만기 후 원금+수익 지급 / 중도 해지 시 원금 40%만 반환";
         const warning = document.createElement("div");
         warning.className = "popupWarning";
         warning.textContent = "수락 전에는 손실 없이 닫을 수 있습니다. 수락 후에는 정산 전까지 잠깁니다.";
@@ -8458,8 +8506,8 @@
 
       if (!investment.accepted) {
         summary.innerHTML =
-          "수락 후 " + investment.duration + "초 동안 새로 얻는 골드의 " + Math.round(investment.redirectRatio * 100) + "%를 자동 투자합니다.<br>" +
-          "만기 시 적립액 +" + Math.round(investment.maturityBonus * 100) + "%를 돌려받습니다. 난이도 상승 없음.";
+          "수락 후 " + investment.duration + "초 동안 주요 골드 수익의 " + Math.round(investment.redirectRatio * 100) + "%를 자동 적립합니다.<br>" +
+          "적립 중 금액은 투자 피해 보너스에 기여하고, 만기 시 적립액 +" + Math.round(investment.maturityBonus * 100) + "%가 정산됩니다.";
         const controls = document.createElement("div");
         controls.className = "popupControls";
         const accept = document.createElement("button");
@@ -8476,7 +8524,7 @@
       }
 
       summary.innerHTML =
-        "적립 중: 새 골드의 " + Math.round(investment.redirectRatio * 100) + "% 자동 예치<br>" +
+        "적립 중: 주요 골드 수익의 " + Math.round(investment.redirectRatio * 100) + "% 자동 적립<br>" +
         "현재 적립: <strong class=\"recurringAccumulatedLabel\">" + investment.accumulated + "G</strong>";
       const progress = document.createElement("div");
       progress.className = "popupProgress";
@@ -8549,108 +8597,48 @@
       const refund = Math.floor(investment.accumulated * 0.6);
       state.investedGold = Math.max(0, state.investedGold - investment.accumulated);
       if (refund > 0) {
-        addGold(refund, "investmentPayout");
+        addGold(refund, "investmentRefund");
       }
       addCreditScore(-5, "자동 적립 중도 해지");
       closePopup(popup.id, { reason: "auto" });
     }
 
     function renderLoanControls(body, popup) {
-      const loan = popup.loan;
       const summary = document.createElement("div");
       summary.className = "popupWarning";
-
-      if (!loan.accepted) {
-        summary.innerHTML =
-          "신용 등급: <strong>" + creditGrade(state.creditScore) + "</strong><br>" +
-          "즉시 수령: " + loan.receive + "G / 상환액: " + loan.repay + "G / 기한: " + loan.deadline + "초";
-        const controls = document.createElement("div");
-        controls.className = "popupControls";
-        const accept = document.createElement("button");
-        accept.type = "button";
-        accept.textContent = "대출 받기 +" + loan.receive + "G";
-        accept.addEventListener("click", () => acceptLoan(popup.id));
-        const close = document.createElement("button");
-        close.type = "button";
-        close.textContent = "닫기";
-        close.addEventListener("click", () => requestClosePopup(popup.id));
-        controls.append(accept, close);
-        body.append(summary, controls);
-        return;
-      }
-
       summary.innerHTML =
-        "상환 필요: <strong>" + loan.repay + "G</strong><br>" +
-        "미상환 시 보유 골드 절반 손실, 30초간 아이템 가격 +20%, 신용도 하락";
-      const progress = document.createElement("div");
-      progress.className = "popupProgress";
-      progress.innerHTML = "<div class=\"popupProgressFill loanProgressFill\"></div>";
+        "현재 신용 등급: <strong>" + creditGrade(state.creditScore) + "</strong> (" + state.creditScore + ")<br>" +
+        "신용도를 즉시 골드로 전환합니다. 상환, 빚, 디폴트 페널티는 없습니다.";
       const controls = document.createElement("div");
       controls.className = "popupControls";
-      const label = document.createElement("strong");
-      label.className = "loanTimeLabel";
-      label.textContent = Math.max(0, loan.deadline - loan.elapsed).toFixed(1) + "초";
-      const repay = document.createElement("button");
-      repay.type = "button";
-      repay.className = "loanRepayButton";
-      repay.dataset.cost = String(loan.repay);
-      repay.textContent = "상환 - " + loan.repay + "G";
-      repay.disabled = state.gold < loan.repay;
-      repay.addEventListener("click", () => repayLoan(popup.id));
-      controls.append(label, repay);
-      body.append(summary, progress, controls);
-      updateLoanUI(popup);
+      for (const option of popup.loan.cashoutOptions || creditCashoutOptions()) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "creditCashoutButton";
+        button.dataset.creditCost = String(option.creditCost);
+        button.textContent = option.label + " · 신용 -" + option.creditCost + " / +" + option.gold + "G";
+        button.disabled = state.creditScore < option.creditCost || state.gameOver;
+        button.addEventListener("click", () => acceptCreditCashout(popup.id, option));
+        controls.appendChild(button);
+      }
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "나중에";
+      close.addEventListener("click", () => requestClosePopup(popup.id));
+      controls.appendChild(close);
+      body.append(summary, controls);
     }
 
-    function acceptLoan(popupId) {
+    function acceptCreditCashout(popupId, option) {
       const popup = state.openPopups.find(item => item.id === popupId);
-      if (!popup || popup.loan.accepted || state.gameOver) {
+      if (!popup || popup.loan?.resolved || state.gameOver || !option || state.creditScore < option.creditCost) {
         return;
       }
-      popup.loan.accepted = true;
-      popup.loan.elapsed = 0;
-      addGold(popup.loan.receive, "loan");
-      state.debtGold += popup.loan.repay;
-      rerenderPopupBody(popup, renderLoanControls);
+      popup.loan.resolved = true;
+      addCreditScore(-option.creditCost, "신용 현금화");
+      addGold(option.gold, "creditCashout");
+      closePopup(popup.id, { reason: "auto" });
       updateUI();
-    }
-
-    function updateLoanUI(popup) {
-      const loan = popup.loan;
-      const ratio = clamp(loan.elapsed / loan.deadline, 0, 1);
-      const progress = popup.element.querySelector(".loanProgressFill");
-      const label = popup.element.querySelector(".loanTimeLabel");
-      if (progress) {
-        progress.style.width = (ratio * 100).toFixed(1) + "%";
-        progress.style.background = ratio > 0.75 ? "#d84e4e" : "#35a866";
-      }
-      if (label) {
-        label.textContent = Math.max(0, loan.deadline - loan.elapsed).toFixed(1) + "초";
-      }
-    }
-
-    function repayLoan(popupId) {
-      const popup = state.openPopups.find(item => item.id === popupId);
-      if (!popup || !popup.loan.accepted || popup.loan.resolved || state.gold < popup.loan.repay) {
-        return;
-      }
-      state.gold -= popup.loan.repay;
-      state.debtGold = Math.max(0, state.debtGold - popup.loan.repay);
-      popup.loan.resolved = true;
-      addCreditScore(9, "대출 정상 상환");
-      closePopup(popup.id, { reason: "auto" });
-    }
-
-    function defaultLoan(popup) {
-      if (!popup || popup.loan.resolved) {
-        return;
-      }
-      popup.loan.resolved = true;
-      state.debtGold = Math.max(0, state.debtGold - popup.loan.repay);
-      state.gold = Math.floor(state.gold * 0.5);
-      state.timedEffects.push({ stat: "debtItemCostMultiplier", value: 0.2, remaining: 30 });
-      addCreditScore(-18, "대출 미상환");
-      closePopup(popup.id, { reason: "auto" });
     }
 
     function renderStockControls(body, popup) {
@@ -8789,6 +8777,53 @@
       };
     }
 
+    function stockMarketBias() {
+      const openPopups = state.openPopups.length;
+      const sponsoredOpen = typeof countOpenAdPopups === "function" ? countOpenAdPopups() : 0;
+      const cleanupCombo = Math.floor(state.cleanupComboValue || 0);
+      const difficulty = manualDifficulty();
+      let driftBonus = 0;
+      let volatilityBonus = 0;
+      let label = "조용한 장세";
+
+      if (openPopups >= 6) {
+        driftBonus += 0.007;
+        volatilityBonus += 0.026;
+        label = "팝업 과밀";
+      } else if (openPopups >= 3) {
+        driftBonus += 0.003;
+        volatilityBonus += 0.012;
+        label = "팝업 관심";
+      }
+
+      if (sponsoredOpen > 0 || state.sponsoredCompletions > 0) {
+        driftBonus += 0.004 + Math.min(0.006, sponsoredOpen * 0.002);
+        volatilityBonus += 0.01;
+        label = "광고 과열";
+      }
+
+      if (cleanupCombo >= 3 || openPopups <= 1) {
+        driftBonus -= cleanupCombo >= 3 ? 0.004 : 0.002;
+        volatilityBonus -= 0.01;
+        if (label === "조용한 장세") {
+          label = "정리 압력";
+        }
+      }
+
+      if (difficulty >= 4) {
+        volatilityBonus += Math.min(0.032, difficulty * 0.004);
+        if (label === "조용한 장세") {
+          label = "난이도 변동성";
+        }
+      }
+
+      return {
+        driftBonus,
+        volatilityBonus,
+        label
+      };
+    }
+
     function stockTickerText() {
       const stock = selectedStock();
       if (!stock) {
@@ -8798,7 +8833,7 @@
       const arrow = (stock.lastChange || 0) >= 0 ? "▲" : "▼";
       const profitText = (info.profit >= 0 ? "+" : "") + Math.round(info.profit) + "G";
       return stock.symbol + " " + Math.ceil(stock.price) + "G " + arrow + " " + formatSignedPercent(stock.lastChange || 0) +
-        " | " + stock.shares + "주 | 손익 " + profitText;
+        " | " + (state.stockMarket.lastBiasLabel || "조용한 장세") + " | " + stock.shares + "주 | 손익 " + profitText;
     }
 
     function updateStockMarket(dt) {
@@ -8817,9 +8852,13 @@
         return;
       }
 
-      market.tickTimer = 1;
-      const shock = Math.random() < 0.14 ? randomRange(-stock.volatility * 1.35, stock.volatility * 1.35) : 0;
-      const change = stock.drift + randomRange(-stock.volatility, stock.volatility) + shock;
+      market.tickTimer = 0.85;
+      const bias = stockMarketBias();
+      market.lastBiasLabel = bias.label;
+      const volatility = Math.max(0.025, stock.volatility + bias.volatilityBonus);
+      const drift = stock.drift + bias.driftBonus;
+      const shock = Math.random() < 0.18 ? randomRange(-volatility * 1.8, volatility * 1.8) : 0;
+      const change = drift + randomRange(-volatility, volatility) + shock;
       stock.price = Math.max(1, stock.price * (1 + change));
       stock.lastChange = change;
       stock.history.push(stock.price);
@@ -8970,11 +9009,13 @@
 
       const info = stockProfitInfo();
       const arrow = (stock.lastChange || 0) >= 0 ? "▲" : "▼";
+      const sentiment = state.stockMarket.lastBiasLabel || stockMarketBias().label;
       const header = document.createElement("div");
       header.className = "stockBrokerHeader";
       header.innerHTML =
         "<strong>" + stock.name + " (" + stock.symbol + ")</strong><br>" +
-        "현재가: " + Math.ceil(stock.price) + "G " + arrow + " " + formatSignedPercent(stock.lastChange || 0);
+        "현재가: " + Math.ceil(stock.price) + "G " + arrow + " " + formatSignedPercent(stock.lastChange || 0) + "<br>" +
+        "시장 심리: <strong>" + sentiment + "</strong>";
 
       const portfolio = document.createElement("div");
       portfolio.className = "stockPortfolioBox";
@@ -10471,10 +10512,38 @@
       }
     }
 
+    function updateInvestorDashboard() {
+      const active = state.activePlaystyle === "investor_starter";
+      investorDashboard.classList.toggle("hidden", !active);
+      if (!active) {
+        investorDashboardBody.textContent = "투자자 계약 대기 중";
+        investorCreditMini.textContent = "신용 " + state.creditScore;
+        return;
+      }
+
+      const investor = investorBonusBreakdown();
+      const recurring = activeRecurringInvestments();
+      const recurringAccumulated = recurring.reduce((sum, popup) => sum + (popup.investment?.accumulated || 0), 0);
+      const stock = selectedStock();
+      const stockInfo = stockProfitInfo();
+      const sentiment = state.stockMarket?.lastBiasLabel || stockMarketBias().label;
+      investorCreditMini.textContent = "신용 " + state.creditScore + " · " + creditGrade(state.creditScore);
+      investorDashboardBody.innerHTML =
+        "<div class=\"investorLine\"><span>보유 골드</span><strong>" + state.gold + "G</strong></div>" +
+        "<div class=\"investorLine\"><span>투자 중 골드</span><strong>" + Math.round(state.investedGold) + "G</strong></div>" +
+        "<div class=\"investorLine\"><span>투자 피해</span><strong>" + formatSignedPercent(investor.investedDamage) + "</strong></div>" +
+        "<div class=\"investorLine\"><span>신용 템포</span><strong>" + formatSignedPercent(investor.creditCooldown) + "</strong></div>" +
+        "<div class=\"investorLine\"><span>보유 골드 사거리</span><strong>" + formatSignedPercent(investor.heldGoldRange) + "</strong></div>" +
+        "<div class=\"investorLine\"><span>자동 적립</span><strong>" + (recurring.length > 0 ? recurring.length + "건 · " + recurringAccumulated + "G" : "없음") + "</strong></div>" +
+        "<div class=\"investorLine\"><span>주식 평가</span><strong>" + Math.floor(stockInfo.value) + "G / " + (stockInfo.profit >= 0 ? "+" : "") + Math.round(stockInfo.profit) + "G</strong></div>" +
+        "<div class=\"investorLine\"><span>시장 심리</span><strong>" + (stock ? sentiment : "데이터 없음") + "</strong></div>";
+    }
+
     function updateUI() {
       updateDifficultyHud();
       updateCleanupComboHud();
       updateResidentProgramHud();
+      updateInvestorDashboard();
       const itemCost = currentItemRollCost();
       const healthRatio = state.player.maxHP > 0 ? clamp((state.player.hp / state.player.maxHP) * 100, 0, 100) : 0;
       hpText.textContent = Math.ceil(state.player.hp) + " / " + state.player.maxHP;
@@ -10547,7 +10616,7 @@
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>난이도: " + difficultyInfo.current.label + " / 시간 +" + timeDifficultyScore().toFixed(1) + " / 선택 +" + manualDifficulty().toFixed(1) +
         " / 신용도: " + state.creditScore + " (" + creditGrade(state.creditScore) + ")" +
-        "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 부채: " + state.debtGold + "G" +
+        "<br>투자금: " + Math.round(state.investedGold) + "G / 주식 평가액: " + stockValue + "G / 신용 현금화: 상환 없음" +
         "<br>" + stockLine +
         "<br>주식 원금: " + stockPrincipal + "G" +
         "<br>1차: " + (state.primaryModule ? moduleName(state.primaryModule) + " 숙련 " + state.primaryMastery : "미선택") +
@@ -10594,10 +10663,10 @@
         "<br>웨이브: " + waveModeLabel() + " / 남은 시간 " + Math.max(0, state.waveDirector.timer).toFixed(1) + "초" +
         "<br>보안 프로그램: " + state.residentPrograms.length + "개 / 점유 HP " + state.reservedMaxHP + " / 아이템 비용 +" + Math.round(totalResidentItemCostMultiplier() * 100) + "%" +
         "<br>정리 콤보: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초" +
-        "<br>투자금/주식 평가/원금/부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
+        "<br>투자금/주식 평가/원금/레거시 부채: " + Math.round(state.investedGold) + "G / " + stockValue + "G / " + stockPrincipal + "G / " + state.debtGold + "G" +
         "<br>" + stockLine +
         "<br>다음 할인/선택지: " + Math.round(pendingDiscount * 100) + "% / +" + state.nextItemExtraChoices +
-        "<br>부채 가격 페널티: " + Math.round(debtPenalty * 100) + "%" +
+        "<br>레거시 가격 페널티: " + Math.round(debtPenalty * 100) + "%" +
         "<br>스폰서 완료/보상/후원탄: " + state.sponsoredCompletions + " / " + state.metrics.sponsoredRewards + " / " + state.sponsoredAttackBoostStacks +
         "<br>난장판 티어: " + clutterTierLabel() +
         "<br>첫 계약: " + (state.firstPurchasePackageChosen || "미선택") +
@@ -10625,9 +10694,13 @@
           button.disabled = principal < 30 || state.gold < principal || state.gameOver;
         }
       });
-      document.querySelectorAll(".popupStoreButton, .loanRepayButton, .stockInvestButton, .stockBuyButton").forEach(button => {
+      document.querySelectorAll(".popupStoreButton, .stockInvestButton, .stockBuyButton").forEach(button => {
         const cost = Number.parseInt(button.dataset.cost, 10) || 0;
         button.disabled = state.gold < cost || state.gameOver;
+      });
+      document.querySelectorAll(".creditCashoutButton").forEach(button => {
+        const creditCost = Number.parseInt(button.dataset.creditCost, 10) || 0;
+        button.disabled = state.creditScore < creditCost || state.gameOver;
       });
       document.querySelectorAll(".bossPackagePayButton").forEach(button => {
         const cost = Number.parseInt(button.dataset.cost, 10) || 0;
