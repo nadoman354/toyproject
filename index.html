@@ -1878,7 +1878,7 @@
           <button id="statusToggleButton" class="panelToggle" type="button" title="조작 패널 접기">−</button>
         </div>
         <div id="statusBody">
-          <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
+          <div><strong>조작</strong>: WASD/모바일 조이스틱 이동, 마우스/터치 팝업 관리, X 일반 팝업 닫기, Space 또는 긴급 닫기 버튼, P 일시정지.</div>
           <div class="statRow" style="margin-top: 8px;"><span>배속</span><select id="speedSelect" class="compactSelect"></select></div>
           <div id="runStats" style="margin-top: 8px;"></div>
         </div>
@@ -2003,6 +2003,7 @@
       playerDamage: 10,
       playerAttackInterval: 0.6,
       playerAttackRange: 140,
+      pickupRange: 48,
       rangedProjectileSpeed: 420,
       rangedProjectileRadius: 5,
       meleeSlashWidth: 42,
@@ -2045,10 +2046,10 @@
       {
         id: "damage_up",
         name: "공격력 증가",
-        description: "피해량 +20%",
+        description: "피해량 +35%",
         rarity: "Common",
         tags: ["generic", "combat", "damage"],
-        effect: { stat: "damageMultiplier", value: 0.2 }
+        effect: { stat: "damageMultiplier", value: 0.35 }
       },
       {
         id: "attack_speed_up",
@@ -2083,6 +2084,22 @@
         effect: { stat: "maxHP", value: 20 }
       },
       {
+        id: "magnetic_cursor",
+        name: "자석 커서",
+        description: "획득 범위 +30%",
+        rarity: "Common",
+        tags: ["generic", "utility", "pickup"],
+        effect: { stat: "pickupRangeMultiplier", value: 0.3 }
+      },
+      {
+        id: "sharp_copy",
+        name: "예리한 문구",
+        description: "치명타 확률 +10%",
+        rarity: "Common",
+        tags: ["generic", "combat", "crit"],
+        effect: { stat: "critChance", value: 0.1 }
+      },
+      {
         id: "piercing_ad_shot",
         name: "관통 광고탄",
         description: "자동 공격이 적 1명을 추가로 타격",
@@ -2093,10 +2110,10 @@
       {
         id: "clean_desk",
         name: "정리된 책상",
-        description: "열린 팝업이 2개 이하일 때 피해량 +25%",
+        description: "열린 팝업이 2개 이하일 때 피해량 +40%",
         rarity: "Rare",
         tags: ["clean", "low_popup", "damage", "combat"],
-        effect: { stat: "cleanDeskDamageMultiplier", value: 0.25 }
+        effect: { stat: "cleanDeskDamageMultiplier", value: 0.4 }
       },
       {
         id: "clutter_adaptation",
@@ -2109,10 +2126,40 @@
       {
         id: "gold_bullets",
         name: "골드 탄환",
-        description: "골드가 50 이상이면 피해량 +20%",
+        description: "보유 골드 50G당 피해량 +8%, 최대 +120%",
         rarity: "Rare",
         tags: ["investor", "gold", "damage", "combat"],
-        effect: { stat: "goldBulletDamageMultiplier", value: 0.2 }
+        effect: { stat: "goldBulletDamageMultiplier", value: 0.08 }
+      },
+      {
+        id: "data_collector",
+        name: "데이터 수집기",
+        description: "획득 범위 +45%, 팝업 생성률 +5%",
+        rarity: "Rare",
+        tags: ["generic", "utility", "pickup", "popup_pressure"],
+        effects: [
+          { stat: "pickupRangeMultiplier", value: 0.45 },
+          { stat: "popupSpawnRateMultiplier", value: 0.05 }
+        ]
+      },
+      {
+        id: "inflated_damage_number",
+        name: "과장된 피해 수치",
+        description: "치명타 피해 +50%",
+        rarity: "Rare",
+        tags: ["generic", "combat", "crit", "damage"],
+        effect: { stat: "critDamageMultiplier", value: 0.5 }
+      },
+      {
+        id: "clickbait_headline",
+        name: "클릭베이트 헤드라인",
+        description: "치명타 확률 +6%, 치명타 피해 +25%",
+        rarity: "Rare",
+        tags: ["sponsored", "combat", "crit", "ad_open"],
+        effects: [
+          { stat: "critChance", value: 0.06 },
+          { stat: "critDamageMultiplier", value: 0.25 }
+        ]
       },
       {
         id: "emergency_training",
@@ -2165,12 +2212,12 @@
       {
         id: "malicious_optimization",
         name: "악성 최적화",
-        description: "피해량 +50%, 팝업 생성률 +25%",
+        description: "피해량 +100%, 팝업 생성률 +30%",
         rarity: "Cursed",
         tags: ["curse", "risky", "damage", "popup_pressure"],
         effects: [
-          { stat: "damageMultiplier", value: 0.5 },
-          { stat: "popupSpawnRateMultiplier", value: 0.25 }
+          { stat: "damageMultiplier", value: 1 },
+          { stat: "popupSpawnRateMultiplier", value: 0.3 }
         ]
       },
       {
@@ -2234,7 +2281,7 @@
       {
         id: "sponsor_rounds",
         name: "후원탄",
-        description: "광고 완료 횟수 1회당 피해량 +3%, 최대 +30%",
+        description: "광고 완료 횟수 1회당 피해량 +8%, 최대 +160%",
         rarity: "Rare",
         tags: ["sponsored", "ad_completion", "projectile", "damage"]
       },
@@ -2296,6 +2343,14 @@
         effect: { stat: "cleanupComboGraceBonus", value: 1 }
       },
       {
+        id: "clean_route",
+        name: "정리된 동선",
+        description: "정리 콤보 유지 중 획득 범위 +40%",
+        rarity: "Rare",
+        tags: ["clean", "cleanup_combo", "pickup", "utility"],
+        effect: { stat: "cleanupComboPickupRangeMultiplier", value: 0.4 }
+      },
+      {
         id: "heat_blade",
         name: "난이도 칼날",
         description: "난이도 1당 피해량 +5%, 대신 난이도가 3 이상이면 팝업 생성률 +10%",
@@ -2311,6 +2366,14 @@
         effects: [
           { stat: "gold", value: 60 }
         ]
+      },
+      {
+        id: "risky_wording",
+        name: "위험 문구 강조",
+        description: "현재 난이도 1당 치명타 피해 +6%",
+        rarity: "Epic",
+        tags: ["curse", "risk", "heat", "crit", "damage"],
+        effect: { stat: "critDamagePerDifficulty", value: 0.06 }
       },
       {
         id: "regeneration_patch",
@@ -2376,6 +2439,7 @@
       clean: "클린업",
       vitality: "생명력",
       curse: "위험",
+      risk: "위험",
       gold: "골드",
       invested_gold: "투자금",
       credit: "신용",
@@ -2398,6 +2462,8 @@
       emergency_close: "긴급닫기",
       cleanup_combo: "정리 콤보",
       duration: "유지시간",
+      pickup: "획득",
+      crit: "치명",
       combat: "전투",
       damage: "피해",
       cooldown: "쿨타임",
@@ -3108,22 +3174,22 @@
     ];
 
     const BUILD_SCALINGS = [
-      { id: "investor_capital_amplifier", name: "자본 증폭", playstyle: "investor", description: "투자 중 골드 50G당 주 공격 피해 +5%, 최대 +60%", compatibleTags: ["any"] },
+      { id: "investor_capital_amplifier", name: "자본 증폭", playstyle: "investor", description: "투자 중 골드 50G당 주 공격 피해 +8%, 최대 +160%", compatibleTags: ["any"] },
       { id: "investor_credit_precision", name: "신용 정밀화", playstyle: "investor", description: "신용도가 높을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
       { id: "investor_reserve_range", name: "비상금 사거리", playstyle: "investor", description: "보유 골드 100G당 주 공격 사거리 +4%, 최대 +24%", compatibleTags: ["any"] },
-      { id: "sponsored_overcharge", name: "후원탄 보급", playstyle: "sponsored", description: "스폰서 광고 완료 횟수에 따라 주 공격 피해가 증가합니다.", compatibleTags: ["any"] },
+      { id: "sponsored_overcharge", name: "후원탄 보급", playstyle: "sponsored", description: "스폰서 광고 완료 횟수당 주 공격 피해 +8%, 최대 +160%", compatibleTags: ["any"] },
       { id: "sponsored_brand_expansion", name: "브랜드 확장", playstyle: "sponsored", description: "열린 스폰서 광고 수에 따라 주 공격 범위가 넓어집니다.", compatibleTags: ["any"] },
       { id: "sponsored_monetization", name: "광고 수익화", playstyle: "sponsored", description: "최근 광고 완료 기록이 많을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
-      { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 수가 많을수록 공격 범위가 증가합니다.", compatibleTags: ["any"] },
+      { id: "clutter_resonance", name: "과밀 공명", playstyle: "clutter", description: "열린 팝업 1개당 공격 범위 +12%, 피해 +8%", compatibleTags: ["any"] },
       { id: "clutter_noise_amplifier", name: "잡음 증폭", playstyle: "clutter", description: "열린 팝업 수가 많을수록 폭발/연쇄/빔 판정이 더 넓어집니다.", compatibleTags: ["any"] },
       { id: "clutter_adaptation", name: "혼잡 적응", playstyle: "clutter", description: "열린 팝업 수가 많을수록 주 공격 쿨타임이 감소합니다.", compatibleTags: ["any"] },
-      { id: "clean_precision", name: "집중 사격", playstyle: "clean", description: "팝업이 적을수록 피해량과 사거리가 증가합니다.", compatibleTags: ["any"] },
+      { id: "clean_precision", name: "집중 사격", playstyle: "clean", description: "팝업 0개면 피해 +80%/사거리 +25%, 1개면 피해 +45%/사거리 +15%", compatibleTags: ["any"] },
       { id: "clean_clear_sight", name: "깨끗한 시야", playstyle: "clean", description: "팝업이 적을수록 사거리와 투사체/빔 판정이 안정적으로 증가합니다.", compatibleTags: ["any"] },
       { id: "cleanup_combo_precision", name: "정리된 루틴", playstyle: "clean", description: "정리 콤보가 유지되는 동안 주 공격 범위와 쿨타임 안정성이 조금 좋아집니다.", compatibleTags: ["any"] },
-      { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "난이도가 높을수록 피해량이 증가합니다.", compatibleTags: ["any"] },
+      { id: "curse_heat_overload", name: "약관 폭주", playstyle: "curse", description: "난이도 1당 피해 +10%, 난이도 8 이상이면 치명타 피해 +50%", compatibleTags: ["any"] },
       { id: "risk_liability_waiver", name: "책임 면책", playstyle: "curse", description: "최근 피해를 입었거나 약관 패널티가 많을수록 방어적 전투 보정이 생깁니다.", compatibleTags: ["any"] },
       { id: "risk_premium", name: "위험 프리미엄", playstyle: "curse", description: "현재 난이도 단계가 높을수록 공격 범위와 보상 기대치가 증가합니다.", compatibleTags: ["any"] },
-      { id: "generic_stable_output", name: "안정 출력", playstyle: "generic", description: "피해, 사거리, 쿨타임을 고르게 조금 개선합니다.", compatibleTags: ["any"] },
+      { id: "generic_stable_output", name: "안정 출력", playstyle: "generic", description: "피해 +25%, 사거리 +12%, 쿨타임 -8%", compatibleTags: ["any"] },
       { id: "generic_expanded_ballistics", name: "확장 탄도", playstyle: "generic", description: "일반 사거리와 투사체/빔 판정을 넓힙니다.", compatibleTags: ["any"] },
       { id: "generic_combat_maintenance", name: "전투 정비", playstyle: "generic", description: "쿨타임과 생존 보조를 조금 개선합니다.", compatibleTags: ["any"] },
       { id: "gold_reserve_range", name: "비상금 사거리", playstyle: "generic", description: "보유 골드 100G당 공격 사거리 +5%, 최대 +25%", compatibleTags: ["any"], hidden: true }
@@ -3472,7 +3538,13 @@
           lowHpDamageMultiplier: 0,
           lowHpCooldownMultiplier: 0,
           maxHpDamageMultiplier: 0,
-          cleanupComboGraceBonus: 0
+          cleanupComboGraceBonus: 0,
+          pickupRangeMultiplier: 0,
+          pickupRangeFlat: 0,
+          cleanupComboPickupRangeMultiplier: 0,
+          critChance: 0,
+          critDamageMultiplier: 0.5,
+          critDamagePerDifficulty: 0
         },
         enemies: [],
         mines: [],
@@ -3580,14 +3652,30 @@
     function difficultyCombatPressure() {
       const stage = difficultyStageInfo().current.id;
       const map = {
-        normal: { enemyHpMultiplier: 0, enemySpeedMultiplier: 0, popupSpawnMultiplier: 0 },
-        warning: { enemyHpMultiplier: 0.05, enemySpeedMultiplier: 0.03, popupSpawnMultiplier: 0 },
-        danger: { enemyHpMultiplier: 0.1, enemySpeedMultiplier: 0.06, popupSpawnMultiplier: 0.05 },
-        overload: { enemyHpMultiplier: 0.18, enemySpeedMultiplier: 0.1, popupSpawnMultiplier: 0.1 },
-        collapse: { enemyHpMultiplier: 0.28, enemySpeedMultiplier: 0.15, popupSpawnMultiplier: 0.16 },
-        nightmare: { enemyHpMultiplier: 0.4, enemySpeedMultiplier: 0.22, popupSpawnMultiplier: 0.25 }
+        normal: { enemyHpMultiplier: 0, enemySpeedMultiplier: 0, enemySpawnMultiplier: 0, popupSpawnMultiplier: 0 },
+        warning: { enemyHpMultiplier: 0.35, enemySpeedMultiplier: 0.05, enemySpawnMultiplier: 0.05, popupSpawnMultiplier: 0.05 },
+        danger: { enemyHpMultiplier: 0.9, enemySpeedMultiplier: 0.09, enemySpawnMultiplier: 0.1, popupSpawnMultiplier: 0.1 },
+        overload: { enemyHpMultiplier: 1.8, enemySpeedMultiplier: 0.14, enemySpawnMultiplier: 0.18, popupSpawnMultiplier: 0.18 },
+        collapse: { enemyHpMultiplier: 3.2, enemySpeedMultiplier: 0.2, enemySpawnMultiplier: 0.28, popupSpawnMultiplier: 0.28 },
+        nightmare: { enemyHpMultiplier: 5.2, enemySpeedMultiplier: 0.28, enemySpawnMultiplier: 0.4, popupSpawnMultiplier: 0.4 }
       };
       return map[stage] || map.normal;
+    }
+
+    function enemyTimeScale() {
+      const minutes = Math.max(0, state.elapsed / 60);
+      return Math.pow(1.45, minutes);
+    }
+
+    function enemySpawnRateScale() {
+      const minutes = Math.max(0, state.elapsed / 60);
+      return Math.min(5.5, 1 + minutes * 0.35 + Math.pow(minutes, 1.35) * 0.18);
+    }
+
+    function currentNormalEnemyHpEstimate() {
+      const pressure = difficultyCombatPressure();
+      const mode = waveModeEnemyStatModifiers();
+      return CONFIG.enemyHP * enemyTimeScale() * (1 + pressure.enemyHpMultiplier) * mode.hpMultiplier;
     }
 
     function waveModeById(id) {
@@ -3842,8 +3930,8 @@
       if (state.stats.cleanDeskDamageMultiplier > 0 && state.openPopups.length <= 2) {
         multiplier += state.stats.cleanDeskDamageMultiplier;
       }
-      if (state.stats.goldBulletDamageMultiplier > 0 && state.gold >= 50) {
-        multiplier += state.stats.goldBulletDamageMultiplier;
+      if (state.stats.goldBulletDamageMultiplier > 0) {
+        multiplier += Math.min(1.2, Math.floor(state.gold / 50) * state.stats.goldBulletDamageMultiplier);
       }
       if (state.stats.lowHpDamageMultiplier !== 0 && hpRatio() <= 0.35) {
         multiplier += state.stats.lowHpDamageMultiplier;
@@ -3860,6 +3948,47 @@
 
     function effectiveLifeStealPercent() {
       return Math.max(0, state.stats.lifeStealPercent);
+    }
+
+    function effectivePickupRange() {
+      let multiplier = state.stats.pickupRangeMultiplier || 0;
+      if (state.cleanupComboValue > 0) {
+        multiplier += state.stats.cleanupComboPickupRangeMultiplier || 0;
+      }
+      const base = CONFIG.pickupRange || 48;
+      return Math.max(12, (base + (state.stats.pickupRangeFlat || 0)) * Math.max(0.2, 1 + multiplier));
+    }
+
+    function effectiveCritChance(source = "attack") {
+      let chance = state.stats.critChance || 0;
+      if (source === "aura_tick") {
+        chance *= 0.5;
+      }
+      return clamp(chance, 0, 0.95);
+    }
+
+    function effectiveCritDamageMultiplier(source = "attack", sourceSlot = null) {
+      let multiplier = Math.max(0, state.stats.critDamageMultiplier || 0.5);
+      multiplier += Math.max(0, state.heat || 0) * (state.stats.critDamagePerDifficulty || 0);
+      if ((sourceSlot === "primary" || sourceSlot === "secondary") && selectedScalingForSlot(sourceSlot)?.id === "curse_heat_overload" && state.heat >= 8) {
+        multiplier += 0.5;
+      }
+      return multiplier;
+    }
+
+    function rollCrit(source = "attack") {
+      return Math.random() < effectiveCritChance(source);
+    }
+
+    function applyCritToDamage(damage, source = "attack", sourceSlot = null) {
+      const crit = rollCrit(source);
+      if (!crit) {
+        return { damage, crit: false };
+      }
+      return {
+        damage: damage * (1 + effectiveCritDamageMultiplier(source, sourceSlot)),
+        crit: true
+      };
     }
 
     function dynamicHealthRegenPerSecond() {
@@ -4122,7 +4251,7 @@
     function prioritizedItemTags(item) {
       const priority = [
         "investor", "sponsored", "clutter", "clean", "vitality", "curse",
-        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "cleanup_combo", "empty_slot", "health", "regen", "lifesteal", "low_hp", "healing", "heat",
+        "gold", "invested_gold", "credit", "ad_open", "ad_completion", "popup_count", "low_popup", "popup_close", "cleanup_combo", "empty_slot", "pickup", "crit", "health", "regen", "lifesteal", "low_hp", "healing", "heat",
         "damage", "cooldown", "range", "economy", "utility"
       ];
       const tags = itemTags(item);
@@ -4145,7 +4274,7 @@
       }
       const sponsorRounds = ownedItemCount("sponsor_rounds");
       if (sponsorRounds > 0) {
-        multiplier += Math.min(0.3 * sponsorRounds, state.sponsoredCompletions * 0.03 * sponsorRounds);
+        multiplier += Math.min(1.6 * sponsorRounds, state.sponsoredCompletions * 0.08 * sponsorRounds);
       }
       const overload = ownedItemCount("overload_cache");
       if (overload > 0 && state.openPopups.length >= 5) {
@@ -4279,19 +4408,20 @@
 
       if (slot === "primary" && scaling && tagsCompatible(scaling.compatibleTags, tags)) {
         if (scaling.id === "investor_capital_amplifier") {
-          upgraded.damageMultiplierFromUpgrade += Math.min(0.6, Math.floor(context.investedGold / 50) * 0.05);
+          upgraded.damageMultiplierFromUpgrade += Math.min(1.6, Math.floor(context.investedGold / 50) * 0.08);
         } else if (scaling.id === "investor_credit_precision") {
           upgraded.cooldownMultiplierFromUpgrade += context.creditScore >= 80 ? -0.15 : context.creditScore >= 60 ? -0.08 : 0;
         } else if (scaling.id === "investor_reserve_range") {
           upgraded.rangeMultiplierFromUpgrade += Math.min(0.24, Math.floor(context.gold / 100) * 0.04);
         } else if (scaling.id === "sponsored_overcharge") {
-          upgraded.damageMultiplierFromUpgrade += Math.min(0.4, context.sponsoredCompletions * 0.03);
+          upgraded.damageMultiplierFromUpgrade += Math.min(1.6, context.sponsoredCompletions * 0.08);
         } else if (scaling.id === "sponsored_brand_expansion") {
           upgraded.rangeMultiplierFromUpgrade += Math.min(0.24, context.openSponsoredAds * 0.08);
         } else if (scaling.id === "sponsored_monetization") {
           upgraded.cooldownMultiplierFromUpgrade += -Math.min(0.18, context.sponsoredCompletions * 0.015);
         } else if (scaling.id === "clutter_resonance") {
-          upgraded.rangeMultiplierFromUpgrade += context.openPopupCount >= 7 ? 0.4 : context.openPopupCount >= 5 ? 0.25 : context.openPopupCount >= 3 ? 0.1 : 0;
+          upgraded.rangeMultiplierFromUpgrade += Math.min(1.0, context.openPopupCount * 0.12);
+          upgraded.damageMultiplierFromUpgrade += Math.min(0.8, context.openPopupCount * 0.08);
         } else if (scaling.id === "clutter_noise_amplifier") {
           upgraded.rangeMultiplierFromUpgrade += Math.min(0.3, context.openPopupCount * 0.04);
           upgraded.beamWidth += Math.min(8, context.openPopupCount);
@@ -4300,11 +4430,11 @@
           upgraded.cooldownMultiplierFromUpgrade += -Math.min(0.2, context.openPopupCount * 0.025);
         } else if (scaling.id === "clean_precision") {
           if (context.openPopupCount === 0) {
-            upgraded.damageMultiplierFromUpgrade += 0.25;
-            upgraded.rangeMultiplierFromUpgrade += 0.15;
+            upgraded.damageMultiplierFromUpgrade += 0.8;
+            upgraded.rangeMultiplierFromUpgrade += 0.25;
           } else if (context.openPopupCount <= 1) {
-            upgraded.damageMultiplierFromUpgrade += 0.15;
-            upgraded.rangeMultiplierFromUpgrade += 0.1;
+            upgraded.damageMultiplierFromUpgrade += 0.45;
+            upgraded.rangeMultiplierFromUpgrade += 0.15;
           }
         } else if (scaling.id === "clean_clear_sight") {
           if (context.openPopupCount === 0) {
@@ -4319,7 +4449,7 @@
           upgraded.rangeMultiplierFromUpgrade += combo * 0.035;
           upgraded.cooldownMultiplierFromUpgrade += combo * -0.018;
         } else if (scaling.id === "curse_heat_overload") {
-          upgraded.damageMultiplierFromUpgrade += context.heat * 0.04 + (context.heat >= 5 ? 0.1 : 0);
+          upgraded.damageMultiplierFromUpgrade += context.heat * 0.1;
         } else if (scaling.id === "risk_liability_waiver") {
           upgraded.damageMultiplierFromUpgrade += (context.playerHpRatio <= 0.7 ? 0.08 : 0) + Math.min(0.18, context.termsPenaltyCount * 0.04);
           upgraded.rangeMultiplierFromUpgrade += context.playerHpRatio <= 0.35 ? 0.08 : 0;
@@ -4328,9 +4458,9 @@
           upgraded.rangeMultiplierFromUpgrade += Math.min(0.3, stageIndex * 0.05);
           upgraded.damageMultiplierFromUpgrade += Math.min(0.25, stageIndex * 0.035);
         } else if (scaling.id === "generic_stable_output") {
-          upgraded.damageMultiplierFromUpgrade += 0.08;
-          upgraded.rangeMultiplierFromUpgrade += 0.06;
-          upgraded.cooldownMultiplierFromUpgrade += -0.05;
+          upgraded.damageMultiplierFromUpgrade += 0.25;
+          upgraded.rangeMultiplierFromUpgrade += 0.12;
+          upgraded.cooldownMultiplierFromUpgrade += -0.08;
         } else if (scaling.id === "generic_expanded_ballistics") {
           upgraded.rangeMultiplierFromUpgrade += 0.14;
           upgraded.beamWidth += 4;
@@ -4347,7 +4477,7 @@
 
       upgraded.damage *= Math.max(0.1, 1 + upgraded.damageMultiplierFromUpgrade);
       upgraded.range *= Math.max(0.1, 1 + upgraded.rangeMultiplierFromUpgrade);
-      upgraded.cooldown *= Math.max(0.2, 1 + upgraded.cooldownMultiplierFromUpgrade);
+      upgraded.cooldown *= Math.max(0.16, 1 + upgraded.cooldownMultiplierFromUpgrade);
       if (form?.id === "aura_pulse") {
         upgraded.cooldown *= 1.25;
       }
@@ -4373,9 +4503,10 @@
       const deepening = deepeningFor(slot) || {};
       const secondaryScale = slot === "secondary" ? 0.72 : 1;
       const starterBonuses = activeStarterCombatBonuses();
-      const damageMultiplier = globalDamageMultiplier() + mastery * 0.08 + (deepening.damage || 0);
-      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.03 + (deepening.range || 0) + starterBonuses.rangeMultiplier + dynamicItemRangeMultiplier();
-      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.025 + (deepening.cooldown || 0) + starterBonuses.cooldownMultiplier + dynamicItemCooldownMultiplier();
+      const moduleGrowthMultiplier = Math.max(0.1, 1 + mastery * 0.15);
+      const damageMultiplier = globalDamageMultiplier() + (deepening.damage || 0);
+      const rangeMultiplier = state.stats.attackRangeMultiplier + mastery * 0.04 + (deepening.range || 0) + starterBonuses.rangeMultiplier + dynamicItemRangeMultiplier();
+      let cooldownMultiplier = state.stats.attackIntervalMultiplier - mastery * 0.03 + (deepening.cooldown || 0) + starterBonuses.cooldownMultiplier + dynamicItemCooldownMultiplier();
       cooldownMultiplier += sponsoredBuff("attackIntervalMultiplier") + clutterThresholdBonuses().attackIntervalBonus;
       if (state.stats.lowHpCooldownMultiplier !== 0 && hpRatio() <= 0.35) {
         cooldownMultiplier += state.stats.lowHpCooldownMultiplier;
@@ -4389,8 +4520,8 @@
 
       const stats = {
         module,
-        damage: module.baseDamage * secondaryScale * Math.max(0.1, 1 + damageMultiplier),
-        cooldown: module.baseCooldown * Math.max(0.2, 1 + cooldownMultiplier),
+        damage: module.baseDamage * secondaryScale * moduleGrowthMultiplier * Math.max(0.1, 1 + damageMultiplier),
+        cooldown: module.baseCooldown * Math.max(0.16, 1 + cooldownMultiplier),
         range: module.baseRange * Math.max(0.25, 1 + rangeMultiplier)
       };
       return applyModuleUpgradeScaling(slot, stats);
@@ -4419,7 +4550,7 @@
       if (state.draggingPopup) {
         multiplier += state.stats.dragAttackIntervalMultiplier;
       }
-      return CONFIG.playerAttackInterval * Math.max(0.22, 1 + multiplier);
+      return CONFIG.playerAttackInterval * Math.max(0.16, 1 + multiplier);
     }
 
     function effectiveAttackRange() {
@@ -5575,12 +5706,12 @@
       const pos = options.x !== undefined && options.y !== undefined
         ? { x: options.x, y: options.y }
         : spawnPositionForWave(mode);
-      const ageBoost = Math.min(1.8, state.elapsed / 110);
       const pressure = difficultyCombatPressure();
       const hpMultiplier = (options.hpMultiplier || 1) * waveMods.hpMultiplier;
       const speedMultiplier = (options.speedMultiplier || 1) * waveMods.speedMultiplier;
       const radiusMultiplier = options.radiusMultiplier || 1;
-      const hp = CONFIG.enemyHP * (1 + ageBoost * 0.3) * (1 + pressure.enemyHpMultiplier) * hpMultiplier;
+      const minutes = Math.max(0, state.elapsed / 60);
+      const hp = CONFIG.enemyHP * enemyTimeScale() * (1 + pressure.enemyHpMultiplier) * hpMultiplier;
       state.enemies.push({
         x: pos.x,
         y: pos.y,
@@ -5589,7 +5720,7 @@
         radius: 12 * radiusMultiplier,
         hp,
         maxHP: hp,
-        speed: CONFIG.enemySpeed * (1 + ageBoost * 0.18) * (1 + pressure.enemySpeedMultiplier) * speedMultiplier,
+        speed: CONFIG.enemySpeed * (1 + Math.min(0.42, minutes * 0.045)) * (1 + pressure.enemySpeedMultiplier) * speedMultiplier,
         damage: CONFIG.enemyDamage,
         hitFlash: 0,
         knockX: 0,
@@ -5598,6 +5729,23 @@
         contactTimer: 0,
         dead: false
       });
+    }
+
+    function estimatedPlayerDps() {
+      const primary = moduleCombatStats("primary");
+      if (!primary) {
+        return CONFIG.playerDamage / CONFIG.playerAttackInterval;
+      }
+      const critExpected = 1 + effectiveCritChance("attack") * effectiveCritDamageMultiplier("attack", "primary");
+      return (primary.damage * critExpected) / Math.max(0.1, primary.cooldown);
+    }
+
+    function bossHpEstimate(tier) {
+      const pressure = difficultyCombatPressure();
+      const tierMultiplier = 1 + (tier - 1) * 0.85 + state.level * 0.04;
+      const stageMultiplier = 1 + pressure.enemyHpMultiplier * 0.85;
+      const targetSurvival = tier === 1 ? 13 : tier === 2 ? 20 : 28;
+      return CONFIG.bossBaseHP * tierMultiplier * enemyTimeScale() * stageMultiplier + estimatedPlayerDps() * targetSurvival;
     }
 
     function spawnBoss(tier) {
@@ -5610,7 +5758,7 @@
       const x = edge === 1 ? right + margin : edge === 3 ? left - margin : randomRange(left + 80, right - 80);
       const y = edge === 0 ? top - margin : edge === 2 ? bottom + margin : randomRange(top + 70, bottom - 70);
       const pressure = difficultyCombatPressure();
-      const hp = CONFIG.bossBaseHP * (1 + (tier - 1) * 0.62 + state.level * 0.035) * (1 + pressure.enemyHpMultiplier * 0.75);
+      const hp = bossHpEstimate(tier);
       state.enemies.push({
         x,
         y,
@@ -5677,16 +5825,17 @@
       if (amount <= 0 || state.floatTexts.length > 80) {
         return;
       }
+      const crit = Boolean(options.crit);
       state.floatTexts.push({
         x: x + randomRange(-8, 8),
         y: y + randomRange(-5, 5),
-        vx: randomRange(-8, 8),
-        vy: randomRange(-42, -28),
-        text: options.text || Math.max(1, Math.round(amount)).toString(),
-        color: options.color || "#fff2a2",
-        size: options.size || (amount >= 30 ? 16 : 12),
-        ttl: options.ttl || 0.65,
-        maxTtl: options.ttl || 0.65
+        vx: randomRange(-10, 10),
+        vy: crit ? randomRange(-56, -40) : randomRange(-42, -28),
+        text: options.text || Math.max(1, Math.round(amount)).toString() + (crit ? "!" : ""),
+        color: options.color || (crit ? "#ffe86e" : "#fff2a2"),
+        size: options.size || (crit ? (amount >= 300 ? 24 : 20) : amount >= 30 ? 16 : 12),
+        ttl: options.ttl || (crit ? 0.82 : 0.65),
+        maxTtl: options.ttl || (crit ? 0.82 : 0.65)
       });
     }
 
@@ -5743,27 +5892,45 @@
       return 34;
     }
 
-    function damageEnemy(enemy, amount, sourceSlot) {
+    function damageCritSource(sourceSlot, options = {}) {
+      if (options.critSource) {
+        return options.critSource;
+      }
+      if (sourceSlot !== "primary" && sourceSlot !== "secondary") {
+        return null;
+      }
+      const formId = selectedFormForSlot(sourceSlot)?.id || "";
+      if (formId === "aura_steady" || formId === "aura_infection" || formId === "aura_absorb") {
+        return "aura_tick";
+      }
+      return "attack";
+    }
+
+    function damageEnemy(enemy, amount, sourceSlot, options = {}) {
       if (!enemy || enemy.dead) {
         return false;
       }
 
-      const dealt = Math.max(0, Math.min(amount, enemy.hp));
-      enemy.hp -= amount;
+      const critSource = damageCritSource(sourceSlot, options);
+      const critResult = critSource ? applyCritToDamage(amount, critSource, sourceSlot) : { damage: amount, crit: false };
+      const finalAmount = critResult.damage;
+      const dealt = Math.max(0, Math.min(finalAmount, enemy.hp));
+      enemy.hp -= finalAmount;
       if (sourceSlot) {
         enemy.lastHitSlot = sourceSlot;
       }
       if (dealt > 0) {
-        enemy.hitFlash = 0.08;
+        enemy.hitFlash = critResult.crit ? 0.14 : 0.08;
         const pushDir = normalized(enemy.x - state.player.x, enemy.y - state.player.y, { x: 1, y: 0 });
         applyEnemyKnockback(enemy, pushDir.x, pushDir.y, knockbackForceForSource(sourceSlot));
-        addHitSpark(enemy.x, enemy.y, sourceSlot === "security" ? "#8be9ff" : "#fff2a2");
+        addHitSpark(enemy.x, enemy.y, critResult.crit ? "#ffe86e" : sourceSlot === "security" ? "#8be9ff" : "#fff2a2");
         addDamageNumber(enemy.x, enemy.y - enemy.radius, dealt, {
           color: sourceSlot === "security" ? "#8be9ff" : undefined,
-          size: dealt >= 40 ? 17 : undefined
+          size: critResult.crit ? undefined : dealt >= 40 ? 17 : undefined,
+          crit: critResult.crit
         });
         if (dealt >= 45 || state[sourceSlot + "Module"] === "deploy") {
-          addScreenShake(2.2, 0.08);
+          addScreenShake(critResult.crit && dealt >= 300 ? 3.4 : 2.2, critResult.crit && dealt >= 300 ? 0.12 : 0.08);
         }
       }
       if ((sourceSlot === "primary" || sourceSlot === "secondary") && dealt > 0) {
@@ -5814,8 +5981,9 @@
       state.enemyTimer -= dt;
       if (state.enemyTimer <= 0) {
         spawnEnemy();
-        const pressure = Math.min(1.45, state.elapsed * 0.012);
-        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, (CONFIG.enemySpawnInterval - pressure) / waveModeSpawnMultiplier());
+        const pressure = difficultyCombatPressure();
+        const spawnScale = enemySpawnRateScale() * waveModeSpawnMultiplier() * Math.max(0.2, 1 + pressure.enemySpawnMultiplier);
+        const nextInterval = Math.max(CONFIG.enemySpawnIntervalMin, CONFIG.enemySpawnInterval / spawnScale);
         state.enemyTimer = nextInterval;
       }
 
@@ -6343,7 +6511,7 @@
       const direction = normalized(target.x - state.player.x, target.y - state.player.y);
       const config = chargedAttackConfig(stats, {
         duration: 1.2,
-        damage: stats.damage * 2.4,
+        damage: stats.damage * 3.5,
         range: stats.range * 1.15,
         radius: 78
       });
@@ -6373,7 +6541,7 @@
       const direction = getMeleeDirection(stats.range);
       const config = chargedAttackConfig(stats, {
         duration: 0.9,
-        damage: stats.damage * 2,
+        damage: stats.damage * 3,
         range: stats.range * 1.58,
         width: CONFIG.meleeSlashWidth * 1.6,
         radius: stats.range * 1.58,
@@ -6404,7 +6572,7 @@
     function executeAuraChargedNova(slot, stats) {
       const config = chargedAttackConfig(stats, {
         duration: 1.4,
-        damage: stats.damage * 2.5,
+        damage: stats.damage * 4,
         range: stats.range * 1.5,
         radius: stats.range * 1.5
       });
@@ -6697,7 +6865,7 @@
     function explodeMine(mine) {
       const maturityRatio = mine.maturity ? clamp((mine.elapsed || 0) / Math.max(0.1, mine.maxTtl || mine.ttl || 8), 0, 1) : 0;
       const explosionRadius = mine.explosionRadius * (1 + maturityRatio * 0.5);
-      const damage = mine.damage * (1 + maturityRatio);
+      const damage = mine.damage * (1 + maturityRatio * 5);
       addCircleAttack(mine.x, mine.y, explosionRadius, mine.maturity ? "rgba(255, 206, 92, " : "rgba(178, 255, 122, ", 0.22);
       for (const enemy of state.enemies) {
         if (!enemy.dead && distance(enemy, mine) <= explosionRadius + enemy.radius) {
@@ -6781,18 +6949,20 @@
     }
 
     function updatePickups(dt) {
+      const pickupRange = effectivePickupRange();
+      const collectRange = Math.max(16, pickupRange * 0.35);
       for (const pickup of state.pickups) {
         const d = distance(pickup, state.player);
-        if (d < 120) {
+        if (d < pickupRange) {
           const dx = state.player.x - pickup.x;
           const dy = state.player.y - pickup.y;
           const length = Math.max(0.001, Math.hypot(dx, dy));
-          const pull = 130 * dt;
+          const pull = (130 + pickupRange * 1.4) * dt;
           pickup.x += (dx / length) * pull;
           pickup.y += (dy / length) * pull;
         }
 
-        if (distance(pickup, state.player) < state.player.radius + pickup.radius + 4) {
+        if (distance(pickup, state.player) < state.player.radius + pickup.radius + collectRange) {
           pickup.collected = true;
           if (pickup.type === "gold") {
             const crowdedBonus = state.openPopups.length >= 4 ? state.stats.crowdedGoldMultiplier : 0;
@@ -7736,6 +7906,9 @@
         minimize.className = "popupMinimize";
         minimize.type = "button";
         minimize.textContent = "－";
+        minimize.addEventListener("pointerdown", event => {
+          event.stopPropagation();
+        });
         minimize.addEventListener("click", event => {
           event.stopPropagation();
           toggleStockBrokerMinimized(popup.id);
@@ -7805,6 +7978,29 @@
         return false;
       }
       return true;
+    }
+
+    function popupZIndex(popup) {
+      return Number.parseInt(popup?.element?.style?.zIndex || "0", 10) || 0;
+    }
+
+    function topmostClosablePopup() {
+      return state.openPopups
+        .filter(popup => isEmergencyClosablePopup(popup))
+        .sort((a, b) => popupZIndex(b) - popupZIndex(a))[0] || null;
+    }
+
+    function isTypingTarget(target) {
+      return target instanceof Element && Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+    }
+
+    function closeTopmostPopupByKeyboard() {
+      const popup = topmostClosablePopup();
+      if (!popup) {
+        createSystemGrowthPopup("닫을 수 있는 창 없음", "현재 X키로 닫을 수 있는 팝업이 없습니다.");
+        return;
+      }
+      requestClosePopup(popup.id, { reason: "manual" });
     }
 
     function requestClosePopup(id, options = {}) {
@@ -9751,6 +9947,12 @@
       if (stat === "lowHpCooldownMultiplier") return "저체력 쿨타임";
       if (stat === "maxHpDamageMultiplier") return "최대 HP 피해";
       if (stat === "cleanupComboGraceBonus") return "정리 콤보 유지";
+      if (stat === "pickupRangeMultiplier") return "획득 범위";
+      if (stat === "pickupRangeFlat") return "획득 범위";
+      if (stat === "cleanupComboPickupRangeMultiplier") return "정리 콤보 획득";
+      if (stat === "critChance") return "치명타 확률";
+      if (stat === "critDamageMultiplier") return "치명타 피해";
+      if (stat === "critDamagePerDifficulty") return "난이도 치명 피해";
       if (stat === "instantHeal") return "즉시 회복";
       return stat;
     }
@@ -9788,6 +9990,12 @@
         effect.stat === "lowHpCooldownMultiplier" ||
         effect.stat === "maxHpDamageMultiplier" ||
         effect.stat === "cleanupComboGraceBonus" ||
+        effect.stat === "pickupRangeMultiplier" ||
+        effect.stat === "pickupRangeFlat" ||
+        effect.stat === "cleanupComboPickupRangeMultiplier" ||
+        effect.stat === "critChance" ||
+        effect.stat === "critDamageMultiplier" ||
+        effect.stat === "critDamagePerDifficulty" ||
         effect.stat === "instantHeal"
       ));
     }
@@ -9811,7 +10019,7 @@
         return stacks <= 0 ? "신용 사거리 변화 없음" : "신용 사거리 " + formatSignedPercent(bonus * stacks);
       }
       if (item.id === "sponsor_rounds") {
-        return stacks <= 0 ? "광고 완료 피해 변화 없음" : "광고 완료 피해 " + formatSignedPercent(Math.min(0.3 * stacks, state.sponsoredCompletions * 0.03 * stacks));
+        return stacks <= 0 ? "광고 완료 피해 변화 없음" : "광고 완료 피해 " + formatSignedPercent(Math.min(1.6 * stacks, state.sponsoredCompletions * 0.08 * stacks));
       }
       if (item.id === "banner_amp") {
         return stacks <= 0 ? "광고 유지 쿨타임 변화 없음" : "광고 유지 쿨타임 " + formatSignedPercent(countOpenAdPopups() > 0 ? -0.08 * stacks : 0);
@@ -9837,6 +10045,15 @@
       }
       if (item.id === "cleanup_routine_timer") {
         return stacks <= 0 ? "정리 콤보 유지 변화 없음" : "정리 콤보 유지 +" + stacks.toFixed(1) + "초";
+      }
+      if (item.id === "clean_route") {
+        return stacks <= 0 ? "정리 콤보 획득 변화 없음" : "정리 콤보 획득 " + formatSignedPercent(state.cleanupComboValue > 0 ? 0.4 * stacks : 0);
+      }
+      if (item.id === "gold_bullets") {
+        return stacks <= 0 ? "보유 골드 피해 변화 없음" : "보유 골드 피해 " + formatSignedPercent(Math.min(1.2 * stacks, Math.floor(state.gold / 50) * 0.08 * stacks));
+      }
+      if (item.id === "risky_wording") {
+        return stacks <= 0 ? "난이도 치명 피해 변화 없음" : "난이도 치명 피해 " + formatSignedPercent(state.heat * 0.06 * stacks);
       }
       if (item.id === "heat_blade") {
         return stacks <= 0 ? "난이도 피해 변화 없음" : "난이도 피해 " + formatSignedPercent(state.heat * 0.05 * stacks);
@@ -9867,7 +10084,7 @@
       }
 
       const total = displayEffect.value * stacks;
-      if (displayEffect.stat === "lifeStealPercent") {
+      if (displayEffect.stat === "lifeStealPercent" || displayEffect.stat === "critChance" || displayEffect.stat === "critDamageMultiplier" || displayEffect.stat === "critDamagePerDifficulty" || displayEffect.stat === "pickupRangeMultiplier" || displayEffect.stat === "cleanupComboPickupRangeMultiplier") {
         return label + " " + formatSignedPercent(total);
       }
       if (displayEffect.stat.indexOf("Multiplier") >= 0) {
@@ -10037,6 +10254,13 @@
       const cleanupComboCountValue = Math.floor(state.cleanupComboValue || 0);
       const executionWindowText = state.cleanupComboValue > 0 ? " / 정리 콤보: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초" : "";
       const waveLine = waveModeLabel() + (state.waveDirector.noticeTimer > 0 ? " / 전환 알림" : "");
+      const pressure = difficultyCombatPressure();
+      const critChanceText = Math.round(effectiveCritChance("attack") * 100);
+      const critDamageText = Math.round(effectiveCritDamageMultiplier("attack", "primary") * 100);
+      const expectedDps = estimatedPlayerDps();
+      const enemyHpScaleText = (enemyTimeScale() * (1 + pressure.enemyHpMultiplier)).toFixed(2);
+      const nextBossTier = Math.max(1, state.bossSpawnIndex + 1);
+      const nextBossHp = bossHpEstimate(nextBossTier);
       runStats.innerHTML =
         "시간: " + formatTime(state.elapsed) + " / 배속: x" + state.timeScale +
         "<br>빌드 계약: " + state.activePlaystyleName +
@@ -10054,11 +10278,14 @@
         " / 기믹: " + upgradeLabels.mechanic +
         "<br>빌드 최적화: " + upgradeLabels.scaling + executionWindowText +
         "<br>재생: +" + regenText + "/s / 흡혈: " + lifestealText + "%" +
+        "<br>획득 범위: " + Math.round(effectivePickupRange()) +
+        " / 치명타: " + critChanceText + "% / 치명 피해: +" + critDamageText + "%" +
         "<br>웨이브: " + waveLine +
         "<br>보안 프로그램: " + state.residentPrograms.length + "개 / 점유 HP " + state.reservedMaxHP +
         "<br>피해: " + effectiveDamage().toFixed(1) +
         " / 사거리: " + Math.round(effectiveAttackRange()) +
         " / 공격 간격: " + effectiveAttackInterval().toFixed(2) + "초" +
+        " / 예상 DPS: " + expectedDps.toFixed(1) +
         "<br>다음 팝업: " + Math.max(0, state.popupTimer).toFixed(1) + "초" +
         " / 긴급 닫기: " + (state.stats.emergencyCloseDisabled > 0 ? "비활성" : emergency) +
         "<br>난장판: " + clutterTierLabel() +
@@ -10081,6 +10308,11 @@
         "<br>아이템 풀: " + itemPoolSummary +
         "<br>1차 방식/기믹/최적화: " + upgradeLabels.form + " / " + upgradeLabels.mechanic + " / " + upgradeLabels.scaling +
         "<br>재생/흡혈/회복효율: +" + regenText + "/s / " + lifestealText + "% / " + formatSignedPercent(state.stats.healingMultiplier) +
+        "<br>획득 범위/치명타/치명 피해: " + Math.round(effectivePickupRange()) + " / " + critChanceText + "% / +" + critDamageText + "%" +
+        "<br>예상 DPS: " + expectedDps.toFixed(1) +
+        "<br>적 HP 스케일: x" + enemyHpScaleText + " / 현재 일반 적 HP: " + Math.round(currentNormalEnemyHpEstimate()) +
+        "<br>다음 보스 예상 HP: " + Math.round(nextBossHp) + " / 난이도 단계 HP 배율: x" + (1 + pressure.enemyHpMultiplier).toFixed(2) +
+        "<br>적 스폰 스케일: x" + (enemySpawnRateScale() * Math.max(0.2, 1 + pressure.enemySpawnMultiplier)).toFixed(2) +
         "<br>웨이브: " + waveModeLabel() + " / 남은 시간 " + Math.max(0, state.waveDirector.timer).toFixed(1) + "초" +
         "<br>보안 프로그램: " + state.residentPrograms.length + "개 / 점유 HP " + state.reservedMaxHP + " / 아이템 비용 +" + Math.round(totalResidentItemCostMultiplier() * 100) + "%" +
         "<br>정리 콤보: x" + cleanupComboCountValue + " " + state.cleanupComboTimer.toFixed(1) + "초" +
@@ -10618,6 +10850,12 @@
 
       if (key === "p" && !state.gameOver && !state.selectingItem && !state.selectingPerk && !state.selectingModule) {
         state.paused = !state.paused;
+        event.preventDefault();
+        return;
+      }
+
+      if (key === "x" && !state.gameOver && !state.selectingItem && !state.selectingPerk && !state.selectingModule && !state.selectingPaidReward && !isTypingTarget(event.target)) {
+        closeTopmostPopupByKeyboard();
         event.preventDefault();
         return;
       }
