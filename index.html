@@ -201,6 +201,15 @@
       color: var(--muted);
       font-size: 10px;
       font-weight: 800;
+      line-height: 1.28;
+    }
+
+    .cleanupMetaLine + .cleanupMetaLine {
+      margin-top: 2px;
+    }
+
+    .cleanupEffects {
+      color: #dffcff;
     }
 
     .packageEfficiencyBadge {
@@ -2229,8 +2238,8 @@
       },
       {
         id: "auto_click_macro",
-        name: "자동 클릭 매크로",
-        description: "8초마다 가장 오래된 광고성 팝업 자동 제거",
+        name: "자동 정리 매크로",
+        description: "8초마다 방해 팝업을 자동 정리하고 정리 콤보를 유지합니다.",
         rarity: "Epic",
         tags: ["clean", "popup_close", "utility"],
         effect: { stat: "autoCloseBasicInterval", value: 8 }
@@ -6904,12 +6913,12 @@
       syncLegacyCleanupComboFields();
     }
 
-    function isManualCleanupReason(reason) {
-      return reason === "manual" || reason === "emergency" || reason === "trash";
+    function isCleanupComboReason(reason) {
+      return reason === "manual" || reason === "emergency" || reason === "trash" || reason === "auto_cleanup";
     }
 
     function registerCleanupCombo(reason, popup) {
-      if (!isManualCleanupReason(reason) || !popup || popup.def.category === "system" || popup.def.type === "first_purchase_package" || popup.def.type === "stock_broker_app") {
+      if (!isCleanupComboReason(reason) || !popup || popup.def.category === "system" || popup.def.type === "first_purchase_package" || popup.def.type === "stock_broker_app" || isPopupLocked(popup)) {
         return;
       }
       state.cleanupComboValue = Math.min(state.cleanupComboMax, state.cleanupComboValue + 1);
@@ -7635,7 +7644,7 @@
         )
       );
       if (target) {
-        closePopup(target.id, { reason: "auto" });
+        closePopup(target.id, { reason: "auto_cleanup" });
       }
       state.autoCloseBasicTimer = Math.max(2, state.stats.autoCloseBasicInterval);
     }
@@ -9693,8 +9702,8 @@
       popup.element.remove();
       state.openPopups.splice(index, 1);
       const isRealPopup = popup.def.category !== "system" && popup.def.type !== "first_purchase_package";
-      const isManualCleanupClose = isManualCleanupReason(options.reason) && isRealPopup;
-      if (!state.gameOver && isManualCleanupClose) {
+      const isCleanupComboClose = isCleanupComboReason(options.reason) && isRealPopup;
+      if (!state.gameOver && isCleanupComboClose) {
         registerCleanupCombo(options.reason, popup);
         addGold(state.stats.goldPerPopupClose, "popupClose");
         applyPopupCloseDamage();
@@ -10252,6 +10261,7 @@
       if (stat === "interestPayoutMultiplier") return "이자 지급";
       if (stat === "popupStoreWeightMultiplier") return "팝업 상점 출현";
       if (stat === "popupStoreDiscountMultiplier") return "상점 할인";
+      if (stat === "autoCloseBasicInterval") return "자동 정리";
       if (stat === "healthRegenPerSecond") return "초당 재생";
       if (stat === "lifeStealPercent") return "흡혈";
       if (stat === "lifeStealFlat") return "고정 흡혈";
@@ -10296,6 +10306,7 @@
         effect.stat === "interestPayoutMultiplier" ||
         effect.stat === "popupStoreWeightMultiplier" ||
         effect.stat === "popupStoreDiscountMultiplier" ||
+        effect.stat === "autoCloseBasicInterval" ||
         effect.stat === "healthRegenPerSecond" ||
         effect.stat === "lifeStealPercent" ||
         effect.stat === "lifeStealFlat" ||
@@ -10390,6 +10401,9 @@
       }
       if (item.id === "cursed_transfusion") {
         return "최대 HP +" + (50 * stacks) + " / 흡혈 " + formatSignedPercent(0.04 * stacks) + " / 난이도 +" + stacks;
+      }
+      if (item.id === "auto_click_macro") {
+        return stacks <= 0 ? "자동 정리 없음" : "자동 정리 " + Math.max(2, state.stats.autoCloseBasicInterval || 8) + "초마다 / 콤보 유지";
       }
 
       const displayEffect = primaryDisplayEffect(item);
@@ -10493,23 +10507,104 @@
       difficultyEffectLabel.textContent = difficultyEffectSummary();
     }
 
+    function cleanupComboBonusBreakdown() {
+      const comboValue = Math.max(0, state.cleanupComboValue || 0);
+      const combo = Math.floor(comboValue);
+      const active = comboValue > 0;
+      const breakdown = {
+        active,
+        combo,
+        remaining: Math.max(0, state.cleanupComboTimer || 0),
+        damageBonus: 0,
+        cooldownBonus: 0,
+        rangeBonus: 0,
+        pickupRangeBonus: 0,
+        graceSeconds: effectiveCleanupComboGrace(),
+        notes: []
+      };
+
+      if (!active) {
+        return breakdown;
+      }
+
+      if (state.activePlaystyle === "clean_desk_starter" && combo >= 1) {
+        breakdown.cooldownBonus += -Math.min(0.22, combo * 0.02);
+        breakdown.rangeBonus += Math.min(0.15, combo * 0.012);
+      }
+
+      const emptySlot = ownedItemCount("empty_slot_charger");
+      if (emptySlot > 0) {
+        breakdown.damageBonus += Math.min(0.2, combo * 0.02) * emptySlot;
+      }
+
+      const closeCombo = ownedItemCount("close_combo");
+      if (closeCombo > 0) {
+        breakdown.cooldownBonus += -0.15 * closeCombo;
+      }
+
+      if (state.stats.cleanupComboPickupRangeMultiplier > 0) {
+        breakdown.pickupRangeBonus += state.stats.cleanupComboPickupRangeMultiplier;
+      }
+
+      if (selectedScalingForSlot("primary")?.id === "cleanup_combo_precision" && combo >= 1) {
+        const scalingCombo = Math.min(5, combo);
+        breakdown.rangeBonus += scalingCombo * 0.035;
+        breakdown.cooldownBonus += scalingCombo * -0.018;
+      }
+
+      if (breakdown.damageBonus !== 0) breakdown.notes.push("피해 " + formatSignedPercent(breakdown.damageBonus));
+      if (breakdown.cooldownBonus !== 0) breakdown.notes.push("쿨타임 " + formatSignedPercent(breakdown.cooldownBonus));
+      if (breakdown.rangeBonus !== 0) breakdown.notes.push("사거리 " + formatSignedPercent(breakdown.rangeBonus));
+      if (breakdown.pickupRangeBonus !== 0) breakdown.notes.push("획득 범위 " + formatSignedPercent(breakdown.pickupRangeBonus));
+      if (state.stats.cleanupComboGraceBonus > 0) breakdown.notes.push("유지 +" + state.stats.cleanupComboGraceBonus.toFixed(1) + "초");
+      return breakdown;
+    }
+
+    function autoCleanupStatusText() {
+      if (state.stats.autoCloseBasicInterval <= 0) {
+        return "자동 정리: 비활성";
+      }
+      const remaining = Math.max(0, state.autoCloseBasicTimer || 0);
+      return remaining <= 0.1 ? "자동 정리 준비 완료" : "자동 정리 대기 " + remaining.toFixed(1) + "초";
+    }
+
+    function emergencyCloseStatusText() {
+      if (state.stats.emergencyCloseDisabled > 0) {
+        return "긴급 닫기 [Space] 비활성화됨";
+      }
+      if (state.emergencyTimer > 0) {
+        return "긴급 닫기 [Space] " + state.emergencyTimer.toFixed(1) + "초";
+      }
+      return "긴급 닫기 [Space] 준비 완료";
+    }
+
     function updateCleanupComboHud() {
-      const visible = state.activePlaystyle === "clean_desk_starter" || state.cleanupComboValue > 0;
-      const combo = Math.floor(state.cleanupComboValue || 0);
-      const comboGrace = effectiveCleanupComboGrace();
+      const breakdown = cleanupComboBonusBreakdown();
+      const autoCleanupActive = state.stats.autoCloseBasicInterval > 0;
+      const visible = state.activePlaystyle === "clean_desk_starter" ||
+        state.cleanupComboValue > 0 ||
+        autoCleanupActive ||
+        state.emergencyTimer > 0 ||
+        state.stats.emergencyCloseDisabled > 0 ||
+        state.openPopups.length > 0;
+      const comboGrace = breakdown.graceSeconds;
       const ratio = comboGrace > 0 ? clamp(state.cleanupComboTimer / comboGrace, 0, 1) : 0;
       cleanupComboHud.classList.toggle("active", visible);
       cleanupComboHud.classList.toggle("decaying", state.cleanupComboValue > 0 && state.cleanupComboTimer <= 0);
       cleanupComboHud.classList.toggle("pulse", state.cleanupComboPulse > 0);
-      cleanupComboCount.textContent = "정리 콤보 x" + combo;
+      cleanupComboCount.textContent = "정리 콤보 x" + breakdown.combo;
       cleanupComboBarFill.style.width = (ratio * 100).toFixed(1) + "%";
-      if (state.cleanupComboTimer > 0) {
-        cleanupComboMeta.textContent = state.cleanupComboTimer.toFixed(1) + "초 유지";
-      } else if (state.cleanupComboValue > 0) {
-        cleanupComboMeta.textContent = "감쇠 중";
-      } else {
-        cleanupComboMeta.textContent = state.activePlaystyle === "clean_desk_starter" ? "수동 정리 대기" : "대기 중";
-      }
+
+      const effectText = breakdown.notes.length > 0 ? breakdown.notes.join(" / ") : "효과 대기";
+      const comboState = state.cleanupComboTimer > 0
+        ? "유지 " + state.cleanupComboTimer.toFixed(1) + "초"
+        : state.cleanupComboValue > 0
+          ? "감쇠 중"
+          : "수동 정리 대기";
+      cleanupComboMeta.innerHTML =
+        "<div class=\"cleanupMetaLine cleanupEffects\">" + effectText + "</div>" +
+        "<div class=\"cleanupMetaLine\">" + comboState + " · " + autoCleanupStatusText() + "</div>" +
+        "<div class=\"cleanupMetaLine\">" + emergencyCloseStatusText() + "</div>";
     }
 
     function updateInvestorDashboard() {
