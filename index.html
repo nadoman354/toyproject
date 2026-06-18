@@ -2106,10 +2106,10 @@
       },
       {
         id: "piercing_ad_shot",
-        name: "관통 광고탄",
-        description: "자동 공격이 적 1명을 추가로 타격",
+        name: "관통 탄환",
+        description: "투사체 관통 +1",
         rarity: "Rare",
-        tags: ["sponsored", "projectile", "combat", "damage"],
+        tags: ["generic", "projectile", "combat", "damage"],
         effect: { stat: "extraTargets", value: 1 }
       },
       {
@@ -2160,7 +2160,7 @@
         name: "클릭베이트 헤드라인",
         description: "치명타 확률 +6%, 치명타 피해 +25%",
         rarity: "Rare",
-        tags: ["sponsored", "combat", "crit", "ad_open"],
+        tags: ["generic", "combat", "crit", "damage"],
         effects: [
           { stat: "critChance", value: 0.06 },
           { stat: "critDamageMultiplier", value: 0.25 }
@@ -2185,7 +2185,7 @@
       {
         id: "sponsored_blade",
         name: "스폰서드 블레이드",
-        description: "광고 버프 팝업이 열려 있으면 자동 공격 2연타",
+        description: "스폰서 광고가 열려 있으면 투사체 공격이 추가 발사됩니다.",
         rarity: "Epic",
         tags: ["sponsored", "ad_open", "combat", "damage"],
         effect: { stat: "sponsoredDoubleHit", value: 1 }
@@ -2263,7 +2263,7 @@
         name: "닫기 버튼 중독",
         description: "팝업을 닫을 때마다 +3G, 최대 팝업 +1",
         rarity: "Rare",
-        tags: ["sponsored", "clean", "popup_close", "economy"],
+        tags: ["clean", "popup_close", "economy"],
         effects: [
           { stat: "goldPerPopupClose", value: 3 },
           { stat: "maxOpenPopups", value: 1 }
@@ -6400,7 +6400,7 @@
       return { actionPerformed: true, hitAny: hit.hitAny, killed: hit.killed };
     }
 
-    function executeMeleeSwordWave(slot, stats) {
+    function executeMeleeSwordWave(slot, stats, waveCount = 1) {
       const direction = getMeleeDirection(stats.range);
       const slashRadius = stats.range * 0.74;
       const slashHit = performMeleeArcHit({
@@ -6426,22 +6426,30 @@
         strength: 0.9
       });
       const speed = 315;
-      spawnProjectile({
-        x: state.player.x + direction.x * 24,
-        y: state.player.y + direction.y * 24,
-        vx: direction.x * speed,
-        vy: direction.y * speed,
-        radius: 18,
-        damage: stats.damage * 0.78,
-        ttl: Math.max(0.22, (stats.range * 1.35) / speed),
-        maxTtl: Math.max(0.22, (stats.range * 1.35) / speed),
-        pierce: Math.max(1, stats.extraTargets || 0),
-        sourceSlot: slot,
-        mechanicId: stats.mechanic?.id || null,
-        chainDamage: stats.damage * 0.3,
-        visual: "sword_wave",
-        hitTargets: []
-      });
+      const count = Math.max(1, Math.round(waveCount));
+      for (let i = 0; i < count; i += 1) {
+        const spread = count <= 1 ? 0 : (i - (count - 1) / 2) * 0.12;
+        const cos = Math.cos(spread);
+        const sin = Math.sin(spread);
+        const dirX = direction.x * cos - direction.y * sin;
+        const dirY = direction.x * sin + direction.y * cos;
+        spawnProjectile({
+          x: state.player.x + dirX * 24,
+          y: state.player.y + dirY * 24,
+          vx: dirX * speed,
+          vy: dirY * speed,
+          radius: 18,
+          damage: stats.damage * 0.78,
+          ttl: Math.max(0.22, (stats.range * 1.35) / speed),
+          maxTtl: Math.max(0.22, (stats.range * 1.35) / speed),
+          pierce: Math.max(1, stats.extraTargets || 0),
+          sourceSlot: slot,
+          mechanicId: stats.mechanic?.id || null,
+          chainDamage: stats.damage * 0.3,
+          visual: "sword_wave",
+          hitTargets: []
+        });
+      }
       return { actionPerformed: true, hitAny: slashHit.hitAny, killed: slashHit.killed };
     }
 
@@ -6751,37 +6759,32 @@
         return false;
       }
 
-      const hitCount = state.stats.sponsoredDoubleHit > 0 && countOpenAdPopups() > 0 ? 2 : 1;
+      const projectileShotBonus = countOpenAdPopups() > 0 ? Math.max(0, Math.round(state.stats.sponsoredDoubleHit || 0)) : 0;
+      const projectileShotCount = 1 + projectileShotBonus;
       const actionStats = applyActionDamageModifiers(slot, stats);
       const formId = actionStats.form?.id || defaultFormForModule(actionStats.module.id);
       let result = { actionPerformed: false, hitAny: false, killed: [] };
 
       if (formId === "ranged_projectile") {
-        result = executeRangedProjectile(slot, actionStats, hitCount, 1, 0.055);
+        result = executeRangedProjectile(slot, actionStats, projectileShotCount, 1, 0.055);
       } else if (formId === "ranged_scatter") {
-        result = executeRangedProjectile(slot, actionStats, 3 * hitCount, 0.7, 0.17);
+        result = executeRangedProjectile(slot, actionStats, 3 + projectileShotBonus, 0.7, 0.17);
       } else if (formId === "ranged_bounce") {
-        result = executeRangedProjectile(slot, actionStats, hitCount, 1, 0.04);
+        result = executeRangedProjectile(slot, actionStats, projectileShotCount, 1, 0.04);
       } else if (formId === "ranged_laser") {
-        const laserStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
-        result = executeRangedLaser(slot, laserStats);
+        result = executeRangedLaser(slot, actionStats);
       } else if (formId === "ranged_charge_cannon") {
-        const chargedStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
-        result = executeRangedChargeCannon(slot, chargedStats);
+        result = executeRangedChargeCannon(slot, actionStats);
       } else if (formId === "melee_forward_slash") {
-        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
-        result = executeMeleeForwardSlash(slot, meleeStats);
+        result = executeMeleeForwardSlash(slot, actionStats);
       } else if (formId === "melee_circle_slash") {
-        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
-        result = executeMeleeCircleSlash(slot, meleeStats);
+        result = executeMeleeCircleSlash(slot, actionStats);
       } else if (formId === "melee_sword_wave") {
-        result = executeMeleeSwordWave(slot, actionStats);
+        result = executeMeleeSwordWave(slot, actionStats, projectileShotCount);
       } else if (formId === "melee_dash_slash") {
-        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
-        result = executeMeleeForwardSlash(slot, meleeStats, 1.8, 0.9);
+        result = executeMeleeForwardSlash(slot, actionStats, 1.8, 0.9);
       } else if (formId === "melee_charged_cleave") {
-        const meleeStats = hitCount > 1 ? { ...actionStats, damage: actionStats.damage * hitCount } : actionStats;
-        result = executeMeleeChargedCleave(slot, meleeStats);
+        result = executeMeleeChargedCleave(slot, actionStats);
       } else if (formId === "aura_steady") {
         result = executeAuraPulse(slot, actionStats);
       } else if (formId === "aura_pulse") {
@@ -10059,7 +10062,8 @@
       if (stat === "attackRangeMultiplier") return "공격 사거리";
       if (stat === "moveSpeedMultiplier") return "이동 속도";
       if (stat === "maxHP") return "최대 HP";
-      if (stat === "extraTargets") return "추가 타격";
+      if (stat === "extraTargets") return "투사체 관통";
+      if (stat === "sponsoredDoubleHit") return "스폰서 투사체 추가 발사";
       if (stat === "popupSpawnRateMultiplier") return "팝업 생성률";
       if (stat === "popupDragSpeedMultiplier") return "팝업 드래그";
       if (stat === "maxOpenPopups") return "최대 팝업";
@@ -10103,6 +10107,7 @@
         effect.stat === "moveSpeedMultiplier" ||
         effect.stat === "maxHP" ||
         effect.stat === "extraTargets" ||
+        effect.stat === "sponsoredDoubleHit" ||
         effect.stat === "popupSpawnRateMultiplier" ||
         effect.stat === "popupDragSpeedMultiplier" ||
         effect.stat === "maxOpenPopups" ||
@@ -10152,6 +10157,10 @@
       }
       if (item.id === "banner_amp") {
         return stacks <= 0 ? "광고 유지 쿨타임 변화 없음" : "광고 유지 쿨타임 " + formatSignedPercent(countOpenAdPopups() > 0 ? -0.08 * stacks : 0);
+      }
+      if (item.id === "sponsored_blade") {
+        const activeShots = countOpenAdPopups() > 0 ? stacks : 0;
+        return stacks <= 0 ? "스폰서 투사체 추가 없음" : "스폰서 투사체 추가 발사 +" + activeShots;
       }
       if (item.id === "popup_resonator") {
         return stacks <= 0 ? "팝업 사거리 변화 없음" : "팝업 사거리 " + formatSignedPercent(Math.min(0.18 * stacks, state.openPopups.length * 0.03 * stacks));
